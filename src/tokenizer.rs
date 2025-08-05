@@ -34,9 +34,7 @@ impl Iterator for Tokenizer<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let Some(c) = self.input.peek() else {
-                return None;
-            };
+            let c = self.input.peek()?;
 
             match c {
                 c if c.is_whitespace() => {
@@ -90,10 +88,10 @@ impl Iterator for Tokenizer<'_> {
                         _ => Some(Token::Ident(ident)),
                     };
                 }
-                c if c.is_digit(10) => {
+                c if c.is_ascii_digit() => {
                     let mut num_str = String::new();
                     while let Some(&c) = self.input.peek() {
-                        if c.is_digit(10) || c == '.' {
+                        if c.is_ascii_digit() || c == '.' {
                             num_str.push(self.input.next().unwrap());
                         } else {
                             break;

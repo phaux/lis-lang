@@ -50,7 +50,7 @@ impl Vm {
             }
             ast::Stmt::Print(expr) => {
                 let value = self.eval_expr(expr);
-                println!("{:?}", value);
+                println!("{value:?}");
             }
         }
     }

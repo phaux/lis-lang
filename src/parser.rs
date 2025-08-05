@@ -19,7 +19,7 @@ impl<'a> Parser<'a> {
         if token == &expected {
             self.tokenizer.next();
         } else {
-            panic!("expected {:?}, found {:?}", expected, token);
+            panic!("expected {expected:?}, found {token:?}");
         }
     }
 
@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
                 self.expect(Token::ParenR);
                 expr
             }
-            Some(t) => panic!("invalid expression: unexpected {:?}", t),
+            Some(t) => panic!("invalid expression: unexpected {t:?}"),
             None => panic!("unexpected end of input"),
         }
     }
