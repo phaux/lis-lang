@@ -1,0 +1,54 @@
+use crate::tokenizer::Token;
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Prog {
+    pub stmts: Vec<Stmt>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Stmt {
+    Let { ident: String, expr: Expr },
+    Print(Expr),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Expr {
+    Number(f64),
+    Ident(String),
+    BinOp {
+        left: Box<Expr>,
+        op: BinOp,
+        right: Box<Expr>,
+    },
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum BinOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+impl BinOp {
+    pub fn get_precedence(&self) -> u8 {
+        match self {
+            BinOp::Add | BinOp::Sub => 1,
+            BinOp::Mul | BinOp::Div => 2,
+        }
+    }
+}
+
+impl TryFrom<&Token> for BinOp {
+    type Error = Token;
+
+    fn try_from(token: &Token) -> Result<Self, Self::Error> {
+        match token {
+            Token::Plus => Ok(BinOp::Add),
+            Token::Minus => Ok(BinOp::Sub),
+            Token::Star => Ok(BinOp::Mul),
+            Token::Slash => Ok(BinOp::Div),
+            _ => Err(token.clone()),
+        }
+    }
+}
