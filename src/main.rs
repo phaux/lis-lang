@@ -18,6 +18,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     let mut vm = Vm::new();
-    vm.exec_str(&input);
+    vm.exec_str(&input)?;
     Ok(())
 }
