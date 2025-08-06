@@ -150,19 +150,15 @@ impl Vm {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::parser::Parser;
 
     #[test]
     fn assign() {
         let mut vm = Vm::new();
-        vm.exec_prog(
-            &Parser::new(
-                r#"
-                    let foo = 2;
-                    let bar = 3;
-                "#,
-            )
-            .parse_prog(),
+        vm.exec_str(
+            r#"
+                let foo = 2;
+                let bar = 3;
+            "#,
         );
         assert_eq!(
             vm.global_obj.props.get("foo"),
