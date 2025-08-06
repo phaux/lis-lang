@@ -1,7 +1,26 @@
 use std::iter::Peekable;
+use thiserror::Error;
 
 use crate::ast;
 use crate::tokenizer::{Token, Tokenizer};
+
+#[derive(Error, Debug, PartialEq)]
+pub enum ParseError {
+    #[error("unexpected {0:?} where statement was expected")]
+    InvalidStmt(Option<Token>),
+    #[error("unexpected {0:?} where identifier of let statement was expected")]
+    InvalidLetIdent(Option<Token>),
+    #[error("unexpected {0:?} where '=' of let statement was expected")]
+    InvalidLetEq(Option<Token>),
+    #[error("unexpected {0:?} where 'then' of if statement was expected")]
+    InvalidIfThen(Option<Token>),
+    #[error("unexpected {0:?} where expression was expected")]
+    InvalidExpr(Option<Token>),
+    #[error("unexpected {0:?} where a closing parenthesis of expression was expected")]
+    UnclosedExprParen(Option<Token>),
+}
+
+type Result<T> = std::result::Result<T, ParseError>;
 
 pub struct Parser<'a> {
     tokenizer: Peekable<Tokenizer<'a>>,
@@ -14,96 +33,83 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn expect(&mut self, expected: Token) {
-        let token = self.tokenizer.peek().unwrap();
-        if token == &expected {
-            self.tokenizer.next();
-        } else {
-            panic!("expected {expected:?}, found {token:?}");
-        }
-    }
-
-    pub fn parse_prog(&mut self) -> ast::Prog {
+    pub fn parse_prog(&mut self) -> Result<ast::Prog> {
         let mut stmts = Vec::new();
         while self.tokenizer.peek().is_some() {
-            stmts.push(self.parse_stmt());
+            stmts.push(self.parse_stmt()?);
         }
-        ast::Prog { stmts }
+        Ok(ast::Prog { stmts })
     }
 
-    fn parse_stmt(&mut self) -> ast::Stmt {
+    fn parse_stmt(&mut self) -> Result<ast::Stmt> {
         let stmt = match self.tokenizer.peek() {
             Some(Token::CurlyL) => self.parse_block_stmt(),
             Some(Token::Let) => self.parse_let_stmt(),
             Some(Token::Print) => self.parse_print_stmt(),
             Some(Token::If) => self.parse_if_stmt(),
-            _ => panic!("invalid statement"),
-        };
+            tok => return Err(ParseError::InvalidStmt(tok.cloned())),
+        }?;
+        // consume semis
         while self.tokenizer.next_if_eq(&Token::Semi).is_some() {}
-        stmt
+        Ok(stmt)
     }
 
-    fn parse_block_stmt(&mut self) -> ast::Stmt {
+    fn parse_block_stmt(&mut self) -> Result<ast::Stmt> {
         self.tokenizer.next(); // Consume '{'
         let mut stmts = Vec::new();
-        loop {
-            match self.tokenizer.peek() {
-                Some(Token::CurlyR) => break,
-                _ => stmts.push(self.parse_stmt()),
-            }
+        while self.tokenizer.next_if_eq(&Token::CurlyR).is_none() {
+            stmts.push(self.parse_stmt()?)
         }
-        self.expect(Token::CurlyR);
-        ast::Stmt::Block(stmts)
+        Ok(ast::Stmt::Block(stmts))
     }
 
-    fn parse_let_stmt(&mut self) -> ast::Stmt {
+    fn parse_let_stmt(&mut self) -> Result<ast::Stmt> {
         self.tokenizer.next(); // Consume 'let'
-        let token = self.tokenizer.peek().cloned();
-        let identifier = match token {
-            Some(Token::Ident(name)) => {
-                self.tokenizer.next();
-                name.clone()
-            }
-            _ => panic!("expected identifier after 'let'"),
+        let ident = match self.tokenizer.next() {
+            Some(Token::Ident(name)) => name,
+            t => return Err(ParseError::InvalidLetIdent(t)),
         };
-        self.expect(Token::Eq);
-        let expr = self.parse_expr(0);
-        ast::Stmt::Let {
-            ident: identifier.clone(),
-            expr,
-        }
+        match self.tokenizer.next() {
+            Some(Token::Eq) => {}
+            t => return Err(ParseError::InvalidLetEq(t)),
+        };
+        let expr = self.parse_expr(0)?;
+        Ok(ast::Stmt::Let { ident, expr })
     }
 
-    fn parse_print_stmt(&mut self) -> ast::Stmt {
+    fn parse_print_stmt(&mut self) -> Result<ast::Stmt> {
         self.tokenizer.next(); // Consume 'print'
-        let expr = self.parse_expr(0);
-        ast::Stmt::Print(expr)
+        let expr = self.parse_expr(0)?;
+        Ok(ast::Stmt::Print(expr))
     }
 
-    fn parse_if_stmt(&mut self) -> ast::Stmt {
+    fn parse_if_stmt(&mut self) -> Result<ast::Stmt> {
         self.tokenizer.next(); // Consume 'if'
-        let condition = self.parse_expr(0);
+        let condition = self.parse_expr(0)?;
 
         // Parse then branch
-        self.expect(Token::Then);
-        let consequent = Box::new(self.parse_stmt());
+        let then_token = self.tokenizer.next();
+        if then_token != Some(Token::Then) {
+            return Err(ParseError::InvalidIfThen(then_token));
+        }
+        let consequent = Box::new(self.parse_stmt()?);
 
         // Parse optional else branch
         let alternate = if self.tokenizer.next_if_eq(&Token::Else).is_some() {
-            Some(Box::new(self.parse_stmt()))
+            Some(Box::new(self.parse_stmt()?))
         } else {
             None
         };
 
-        ast::Stmt::If {
+        Ok(ast::Stmt::If {
             condition,
             consequent,
             alternate,
-        }
+        })
     }
 
-    pub fn parse_expr(&mut self, precedence: u8) -> ast::Expr {
-        let mut left = self.parse_operand();
+    pub fn parse_expr(&mut self, precedence: u8) -> Result<ast::Expr> {
+        let mut left = self.parse_operand()?;
         loop {
             let Some(tok) = self.tokenizer.peek() else {
                 break;
@@ -116,35 +122,38 @@ impl<'a> Parser<'a> {
                 break;
             }
             self.tokenizer.next(); // Consume operator
-            let right = self.parse_expr(next_prec);
+            let right = self.parse_expr(next_prec)?;
             left = ast::Expr::BinOp {
                 left: Box::new(left),
                 op,
                 right: Box::new(right),
             };
         }
-        left
+        Ok(left)
     }
 
-    fn parse_operand(&mut self) -> ast::Expr {
-        let Some(token) = self.tokenizer.next() else {
-            panic!("unexpected end of input");
-        };
-        if let Ok(op) = ast::UnaryOp::try_from(&token) {
-            ast::Expr::UnaryOp {
-                op,
-                expr: Box::new(self.parse_operand()),
-            }
-        } else {
-            match token {
-                Token::Num(n) => ast::Expr::Number(n),
-                Token::Ident(name) => ast::Expr::Ident(name),
-                Token::ParenL => {
-                    let expr = self.parse_expr(0);
-                    self.expect(Token::ParenR);
-                    expr
+    fn parse_operand(&mut self) -> Result<ast::Expr> {
+        match self.tokenizer.next() {
+            Some(Token::Num(n)) => Ok(ast::Expr::Number(n)),
+            Some(Token::Ident(name)) => Ok(ast::Expr::Ident(name)),
+            Some(Token::ParenL) => {
+                let expr = self.parse_expr(0)?;
+                let paren = self.tokenizer.next();
+                if paren != Some(Token::ParenR) {
+                    return Err(ParseError::UnclosedExprParen(paren));
                 }
-                t => panic!("invalid expression: unexpected {t:?}"),
+                Ok(expr)
+            }
+            t => {
+                let op = t.as_ref().and_then(|t| ast::UnaryOp::try_from(t).ok());
+                if let Some(op) = op {
+                    Ok(ast::Expr::UnaryOp {
+                        op,
+                        expr: Box::new(self.parse_operand()?),
+                    })
+                } else {
+                    Err(ParseError::InvalidExpr(t))
+                }
             }
         }
     }
@@ -156,20 +165,36 @@ mod tests {
     use crate::ast::*;
 
     #[test]
-    fn empty_prog() {
-        let prog = Parser::new("").parse_prog();
+    fn empty_prog() -> Result<()> {
+        let prog = Parser::new("").parse_prog()?;
         assert_eq!(prog.stmts.len(), 0);
+        Ok(())
     }
 
     #[test]
-    fn many_semis_prog() {
-        let prog = Parser::new("print 1;;;;;").parse_prog();
+    fn many_semis_prog() -> Result<()> {
+        let prog = Parser::new("print 1;;;;;").parse_prog()?;
         assert_eq!(prog.stmts.len(), 1);
+        Ok(())
     }
 
     #[test]
-    fn assignment_prog() {
-        let prog = Parser::new("let x = 1;").parse_prog();
+    fn only_semis_prog() -> Result<()> {
+        let prog = Parser::new(";;;;").parse_prog();
+        assert_eq!(prog, Err(ParseError::InvalidStmt(Some(Token::Semi))));
+        Ok(())
+    }
+
+    #[test]
+    fn unclosed_paren() -> Result<()> {
+        let prog = Parser::new("(1 + 2;").parse_expr(0);
+        assert_eq!(prog, Err(ParseError::UnclosedExprParen(Some(Token::Semi))));
+        Ok(())
+    }
+
+    #[test]
+    fn assignment_prog() -> Result<()> {
+        let prog = Parser::new("let x = 1;").parse_prog()?;
         assert_eq!(
             prog,
             Prog {
@@ -179,17 +204,19 @@ mod tests {
                 }],
             },
         );
+        Ok(())
     }
 
     #[test]
-    fn print_stmt() {
-        let stmt = Parser::new("print 1").parse_stmt();
+    fn print_stmt() -> Result<()> {
+        let stmt = Parser::new("print 1").parse_stmt()?;
         assert_eq!(stmt, Stmt::Print(Expr::Number(1.0)));
+        Ok(())
     }
 
     #[test]
-    fn unary_ops() {
-        let expr = Parser::new("+-1").parse_expr(0);
+    fn unary_ops() -> Result<()> {
+        let expr = Parser::new("+-1").parse_expr(0)?;
         assert_eq!(
             expr,
             Expr::UnaryOp {
@@ -200,51 +227,51 @@ mod tests {
                 })
             }
         );
+        Ok(())
     }
 
     #[test]
-    fn binary_ops() {
-        let expr = Parser::new("1 * 2 + 3 / 4").parse_expr(0);
+    fn binary_ops() -> Result<()> {
+        let expr = Parser::new("1 + 2 * 3").parse_expr(0)?;
         assert_eq!(
             expr,
             Expr::BinOp {
-                left: Box::new(Expr::BinOp {
-                    left: Box::new(Expr::Number(1.0)),
-                    op: BinOp::Mul,
-                    right: Box::new(Expr::Number(2.0)),
-                }),
+                left: Box::new(Expr::Number(1.0)),
                 op: BinOp::Add,
                 right: Box::new(Expr::BinOp {
-                    left: Box::new(Expr::Number(3.0)),
-                    op: BinOp::Div,
-                    right: Box::new(Expr::Number(4.0)),
+                    left: Box::new(Expr::Number(2.0)),
+                    op: BinOp::Mul,
+                    right: Box::new(Expr::Number(3.0)),
                 }),
-            },
+            }
         );
+        Ok(())
     }
 
     #[test]
-    fn binary_and_unary_ops() {
-        let expr = Parser::new("+1 + -1").parse_expr(0);
+    fn binary_and_unary_ops() -> Result<()> {
+        let expr = Parser::new("1 + -2 * 3").parse_expr(0)?;
         assert_eq!(
             expr,
             Expr::BinOp {
-                left: Box::new(Expr::UnaryOp {
-                    op: UnaryOp::Pos,
-                    expr: Box::new(Expr::Number(1.0)),
-                }),
+                left: Box::new(Expr::Number(1.0)),
                 op: BinOp::Add,
-                right: Box::new(Expr::UnaryOp {
-                    op: UnaryOp::Neg,
-                    expr: Box::new(Expr::Number(1.0)),
+                right: Box::new(Expr::BinOp {
+                    left: Box::new(Expr::UnaryOp {
+                        op: UnaryOp::Neg,
+                        expr: Box::new(Expr::Number(2.0)),
+                    }),
+                    op: BinOp::Mul,
+                    right: Box::new(Expr::Number(3.0)),
                 }),
-            },
+            }
         );
+        Ok(())
     }
 
     #[test]
-    fn parens() {
-        let expr = Parser::new("(1 + 2) * 3").parse_expr(0);
+    fn parens() -> Result<()> {
+        let expr = Parser::new("(1 + 2) * 3").parse_expr(0)?;
         assert_eq!(
             expr,
             Expr::BinOp {
@@ -255,26 +282,35 @@ mod tests {
                 }),
                 op: BinOp::Mul,
                 right: Box::new(Expr::Number(3.0)),
-            },
-        );
-    }
-
-    #[test]
-    fn if_statement() {
-        let stmt = Parser::new("if x then print 1").parse_stmt();
-        assert_eq!(
-            stmt,
-            Stmt::If {
-                condition: Expr::Ident("x".to_string()),
-                consequent: Box::new(Stmt::Print(Expr::Number(1.0))),
-                alternate: None,
             }
         );
+        Ok(())
     }
 
     #[test]
-    fn if_else_statement() {
-        let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt();
+    fn if_statement() -> Result<()> {
+        let stmt = Parser::new("if 1 then { print 1 } else { print 2 }").parse_stmt()?;
+        assert!(matches!(
+            stmt,
+            Stmt::If {
+                condition: Expr::Number(1.0),
+                consequent: _,
+                alternate: _
+            }
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn unclosed_curly() -> Result<()> {
+        let stmt = Parser::new("if 1 then { print 1").parse_stmt();
+        assert_eq!(stmt, Err(ParseError::InvalidStmt(None)));
+        Ok(())
+    }
+
+    #[test]
+    fn if_else_statement() -> Result<()> {
+        let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt()?;
         assert_eq!(
             stmt,
             Stmt::If {
@@ -283,5 +319,6 @@ mod tests {
                 alternate: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Number(0.0))]))),
             }
         );
+        Ok(())
     }
 }

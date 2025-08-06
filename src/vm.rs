@@ -1,4 +1,4 @@
-use crate::{ast, parser::Parser};
+use crate::{ast, parser::ParseError, parser::Parser};
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -20,6 +20,9 @@ pub enum VmError {
         left: Type,
         right: Type,
     },
+
+    #[error("parse error: {0}")]
+    ParseError(#[from] ParseError),
 }
 
 /// A single virtual machine instance.
@@ -77,7 +80,7 @@ impl Vm {
     }
 
     pub fn exec_str(&mut self, input: &str) -> Result<(), VmError> {
-        let prog = Parser::new(input).parse_prog();
+        let prog = Parser::new(input).parse_prog()?;
         self.exec_prog(&prog)
     }
 
@@ -276,7 +279,7 @@ mod test {
     #[test]
     fn eval_expr() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(1.0)));
         Ok(())
     }
@@ -284,7 +287,7 @@ mod test {
     #[test]
     fn eval_bin_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 + 2 * 3"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1 + 2 * 3"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(7.0)));
         Ok(())
     }
@@ -292,7 +295,7 @@ mod test {
     #[test]
     fn eval_unary_num_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"+-(10)"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"+-(10)"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(-10.0)));
         Ok(())
     }
@@ -300,7 +303,7 @@ mod test {
     #[test]
     fn eval_unary_bool_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"!!!(1==1)"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"!!!(1==1)"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
         Ok(())
     }
@@ -308,9 +311,9 @@ mod test {
     #[test]
     fn eval_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 == 1"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1 == 1"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
-        let val = vm.eval_expr(&Parser::new(r#"1 == 2"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1 == 2"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
         Ok(())
     }
@@ -318,9 +321,9 @@ mod test {
     #[test]
     fn eval_not_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 != 1"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1 != 1"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
-        let val = vm.eval_expr(&Parser::new(r#"1 != 2"#).parse_expr(0))?;
+        let val = vm.eval_expr(&Parser::new(r#"1 != 2"#).parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
         Ok(())
     }

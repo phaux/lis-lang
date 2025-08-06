@@ -23,6 +23,7 @@ pub enum Token {
     ParenR,
     CurlyL,
     CurlyR,
+    Invalid(char),
 }
 
 pub struct Tokenizer<'a> {
@@ -92,7 +93,7 @@ impl Iterator for Tokenizer<'_> {
                     let num = num_str.parse().unwrap();
                     Some(Token::Num(num))
                 }
-                _ => panic!("invalid character"),
+                ch => Some(Token::Invalid(ch)),
             };
         }
     }
