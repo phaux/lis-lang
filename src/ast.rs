@@ -66,7 +66,7 @@ impl TryFrom<&Token> for UnaryOp {
 }
 
 impl BinOp {
-    pub fn get_precedence(&self) -> u8 {
+    pub fn get_precedence(self) -> u8 {
         match self {
             BinOp::Eq | BinOp::NotEq => 1,
             BinOp::Add | BinOp::Sub => 2,

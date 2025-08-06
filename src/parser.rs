@@ -58,7 +58,7 @@ impl<'a> Parser<'a> {
         self.tokenizer.next(); // Consume '{'
         let mut stmts = Vec::new();
         while self.tokenizer.next_if_eq(&Token::CurlyR).is_none() {
-            stmts.push(self.parse_stmt()?)
+            stmts.push(self.parse_stmt()?);
         }
         Ok(ast::Stmt::Block(stmts))
     }
@@ -72,7 +72,7 @@ impl<'a> Parser<'a> {
         match self.tokenizer.next() {
             Some(Token::Eq) => {}
             t => return Err(ParseError::InvalidLetEq(t)),
-        };
+        }
         let expr = self.parse_expr(0)?;
         Ok(ast::Stmt::Let { ident, expr })
     }
@@ -179,17 +179,15 @@ mod tests {
     }
 
     #[test]
-    fn only_semis_prog() -> Result<()> {
+    fn only_semis_prog() {
         let prog = Parser::new(";;;;").parse_prog();
         assert_eq!(prog, Err(ParseError::InvalidStmt(Some(Token::Semi))));
-        Ok(())
     }
 
     #[test]
-    fn unclosed_paren() -> Result<()> {
+    fn unclosed_paren() {
         let prog = Parser::new("(1 + 2;").parse_expr(0);
         assert_eq!(prog, Err(ParseError::UnclosedExprParen(Some(Token::Semi))));
-        Ok(())
     }
 
     #[test]
@@ -302,10 +300,9 @@ mod tests {
     }
 
     #[test]
-    fn unclosed_curly() -> Result<()> {
+    fn unclosed_curly() {
         let stmt = Parser::new("if 1 then { print 1").parse_stmt();
         assert_eq!(stmt, Err(ParseError::InvalidStmt(None)));
-        Ok(())
     }
 
     #[test]

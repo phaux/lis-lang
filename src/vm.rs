@@ -8,8 +8,8 @@ pub enum VmError {
     #[error("division by zero")]
     DivByZero,
 
-    #[error("unexpected {0} in a condition")]
-    InvalidCond(String),
+    #[error("unexpected {0:?} in a condition")]
+    InvalidCond(Type),
 
     #[error("invalid {op:?} on {ty:?}")]
     InvalidUnaryOp { op: ast::UnaryOp, ty: Type },
@@ -124,7 +124,7 @@ impl Vm {
                         Ok(())
                     }
                 } else {
-                    Err(VmError::InvalidCond(format!("{:?}", condition)))
+                    Err(VmError::InvalidCond(condition.type_of()))
                 }
             }
         }
@@ -144,8 +144,8 @@ impl Vm {
                         Value::Primitive(Primitive::Num(n)) => {
                             Ok(Value::Primitive(Primitive::Num(n)))
                         }
-                        _ => Err(VmError::InvalidUnaryOp {
-                            op: op.clone(),
+                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
+                            op: *op,
                             ty: val.type_of(),
                         }),
                     },
@@ -153,8 +153,8 @@ impl Vm {
                         Value::Primitive(Primitive::Num(n)) => {
                             Ok(Value::Primitive(Primitive::Num(-n)))
                         }
-                        _ => Err(VmError::InvalidUnaryOp {
-                            op: op.clone(),
+                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
+                            op: *op,
                             ty: val.type_of(),
                         }),
                     },
@@ -162,8 +162,8 @@ impl Vm {
                         Value::Primitive(Primitive::Bool(b)) => {
                             Ok(Value::Primitive(Primitive::Bool(!b)))
                         }
-                        _ => Err(VmError::InvalidUnaryOp {
-                            op: op.clone(),
+                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
+                            op: *op,
                             ty: val.type_of(),
                         }),
                     },
@@ -179,7 +179,7 @@ impl Vm {
                             Value::Primitive(Primitive::Num(r)),
                         ) => Ok(Value::Primitive(Primitive::Num(l + r))),
                         _ => Err(VmError::InvalidBinaryOp {
-                            op: op.clone(),
+                            op: *op,
                             left: left_val.type_of(),
                             right: right_val.type_of(),
                         }),
@@ -190,7 +190,7 @@ impl Vm {
                             Value::Primitive(Primitive::Num(r)),
                         ) => Ok(Value::Primitive(Primitive::Num(l - r))),
                         _ => Err(VmError::InvalidBinaryOp {
-                            op: op.clone(),
+                            op: *op,
                             left: left_val.type_of(),
                             right: right_val.type_of(),
                         }),
@@ -201,7 +201,7 @@ impl Vm {
                             Value::Primitive(Primitive::Num(r)),
                         ) => Ok(Value::Primitive(Primitive::Num(l * r))),
                         _ => Err(VmError::InvalidBinaryOp {
-                            op: op.clone(),
+                            op: *op,
                             left: left_val.type_of(),
                             right: right_val.type_of(),
                         }),
@@ -217,7 +217,7 @@ impl Vm {
                             Ok(Value::Primitive(Primitive::Num(l / r)))
                         }
                         _ => Err(VmError::InvalidBinaryOp {
-                            op: op.clone(),
+                            op: *op,
                             left: left_val.type_of(),
                             right: right_val.type_of(),
                         }),
@@ -240,10 +240,10 @@ mod test {
     fn assign() -> Result<(), VmError> {
         let mut vm = Vm::new();
         vm.exec_str(
-            r#"
+            r"
                 let foo = 2;
                 let bar = 3;
-            "#,
+            ",
         )?;
         assert_eq!(
             vm.global_obj.props.get("foo"),
@@ -260,14 +260,14 @@ mod test {
     fn if_stmt() -> Result<(), VmError> {
         let mut vm = Vm::new();
         vm.exec_str(
-            r#"
+            r"
             let foo = 1 + 1;
             if foo == 2 then {
                 let bar = 1;
             } else {
                 let bar = 0;
             }
-            "#,
+            ",
         )?;
         assert_eq!(
             vm.global_obj.props.get("bar"),
@@ -279,7 +279,7 @@ mod test {
     #[test]
     fn eval_expr() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(1.0)));
         Ok(())
     }
@@ -287,7 +287,7 @@ mod test {
     #[test]
     fn eval_bin_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 + 2 * 3"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1 + 2 * 3").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(7.0)));
         Ok(())
     }
@@ -295,7 +295,7 @@ mod test {
     #[test]
     fn eval_unary_num_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"+-(10)"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"+-(10)").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Num(-10.0)));
         Ok(())
     }
@@ -303,7 +303,7 @@ mod test {
     #[test]
     fn eval_unary_bool_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"!!!(1==1)"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"!!!(1==1)").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
         Ok(())
     }
@@ -311,9 +311,9 @@ mod test {
     #[test]
     fn eval_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 == 1"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1 == 1").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
-        let val = vm.eval_expr(&Parser::new(r#"1 == 2"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1 == 2").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
         Ok(())
     }
@@ -321,9 +321,9 @@ mod test {
     #[test]
     fn eval_not_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"1 != 1"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1 != 1").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
-        let val = vm.eval_expr(&Parser::new(r#"1 != 2"#).parse_expr(0)?)?;
+        let val = vm.eval_expr(&Parser::new(r"1 != 2").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
         Ok(())
     }
