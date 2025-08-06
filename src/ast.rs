@@ -7,8 +7,17 @@ pub struct Prog {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
-    Let { ident: String, expr: Expr },
+    Let {
+        ident: String,
+        expr: Expr,
+    },
     Print(Expr),
+    Block(Vec<Stmt>),
+    If {
+        condition: Expr,
+        consequent: Box<Stmt>,
+        alternate: Option<Box<Stmt>>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]

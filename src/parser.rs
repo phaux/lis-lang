@@ -27,21 +27,33 @@ impl<'a> Parser<'a> {
         let mut stmts = Vec::new();
         while self.tokenizer.peek().is_some() {
             stmts.push(self.parse_stmt());
-            if let Some(Token::Semi) = self.tokenizer.peek() {
-                self.tokenizer.next();
-            } else if self.tokenizer.peek().is_some() {
-                panic!("expected semicolon at the end of a statement");
-            }
         }
         ast::Prog { stmts }
     }
 
     fn parse_stmt(&mut self) -> ast::Stmt {
-        match self.tokenizer.peek() {
+        let stmt = match self.tokenizer.peek() {
+            Some(Token::CurlyL) => self.parse_block_stmt(),
             Some(Token::Let) => self.parse_let_stmt(),
             Some(Token::Print) => self.parse_print_stmt(),
+            Some(Token::If) => self.parse_if_stmt(),
             _ => panic!("invalid statement"),
+        };
+        while self.tokenizer.next_if_eq(&Token::Semi).is_some() {}
+        stmt
+    }
+
+    fn parse_block_stmt(&mut self) -> ast::Stmt {
+        self.tokenizer.next(); // Consume '{'
+        let mut stmts = Vec::new();
+        loop {
+            match self.tokenizer.peek() {
+                Some(Token::CurlyR) => break,
+                _ => stmts.push(self.parse_stmt()),
+            }
         }
+        self.expect(Token::CurlyR);
+        ast::Stmt::Block(stmts)
     }
 
     fn parse_let_stmt(&mut self) -> ast::Stmt {
@@ -66,6 +78,28 @@ impl<'a> Parser<'a> {
         self.tokenizer.next(); // Consume 'print'
         let expr = self.parse_expr(0);
         ast::Stmt::Print(expr)
+    }
+
+    fn parse_if_stmt(&mut self) -> ast::Stmt {
+        self.tokenizer.next(); // Consume 'if'
+        let condition = self.parse_expr(0);
+
+        // Parse then branch
+        self.expect(Token::Then);
+        let consequent = Box::new(self.parse_stmt());
+
+        // Parse optional else branch
+        let alternate = if self.tokenizer.next_if_eq(&Token::Else).is_some() {
+            Some(Box::new(self.parse_stmt()))
+        } else {
+            None
+        };
+
+        ast::Stmt::If {
+            condition,
+            consequent,
+            alternate,
+        }
     }
 
     pub fn parse_expr(&mut self, precedence: u8) -> ast::Expr {
@@ -93,31 +127,24 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_operand(&mut self) -> ast::Expr {
-        let token = self.tokenizer.peek();
-
-        match token {
-            Some(Token::Plus) | Some(Token::Minus) => {
-                let op_token = self.tokenizer.next().unwrap();
-                let op = ast::UnaryOp::try_from(&op_token).unwrap();
-                let expr = self.parse_operand();
-                ast::Expr::UnaryOp {
-                    op,
-                    expr: Box::new(expr),
-                }
+        let Some(token) = self.tokenizer.next() else {
+            panic!("unexpected end of input");
+        };
+        if let Ok(op) = ast::UnaryOp::try_from(&token) {
+            ast::Expr::UnaryOp {
+                op,
+                expr: Box::new(self.parse_operand()),
             }
-            _ => {
-                let token = self.tokenizer.next();
-                match token {
-                    Some(Token::Num(n)) => ast::Expr::Number(n),
-                    Some(Token::Ident(name)) => ast::Expr::Ident(name),
-                    Some(Token::ParenL) => {
-                        let expr = self.parse_expr(0);
-                        self.expect(Token::ParenR);
-                        expr
-                    }
-                    Some(t) => panic!("invalid expression: unexpected {t:?}"),
-                    None => panic!("unexpected end of input"),
+        } else {
+            match token {
+                Token::Num(n) => ast::Expr::Number(n),
+                Token::Ident(name) => ast::Expr::Ident(name),
+                Token::ParenL => {
+                    let expr = self.parse_expr(0);
+                    self.expect(Token::ParenR);
+                    expr
                 }
+                t => panic!("invalid expression: unexpected {t:?}"),
             }
         }
     }
@@ -126,75 +153,71 @@ impl<'a> Parser<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast;
+    use crate::ast::*;
 
     #[test]
     fn empty_prog() {
-        let mut parser = Parser::new("");
-        let prog = parser.parse_prog();
+        let prog = Parser::new("").parse_prog();
         assert_eq!(prog.stmts.len(), 0);
     }
 
     #[test]
+    fn many_semis_prog() {
+        let prog = Parser::new("print 1;;;;;").parse_prog();
+        assert_eq!(prog.stmts.len(), 1);
+    }
+
+    #[test]
     fn assignment_prog() {
-        let mut parser = Parser::new("let x = 1;");
-        let prog = parser.parse_prog();
+        let prog = Parser::new("let x = 1;").parse_prog();
         assert_eq!(
             prog,
-            ast::Prog {
-                stmts: vec![ast::Stmt::Let {
+            Prog {
+                stmts: vec![Stmt::Let {
                     ident: "x".to_string(),
-                    expr: ast::Expr::Number(1.0),
-                },],
+                    expr: Expr::Number(1.0),
+                }],
             },
         );
     }
 
     #[test]
-    fn print_prog() {
-        let mut parser = Parser::new("print 1");
-        let prog = parser.parse_prog();
-        assert_eq!(
-            prog,
-            ast::Prog {
-                stmts: vec![ast::Stmt::Print(ast::Expr::Number(1.0)),],
-            },
-        );
+    fn print_stmt() {
+        let stmt = Parser::new("print 1").parse_stmt();
+        assert_eq!(stmt, Stmt::Print(Expr::Number(1.0)));
     }
 
     #[test]
     fn unary_ops() {
-        let mut parser = Parser::new("+-1");
-        let expr = parser.parse_expr(0);
+        let expr = Parser::new("+-1").parse_expr(0);
         assert_eq!(
             expr,
-            ast::Expr::UnaryOp {
-                op: ast::UnaryOp::Pos,
-                expr: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Neg,
-                    expr: Box::new(ast::Expr::Number(1.0)),
-                }),
-            },
+            Expr::UnaryOp {
+                op: UnaryOp::Pos,
+                expr: Box::new(Expr::UnaryOp {
+                    op: UnaryOp::Neg,
+                    expr: Box::new(Expr::Number(1.0))
+                })
+            }
         );
     }
 
     #[test]
     fn binary_ops() {
-        let mut parser = Parser::new("1 * 2 + 3 / 4");
-        let expr = parser.parse_expr(0);
+        let expr = Parser::new("1 * 2 + 3 / 4").parse_expr(0);
         assert_eq!(
             expr,
-            ast::Expr::BinOp {
-                left: Box::new(ast::Expr::BinOp {
-                    left: Box::new(ast::Expr::Number(1.0)),
-                    op: ast::BinOp::Mul,
-                    right: Box::new(ast::Expr::Number(2.0)),
+            Expr::BinOp {
+                left: Box::new(Expr::BinOp {
+                    left: Box::new(Expr::Number(1.0)),
+                    op: BinOp::Mul,
+                    right: Box::new(Expr::Number(2.0)),
                 }),
-                op: ast::BinOp::Add,
-                right: Box::new(ast::Expr::BinOp {
-                    left: Box::new(ast::Expr::Number(3.0)),
-                    op: ast::BinOp::Div,
-                    right: Box::new(ast::Expr::Number(4.0)),
+                op: BinOp::Add,
+                right: Box::new(Expr::BinOp {
+                    left: Box::new(Expr::Number(3.0)),
+                    op: BinOp::Div,
+                    right: Box::new(Expr::Number(4.0)),
                 }),
             },
         );
@@ -202,19 +225,18 @@ mod tests {
 
     #[test]
     fn binary_and_unary_ops() {
-        let mut parser = Parser::new("+1 + -1");
-        let expr = parser.parse_expr(0);
+        let expr = Parser::new("+1 + -1").parse_expr(0);
         assert_eq!(
             expr,
-            ast::Expr::BinOp {
-                left: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Pos,
-                    expr: Box::new(ast::Expr::Number(1.0)),
+            Expr::BinOp {
+                left: Box::new(Expr::UnaryOp {
+                    op: UnaryOp::Pos,
+                    expr: Box::new(Expr::Number(1.0)),
                 }),
-                op: ast::BinOp::Add,
-                right: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Neg,
-                    expr: Box::new(ast::Expr::Number(1.0)),
+                op: BinOp::Add,
+                right: Box::new(Expr::UnaryOp {
+                    op: UnaryOp::Neg,
+                    expr: Box::new(Expr::Number(1.0)),
                 }),
             },
         );
@@ -222,19 +244,44 @@ mod tests {
 
     #[test]
     fn parens() {
-        let mut parser = Parser::new("(1 + 2) * 3");
-        let expr = parser.parse_expr(0);
+        let expr = Parser::new("(1 + 2) * 3").parse_expr(0);
         assert_eq!(
             expr,
-            ast::Expr::BinOp {
-                left: Box::new(ast::Expr::BinOp {
-                    left: Box::new(ast::Expr::Number(1.0)),
-                    op: ast::BinOp::Add,
-                    right: Box::new(ast::Expr::Number(2.0)),
+            Expr::BinOp {
+                left: Box::new(Expr::BinOp {
+                    left: Box::new(Expr::Number(1.0)),
+                    op: BinOp::Add,
+                    right: Box::new(Expr::Number(2.0)),
                 }),
-                op: ast::BinOp::Mul,
-                right: Box::new(ast::Expr::Number(3.0)),
+                op: BinOp::Mul,
+                right: Box::new(Expr::Number(3.0)),
             },
+        );
+    }
+
+    #[test]
+    fn if_statement() {
+        let stmt = Parser::new("if x then print 1").parse_stmt();
+        assert_eq!(
+            stmt,
+            Stmt::If {
+                condition: Expr::Ident("x".to_string()),
+                consequent: Box::new(Stmt::Print(Expr::Number(1.0))),
+                alternate: None,
+            }
+        );
+    }
+
+    #[test]
+    fn if_else_statement() {
+        let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt();
+        assert_eq!(
+            stmt,
+            Stmt::If {
+                condition: Expr::Ident("x".to_string()),
+                consequent: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Number(1.0))])),
+                alternate: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Number(0.0))]))),
+            }
         );
     }
 }

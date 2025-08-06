@@ -1,4 +1,4 @@
-use crate::ast;
+use crate::{ast, parser::Parser};
 use std::collections::HashMap;
 
 /// A single virtual machine instance.
@@ -24,7 +24,6 @@ pub enum Primitive {
     /// A special value that represents the absence of a value.
     Nil,
     Num(f64),
-    // Str(String),
     Bool(bool),
 }
 
@@ -37,7 +36,12 @@ impl Vm {
         }
     }
 
-    pub fn exec(&mut self, prog: &ast::Prog) {
+    pub fn exec_str(&mut self, input: &str) {
+        let prog = Parser::new(input).parse_prog();
+        self.exec_prog(&prog);
+    }
+
+    pub fn exec_prog(&mut self, prog: &ast::Prog) {
         for stmt in &prog.stmts {
             self.exec_stmt(stmt);
         }
@@ -45,6 +49,11 @@ impl Vm {
 
     fn exec_stmt(&mut self, stmt: &ast::Stmt) {
         match stmt {
+            ast::Stmt::Block(stmts) => {
+                for stmt in stmts {
+                    self.exec_stmt(stmt);
+                }
+            }
             ast::Stmt::Let { ident: name, expr } => {
                 let value = self.eval_expr(expr);
                 self.global_obj.props.insert(name.to_owned(), value);
@@ -52,6 +61,22 @@ impl Vm {
             ast::Stmt::Print(expr) => {
                 let value = self.eval_expr(expr);
                 println!("{value:?}");
+            }
+            ast::Stmt::If {
+                condition,
+                consequent: then_branch,
+                alternate: else_branch,
+            } => {
+                let condition = self.eval_expr(condition);
+                if let Value::Primitive(Primitive::Bool(cond)) = condition {
+                    if cond {
+                        self.exec_stmt(then_branch);
+                    } else if let Some(else_branch) = else_branch {
+                        self.exec_stmt(else_branch);
+                    }
+                } else {
+                    panic!("if condition must evaluate to a boolean");
+                }
             }
         }
     }
@@ -130,7 +155,7 @@ mod test {
     #[test]
     fn assign() {
         let mut vm = Vm::new();
-        vm.exec(
+        vm.exec_prog(
             &Parser::new(
                 r#"
                     let foo = 2;
@@ -146,6 +171,25 @@ mod test {
         assert_eq!(
             vm.global_obj.props.get("bar"),
             Some(&Value::Primitive(Primitive::Num(3.0))),
+        );
+    }
+
+    #[test]
+    fn if_stmt() {
+        let mut vm = Vm::new();
+        vm.exec_str(
+            r#"
+            let foo = 1 + 1;
+            if foo == 2 then {
+                let bar = 1;
+            } else {
+                let bar = 0;
+            }
+            "#,
+        );
+        assert_eq!(
+            vm.global_obj.props.get("bar"),
+            Some(&Value::Primitive(Primitive::Num(1.0))),
         );
     }
 
@@ -173,7 +217,7 @@ mod test {
     #[test]
     fn eval_unary_bool_op() {
         let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#"!!!true"#).parse_expr(0));
+        let val = vm.eval_expr(&Parser::new(r#"!!!(1==1)"#).parse_expr(0));
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
     }
 

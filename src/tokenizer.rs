@@ -7,6 +7,9 @@ pub enum Token {
     Print,
     Ident(String),
     Num(f64),
+    If,
+    Then,
+    Else,
     Eq,
     EqEq,
     Bang,
@@ -18,6 +21,8 @@ pub enum Token {
     Slash,
     ParenL,
     ParenR,
+    CurlyL,
+    CurlyR,
 }
 
 pub struct Tokenizer<'a> {
@@ -60,6 +65,8 @@ impl Iterator for Tokenizer<'_> {
                 '/' => Some(Token::Slash),
                 '(' => Some(Token::ParenL),
                 ')' => Some(Token::ParenR),
+                '{' => Some(Token::CurlyL),
+                '}' => Some(Token::CurlyR),
                 ch if ch.is_alphabetic() => {
                     let mut ident = String::new();
                     ident.push(ch);
@@ -69,6 +76,9 @@ impl Iterator for Tokenizer<'_> {
                     match ident.as_str() {
                         "let" => Some(Token::Let),
                         "print" => Some(Token::Print),
+                        "if" => Some(Token::If),
+                        "then" => Some(Token::Then),
+                        "else" => Some(Token::Else),
                         _ => Some(Token::Ident(ident)),
                     }
                 }
