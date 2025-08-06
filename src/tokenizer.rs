@@ -8,6 +8,7 @@ pub enum Token {
     Ident(String),
     Num(f64),
     Eq,
+    EqEq,
     Semi,
     Plus,
     Minus,
@@ -34,74 +35,46 @@ impl Iterator for Tokenizer<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let c = self.input.peek()?;
-
-            match c {
-                c if c.is_whitespace() => {
-                    self.input.next();
-                    continue;
-                }
+            return match self.input.next()? {
+                ch if ch.is_whitespace() => continue,
                 '=' => {
-                    self.input.next();
-                    return Some(Token::Eq);
-                }
-                ';' => {
-                    self.input.next();
-                    return Some(Token::Semi);
-                }
-                '+' => {
-                    self.input.next();
-                    return Some(Token::Plus);
-                }
-                '-' => {
-                    self.input.next();
-                    return Some(Token::Minus);
-                }
-                '*' => {
-                    self.input.next();
-                    return Some(Token::Star);
-                }
-                '/' => {
-                    self.input.next();
-                    return Some(Token::Slash);
-                }
-                '(' => {
-                    self.input.next();
-                    return Some(Token::ParenL);
-                }
-                ')' => {
-                    self.input.next();
-                    return Some(Token::ParenR);
-                }
-                c if c.is_alphabetic() => {
-                    let mut ident = String::new();
-                    while let Some(&c) = self.input.peek() {
-                        if c.is_alphanumeric() {
-                            ident.push(self.input.next().unwrap());
-                        } else {
-                            break;
-                        }
+                    if self.input.next_if_eq(&'=').is_some() {
+                        Some(Token::EqEq)
+                    } else {
+                        Some(Token::Eq)
                     }
-                    return match ident.as_str() {
+                }
+                ';' => Some(Token::Semi),
+                '+' => Some(Token::Plus),
+                '-' => Some(Token::Minus),
+                '*' => Some(Token::Star),
+                '/' => Some(Token::Slash),
+                '(' => Some(Token::ParenL),
+                ')' => Some(Token::ParenR),
+                ch if ch.is_alphabetic() => {
+                    let mut ident = String::new();
+                    ident.push(ch);
+                    while let Some(ch) = self.input.next_if(|ch| ch.is_alphanumeric()) {
+                        ident.push(ch);
+                    }
+                    match ident.as_str() {
                         "let" => Some(Token::Let),
                         "print" => Some(Token::Print),
                         _ => Some(Token::Ident(ident)),
-                    };
+                    }
                 }
-                c if c.is_ascii_digit() => {
+                ch if ch.is_ascii_digit() => {
                     let mut num_str = String::new();
-                    while let Some(&c) = self.input.peek() {
-                        if c.is_ascii_digit() || c == '.' {
-                            num_str.push(self.input.next().unwrap());
-                        } else {
-                            break;
-                        }
+                    num_str.push(ch);
+                    while let Some(ch) = self.input.next_if(|ch| ch.is_ascii_digit() || *ch == '.')
+                    {
+                        num_str.push(ch);
                     }
                     let num = num_str.parse().unwrap();
-                    return Some(Token::Num(num));
+                    Some(Token::Num(num))
                 }
                 _ => panic!("invalid character"),
-            }
+            };
         }
     }
 }
