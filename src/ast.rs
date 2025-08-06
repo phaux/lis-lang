@@ -20,6 +20,10 @@ pub enum Expr {
         op: BinOp,
         right: Box<Expr>,
     },
+    UnaryOp {
+        op: UnaryOp,
+        expr: Box<Expr>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -28,6 +32,24 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum UnaryOp {
+    Plus,
+    Minus,
+}
+
+impl TryFrom<&Token> for UnaryOp {
+    type Error = Token;
+
+    fn try_from(token: &Token) -> Result<Self, Self::Error> {
+        match token {
+            Token::Plus => Ok(UnaryOp::Plus),
+            Token::Minus => Ok(UnaryOp::Minus),
+            _ => Err(token.clone()),
+        }
+    }
 }
 
 impl BinOp {

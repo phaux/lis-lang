@@ -68,8 +68,8 @@ impl<'a> Parser<'a> {
         ast::Stmt::Print(expr)
     }
 
-    fn parse_expr(&mut self, precedence: u8) -> ast::Expr {
-        let mut left = self.parse_bin_operand();
+    pub fn parse_expr(&mut self, precedence: u8) -> ast::Expr {
+        let mut left = self.parse_operand();
         loop {
             let Some(tok) = self.tokenizer.peek() else {
                 break;
@@ -92,54 +92,149 @@ impl<'a> Parser<'a> {
         left
     }
 
-    fn parse_bin_operand(&mut self) -> ast::Expr {
-        let token = self.tokenizer.next();
+    fn parse_operand(&mut self) -> ast::Expr {
+        let token = self.tokenizer.peek();
 
         match token {
-            Some(Token::Num(n)) => ast::Expr::Number(n),
-            Some(Token::Ident(name)) => ast::Expr::Ident(name),
-            Some(Token::ParenL) => {
-                let expr = self.parse_expr(0);
-                self.expect(Token::ParenR);
-                expr
+            Some(Token::Plus) | Some(Token::Minus) => {
+                let op_token = self.tokenizer.next().unwrap();
+                let op = ast::UnaryOp::try_from(&op_token).unwrap();
+                let expr = self.parse_operand();
+                ast::Expr::UnaryOp {
+                    op,
+                    expr: Box::new(expr),
+                }
             }
-            Some(t) => panic!("invalid expression: unexpected {t:?}"),
-            None => panic!("unexpected end of input"),
+            _ => {
+                let token = self.tokenizer.next();
+                match token {
+                    Some(Token::Num(n)) => ast::Expr::Number(n),
+                    Some(Token::Ident(name)) => ast::Expr::Ident(name),
+                    Some(Token::ParenL) => {
+                        let expr = self.parse_expr(0);
+                        self.expect(Token::ParenR);
+                        expr
+                    }
+                    Some(t) => panic!("invalid expression: unexpected {t:?}"),
+                    None => panic!("unexpected end of input"),
+                }
+            }
         }
     }
 }
 
-#[test]
-fn test_parser() {
-    use ast::*;
-    let input = r#"
-        let foo = 1;
-        let bar = 2;
-        print foo + bar;
-    "#;
-    let mut parser = Parser::new(input);
-    let prog = parser.parse_prog();
-    assert_eq!(prog.stmts.len(), 3);
-    assert_eq!(
-        prog.stmts[0],
-        Stmt::Let {
-            ident: "foo".to_string(),
-            expr: Expr::Number(1.0),
-        }
-    );
-    assert_eq!(
-        prog.stmts[1],
-        Stmt::Let {
-            ident: "bar".to_string(),
-            expr: Expr::Number(2.0),
-        }
-    );
-    assert_eq!(
-        prog.stmts[2],
-        Stmt::Print(Expr::BinOp {
-            left: Box::new(Expr::Ident("foo".to_string())),
-            op: BinOp::Add,
-            right: Box::new(Expr::Ident("bar".to_string())),
-        })
-    );
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast;
+
+    #[test]
+    fn empty_prog() {
+        let mut parser = Parser::new("");
+        let prog = parser.parse_prog();
+        assert_eq!(prog.stmts.len(), 0);
+    }
+
+    #[test]
+    fn assignment_prog() {
+        let mut parser = Parser::new("let x = 1;");
+        let prog = parser.parse_prog();
+        assert_eq!(
+            prog,
+            ast::Prog {
+                stmts: vec![ast::Stmt::Let {
+                    ident: "x".to_string(),
+                    expr: ast::Expr::Number(1.0),
+                },],
+            },
+        );
+    }
+
+    #[test]
+    fn print_prog() {
+        let mut parser = Parser::new("print 1");
+        let prog = parser.parse_prog();
+        assert_eq!(
+            prog,
+            ast::Prog {
+                stmts: vec![ast::Stmt::Print(ast::Expr::Number(1.0)),],
+            },
+        );
+    }
+
+    #[test]
+    fn unary_ops() {
+        let mut parser = Parser::new("+-1");
+        let expr = parser.parse_expr(0);
+        assert_eq!(
+            expr,
+            ast::Expr::UnaryOp {
+                op: ast::UnaryOp::Plus,
+                expr: Box::new(ast::Expr::UnaryOp {
+                    op: ast::UnaryOp::Minus,
+                    expr: Box::new(ast::Expr::Number(1.0)),
+                }),
+            },
+        );
+    }
+
+    #[test]
+    fn binary_ops() {
+        let mut parser = Parser::new("1 * 2 + 3 / 4");
+        let expr = parser.parse_expr(0);
+        assert_eq!(
+            expr,
+            ast::Expr::BinOp {
+                left: Box::new(ast::Expr::BinOp {
+                    left: Box::new(ast::Expr::Number(1.0)),
+                    op: ast::BinOp::Mul,
+                    right: Box::new(ast::Expr::Number(2.0)),
+                }),
+                op: ast::BinOp::Add,
+                right: Box::new(ast::Expr::BinOp {
+                    left: Box::new(ast::Expr::Number(3.0)),
+                    op: ast::BinOp::Div,
+                    right: Box::new(ast::Expr::Number(4.0)),
+                }),
+            },
+        );
+    }
+
+    #[test]
+    fn binary_and_unary_ops() {
+        let mut parser = Parser::new("+1 + -1");
+        let expr = parser.parse_expr(0);
+        assert_eq!(
+            expr,
+            ast::Expr::BinOp {
+                left: Box::new(ast::Expr::UnaryOp {
+                    op: ast::UnaryOp::Plus,
+                    expr: Box::new(ast::Expr::Number(1.0)),
+                }),
+                op: ast::BinOp::Add,
+                right: Box::new(ast::Expr::UnaryOp {
+                    op: ast::UnaryOp::Minus,
+                    expr: Box::new(ast::Expr::Number(1.0)),
+                }),
+            },
+        );
+    }
+
+    #[test]
+    fn parens() {
+        let mut parser = Parser::new("(1 + 2) * 3");
+        let expr = parser.parse_expr(0);
+        assert_eq!(
+            expr,
+            ast::Expr::BinOp {
+                left: Box::new(ast::Expr::BinOp {
+                    left: Box::new(ast::Expr::Number(1.0)),
+                    op: ast::BinOp::Add,
+                    right: Box::new(ast::Expr::Number(2.0)),
+                }),
+                op: ast::BinOp::Mul,
+                right: Box::new(ast::Expr::Number(3.0)),
+            },
+        );
+    }
 }

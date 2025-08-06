@@ -62,6 +62,19 @@ impl Vm {
                 Some(value) => value.clone(),
                 None => Value::Primitive(Primitive::Nil),
             },
+            ast::Expr::UnaryOp { op, expr } => {
+                let val = self.eval_expr(expr);
+                match op {
+                    ast::UnaryOp::Plus => match val {
+                        Value::Primitive(Primitive::Num(n)) => Value::Primitive(Primitive::Num(n)),
+                        _ => panic!("type mismatch"),
+                    },
+                    ast::UnaryOp::Minus => match val {
+                        Value::Primitive(Primitive::Num(n)) => Value::Primitive(Primitive::Num(-n)),
+                        _ => panic!("type mismatch"),
+                    },
+                }
+            }
             ast::Expr::BinOp { left, op, right } => {
                 let left_val = self.eval_expr(left);
                 let right_val = self.eval_expr(right);
@@ -100,19 +113,51 @@ impl Vm {
     }
 }
 
-#[test]
-fn test_vm() {
-    let input = r#"
-        let foo = 2;
-        let bar = 3;
-        let baz = 2 * foo + 3 * bar;
-    "#;
-    let mut parser = crate::parser::Parser::new(input);
-    let prog = parser.parse_prog();
-    let mut vm = Vm::new();
-    vm.exec(&prog);
-    assert_eq!(
-        vm.global_obj.props.get("baz"),
-        Some(&Value::Primitive(Primitive::Num(13.0)))
-    );
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::parser::Parser;
+
+    #[test]
+    fn assign() {
+        let mut vm = Vm::new();
+        vm.exec(
+            &Parser::new(
+                r#"
+                    let foo = 2;
+                    let bar = 3;
+                "#,
+            )
+            .parse_prog(),
+        );
+        assert_eq!(
+            vm.global_obj.props.get("foo"),
+            Some(&Value::Primitive(Primitive::Num(2.0))),
+        );
+        assert_eq!(
+            vm.global_obj.props.get("bar"),
+            Some(&Value::Primitive(Primitive::Num(3.0))),
+        );
+    }
+
+    #[test]
+    fn eval_expr() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"1;"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Num(1.0)));
+    }
+
+    #[test]
+    fn eval_bin_op() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"1 + 2 * 3"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Num(7.0)));
+    }
+
+    #[test]
+    fn eval_unary_op() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"+-(10)"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Num(-10.0)));
+    }
 }
