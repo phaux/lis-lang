@@ -9,6 +9,8 @@ pub enum Token {
     Num(f64),
     Eq,
     EqEq,
+    Bang,
+    BangEq,
     Semi,
     Plus,
     Minus,
@@ -42,6 +44,13 @@ impl Iterator for Tokenizer<'_> {
                         Some(Token::EqEq)
                     } else {
                         Some(Token::Eq)
+                    }
+                }
+                '!' => {
+                    if self.input.next_if_eq(&'=').is_some() {
+                        Some(Token::BangEq)
+                    } else {
+                        Some(Token::Bang)
                     }
                 }
                 ';' => Some(Token::Semi),

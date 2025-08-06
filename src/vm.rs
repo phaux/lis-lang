@@ -1,5 +1,5 @@
 use crate::ast;
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 /// A single virtual machine instance.
 #[derive(Debug)]
@@ -11,7 +11,7 @@ pub struct Vm {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Primitive(Primitive),
-    Object(Rc<Object>),
+    // Object(Rc<Object>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,7 +24,8 @@ pub enum Primitive {
     /// A special value that represents the absence of a value.
     Nil,
     Num(f64),
-    Str(String),
+    // Str(String),
+    Bool(bool),
 }
 
 impl Vm {
@@ -65,12 +66,18 @@ impl Vm {
             ast::Expr::UnaryOp { op, expr } => {
                 let val = self.eval_expr(expr);
                 match op {
-                    ast::UnaryOp::Plus => match val {
+                    ast::UnaryOp::Pos => match val {
                         Value::Primitive(Primitive::Num(n)) => Value::Primitive(Primitive::Num(n)),
                         _ => panic!("type mismatch"),
                     },
-                    ast::UnaryOp::Minus => match val {
+                    ast::UnaryOp::Neg => match val {
                         Value::Primitive(Primitive::Num(n)) => Value::Primitive(Primitive::Num(-n)),
+                        _ => panic!("type mismatch"),
+                    },
+                    ast::UnaryOp::Not => match val {
+                        Value::Primitive(Primitive::Bool(b)) => {
+                            Value::Primitive(Primitive::Bool(!b))
+                        }
                         _ => panic!("type mismatch"),
                     },
                 }
@@ -107,6 +114,8 @@ impl Vm {
                         ) => Value::Primitive(Primitive::Num(l / r)),
                         _ => panic!("type mismatch"),
                     },
+                    ast::BinOp::Eq => Value::Primitive(Primitive::Bool(left_val == right_val)),
+                    ast::BinOp::NotEq => Value::Primitive(Primitive::Bool(left_val != right_val)),
                 }
             }
         }
@@ -155,9 +164,34 @@ mod test {
     }
 
     #[test]
-    fn eval_unary_op() {
+    fn eval_unary_num_op() {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r#"+-(10)"#).parse_expr(0));
         assert_eq!(val, Value::Primitive(Primitive::Num(-10.0)));
+    }
+
+    #[test]
+    fn eval_unary_bool_op() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"!!!true"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+    }
+
+    #[test]
+    fn eval_eq_op() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"1 == 1"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
+        let val = vm.eval_expr(&Parser::new(r#"1 == 2"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+    }
+
+    #[test]
+    fn eval_not_eq_op() {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"1 != 1"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+        let val = vm.eval_expr(&Parser::new(r#"1 != 2"#).parse_expr(0));
+        assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
     }
 }

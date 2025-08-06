@@ -32,12 +32,15 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
+    Eq,
+    NotEq,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum UnaryOp {
-    Plus,
-    Minus,
+    Pos,
+    Neg,
+    Not,
 }
 
 impl TryFrom<&Token> for UnaryOp {
@@ -45,8 +48,9 @@ impl TryFrom<&Token> for UnaryOp {
 
     fn try_from(token: &Token) -> Result<Self, Self::Error> {
         match token {
-            Token::Plus => Ok(UnaryOp::Plus),
-            Token::Minus => Ok(UnaryOp::Minus),
+            Token::Plus => Ok(UnaryOp::Pos),
+            Token::Minus => Ok(UnaryOp::Neg),
+            Token::Bang => Ok(UnaryOp::Not),
             _ => Err(token.clone()),
         }
     }
@@ -55,8 +59,9 @@ impl TryFrom<&Token> for UnaryOp {
 impl BinOp {
     pub fn get_precedence(&self) -> u8 {
         match self {
-            BinOp::Add | BinOp::Sub => 1,
-            BinOp::Mul | BinOp::Div => 2,
+            BinOp::Eq | BinOp::NotEq => 1,
+            BinOp::Add | BinOp::Sub => 2,
+            BinOp::Mul | BinOp::Div => 3,
         }
     }
 }
@@ -70,6 +75,8 @@ impl TryFrom<&Token> for BinOp {
             Token::Minus => Ok(BinOp::Sub),
             Token::Star => Ok(BinOp::Mul),
             Token::Slash => Ok(BinOp::Div),
+            Token::EqEq => Ok(BinOp::Eq),
+            Token::BangEq => Ok(BinOp::NotEq),
             _ => Err(token.clone()),
         }
     }

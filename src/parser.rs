@@ -169,9 +169,9 @@ mod tests {
         assert_eq!(
             expr,
             ast::Expr::UnaryOp {
-                op: ast::UnaryOp::Plus,
+                op: ast::UnaryOp::Pos,
                 expr: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Minus,
+                    op: ast::UnaryOp::Neg,
                     expr: Box::new(ast::Expr::Number(1.0)),
                 }),
             },
@@ -208,12 +208,12 @@ mod tests {
             expr,
             ast::Expr::BinOp {
                 left: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Plus,
+                    op: ast::UnaryOp::Pos,
                     expr: Box::new(ast::Expr::Number(1.0)),
                 }),
                 op: ast::BinOp::Add,
                 right: Box::new(ast::Expr::UnaryOp {
-                    op: ast::UnaryOp::Minus,
+                    op: ast::UnaryOp::Neg,
                     expr: Box::new(ast::Expr::Number(1.0)),
                 }),
             },
