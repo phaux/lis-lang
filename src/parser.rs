@@ -134,8 +134,9 @@ impl<'a> Parser<'a> {
 
     fn parse_operand(&mut self) -> Result<ast::Expr> {
         match self.tokenizer.next() {
-            Some(Token::Num(n)) => Ok(ast::Expr::Number(n)),
-            Some(Token::Ident(name)) => Ok(ast::Expr::Ident(name)),
+            Some(Token::Num(n)) => Ok(ast::Expr::Num(n)),
+            Some(Token::Ident(name)) => Ok(ast::Expr::Var(name)),
+            Some(Token::Str(s)) => Ok(ast::Expr::Str(s)),
             Some(Token::ParenL) => {
                 let expr = self.parse_expr(0)?;
                 let paren = self.tokenizer.next();
@@ -198,7 +199,7 @@ mod tests {
             Prog {
                 stmts: vec![Stmt::Let {
                     ident: "x".to_string(),
-                    expr: Expr::Number(1.0),
+                    expr: Expr::Num(1.0),
                 }],
             },
         );
@@ -208,7 +209,7 @@ mod tests {
     #[test]
     fn print_stmt() -> Result<()> {
         let stmt = Parser::new("print 1").parse_stmt()?;
-        assert_eq!(stmt, Stmt::Print(Expr::Number(1.0)));
+        assert_eq!(stmt, Stmt::Print(Expr::Num(1.0)));
         Ok(())
     }
 
@@ -221,7 +222,7 @@ mod tests {
                 op: UnaryOp::Pos,
                 expr: Box::new(Expr::UnaryOp {
                     op: UnaryOp::Neg,
-                    expr: Box::new(Expr::Number(1.0))
+                    expr: Box::new(Expr::Num(1.0))
                 })
             }
         );
@@ -234,12 +235,12 @@ mod tests {
         assert_eq!(
             expr,
             Expr::BinOp {
-                left: Box::new(Expr::Number(1.0)),
+                left: Box::new(Expr::Num(1.0)),
                 op: BinOp::Add,
                 right: Box::new(Expr::BinOp {
-                    left: Box::new(Expr::Number(2.0)),
+                    left: Box::new(Expr::Num(2.0)),
                     op: BinOp::Mul,
-                    right: Box::new(Expr::Number(3.0)),
+                    right: Box::new(Expr::Num(3.0)),
                 }),
             }
         );
@@ -252,15 +253,15 @@ mod tests {
         assert_eq!(
             expr,
             Expr::BinOp {
-                left: Box::new(Expr::Number(1.0)),
+                left: Box::new(Expr::Num(1.0)),
                 op: BinOp::Add,
                 right: Box::new(Expr::BinOp {
                     left: Box::new(Expr::UnaryOp {
                         op: UnaryOp::Neg,
-                        expr: Box::new(Expr::Number(2.0)),
+                        expr: Box::new(Expr::Num(2.0)),
                     }),
                     op: BinOp::Mul,
-                    right: Box::new(Expr::Number(3.0)),
+                    right: Box::new(Expr::Num(3.0)),
                 }),
             }
         );
@@ -274,12 +275,12 @@ mod tests {
             expr,
             Expr::BinOp {
                 left: Box::new(Expr::BinOp {
-                    left: Box::new(Expr::Number(1.0)),
+                    left: Box::new(Expr::Num(1.0)),
                     op: BinOp::Add,
-                    right: Box::new(Expr::Number(2.0)),
+                    right: Box::new(Expr::Num(2.0)),
                 }),
                 op: BinOp::Mul,
-                right: Box::new(Expr::Number(3.0)),
+                right: Box::new(Expr::Num(3.0)),
             }
         );
         Ok(())
@@ -291,7 +292,7 @@ mod tests {
         assert!(matches!(
             stmt,
             Stmt::If {
-                condition: Expr::Number(1.0),
+                condition: Expr::Num(1.0),
                 consequent: _,
                 alternate: _
             }
@@ -311,9 +312,30 @@ mod tests {
         assert_eq!(
             stmt,
             Stmt::If {
-                condition: Expr::Ident("x".to_string()),
-                consequent: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Number(1.0))])),
-                alternate: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Number(0.0))]))),
+                condition: Expr::Var("x".to_string()),
+                consequent: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(1.0))])),
+                alternate: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(0.0))]))),
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn print_string_literal() -> Result<()> {
+        let stmt = Parser::new(r#"print "hello\nworld""#).parse_stmt()?;
+        assert_eq!(stmt, Stmt::Print(Expr::Str("hello\nworld".to_string())));
+        Ok(())
+    }
+
+    #[test]
+    fn string_concat() -> Result<()> {
+        let expr = Parser::new(r#""hello" ++ "world""#).parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::BinOp {
+                left: Box::new(Expr::Str("hello".to_string())),
+                op: BinOp::Concat,
+                right: Box::new(Expr::Str("world".to_string())),
             }
         );
         Ok(())

@@ -7,6 +7,7 @@ pub enum Token {
     Print,
     Ident(String),
     Num(f64),
+    Str(String),
     If,
     Then,
     Else,
@@ -16,9 +17,13 @@ pub enum Token {
     BangEq,
     Semi,
     Plus,
+    PlusPlus,
     Minus,
     Star,
     Slash,
+    Dot,
+    Colon,
+    Comma,
     ParenL,
     ParenR,
     CurlyL,
@@ -52,6 +57,13 @@ impl Iterator for Tokenizer<'_> {
                         Some(Token::Eq)
                     }
                 }
+                '+' => {
+                    if self.input.next_if_eq(&'+').is_some() {
+                        Some(Token::PlusPlus)
+                    } else {
+                        Some(Token::Plus)
+                    }
+                }
                 '!' => {
                     if self.input.next_if_eq(&'=').is_some() {
                         Some(Token::BangEq)
@@ -60,14 +72,40 @@ impl Iterator for Tokenizer<'_> {
                     }
                 }
                 ';' => Some(Token::Semi),
-                '+' => Some(Token::Plus),
                 '-' => Some(Token::Minus),
                 '*' => Some(Token::Star),
                 '/' => Some(Token::Slash),
+                '.' => Some(Token::Dot),
+                ':' => Some(Token::Colon),
+                ',' => Some(Token::Comma),
                 '(' => Some(Token::ParenL),
                 ')' => Some(Token::ParenR),
                 '{' => Some(Token::CurlyL),
                 '}' => Some(Token::CurlyR),
+                '"' => {
+                    let mut string_content = String::new();
+                    while let Some(ch) = self.input.next() {
+                        match ch {
+                            '"' => break,
+                            '\\' => {
+                                if let Some(escaped) = self.input.next() {
+                                    match escaped {
+                                        'n' => string_content.push('\n'),
+                                        't' => string_content.push('\t'),
+                                        'r' => string_content.push('\r'),
+                                        '\\' => string_content.push('\\'),
+                                        '"' => string_content.push('"'),
+                                        _ => string_content.push(escaped),
+                                    }
+                                } else {
+                                    return Some(Token::Invalid('\\'));
+                                }
+                            }
+                            _ => string_content.push(ch),
+                        }
+                    }
+                    Some(Token::Str(string_content))
+                }
                 ch if ch.is_alphabetic() => {
                     let mut ident = String::new();
                     ident.push(ch);
@@ -99,14 +137,40 @@ impl Iterator for Tokenizer<'_> {
     }
 }
 
-#[test]
-fn test_tokenizer() {
-    let input = "let x = 5;";
-    let mut tokenizer = Tokenizer::new(input);
-    assert_eq!(tokenizer.next(), Some(Token::Let));
-    assert_eq!(tokenizer.next(), Some(Token::Ident("x".to_string())));
-    assert_eq!(tokenizer.next(), Some(Token::Eq));
-    assert_eq!(tokenizer.next(), Some(Token::Num(5.0)));
-    assert_eq!(tokenizer.next(), Some(Token::Semi));
-    assert_eq!(tokenizer.next(), None);
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let input = "let x = 5;";
+        let mut tokenizer = Tokenizer::new(input);
+        assert_eq!(tokenizer.next(), Some(Token::Let));
+        assert_eq!(tokenizer.next(), Some(Token::Ident("x".to_string())));
+        assert_eq!(tokenizer.next(), Some(Token::Eq));
+        assert_eq!(tokenizer.next(), Some(Token::Num(5.0)));
+        assert_eq!(tokenizer.next(), Some(Token::Semi));
+        assert_eq!(tokenizer.next(), None);
+    }
+
+    #[test]
+    fn string_with_escapes() {
+        let input = r#""hello\nworld\twith\\quotes\"""#;
+        let mut tokenizer = Tokenizer::new(input);
+        assert_eq!(
+            tokenizer.next(),
+            Some(Token::Str("hello\nworld\twith\\quotes\"".to_string()))
+        );
+        assert_eq!(tokenizer.next(), None);
+    }
+
+    #[test]
+    fn string_concat_operator() {
+        let input = "hello ++ world";
+        let mut tokenizer = Tokenizer::new(input);
+        assert_eq!(tokenizer.next(), Some(Token::Ident("hello".to_string())));
+        assert_eq!(tokenizer.next(), Some(Token::PlusPlus));
+        assert_eq!(tokenizer.next(), Some(Token::Ident("world".to_string())));
+        assert_eq!(tokenizer.next(), None);
+    }
 }

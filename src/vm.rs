@@ -44,6 +44,7 @@ impl Value {
             Value::Primitive(Primitive::Nil) => Type::Nil,
             Value::Primitive(Primitive::Bool(_)) => Type::Bool,
             Value::Primitive(Primitive::Num(_)) => Type::Num,
+            Value::Primitive(Primitive::Str(_)) => Type::String,
             // Value::Object(_) => Type::Obj,
         }
     }
@@ -54,6 +55,7 @@ pub enum Type {
     Nil,
     Bool,
     Num,
+    String,
     // Obj,
 }
 
@@ -68,6 +70,7 @@ pub enum Primitive {
     Nil,
     Num(f64),
     Bool(bool),
+    Str(String),
 }
 
 impl Vm {
@@ -132,8 +135,9 @@ impl Vm {
 
     fn eval_expr(&self, expr: &ast::Expr) -> Result<Value, VmError> {
         match expr {
-            ast::Expr::Number(n) => Ok(Value::Primitive(Primitive::Num(*n))),
-            ast::Expr::Ident(name) => match self.global_obj.props.get(name) {
+            ast::Expr::Num(n) => Ok(Value::Primitive(Primitive::Num(*n))),
+            ast::Expr::Str(s) => Ok(Value::Primitive(Primitive::Str(s.clone()))),
+            ast::Expr::Var(name) => match self.global_obj.props.get(name) {
                 Some(value) => Ok(value.clone()),
                 None => Ok(Value::Primitive(Primitive::Nil)),
             },
@@ -226,6 +230,17 @@ impl Vm {
                     ast::BinOp::NotEq => {
                         Ok(Value::Primitive(Primitive::Bool(left_val != right_val)))
                     }
+                    ast::BinOp::Concat => match (&left_val, &right_val) {
+                        (
+                            Value::Primitive(Primitive::Str(l)),
+                            Value::Primitive(Primitive::Str(r)),
+                        ) => Ok(Value::Primitive(Primitive::Str(format!("{}{}", l, r)))),
+                        _ => Err(VmError::InvalidBinaryOp {
+                            op: *op,
+                            left: left_val.type_of(),
+                            right: right_val.type_of(),
+                        }),
+                    },
                 }
             }
         }
@@ -325,6 +340,28 @@ mod test {
         assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
         let val = vm.eval_expr(&Parser::new(r"1 != 2").parse_expr(0)?)?;
         assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
+        Ok(())
+    }
+
+    #[test]
+    fn assign_string_literal() -> Result<(), VmError> {
+        let mut vm = Vm::new();
+        vm.exec_str(r#"let foo = "hello world""#)?;
+        assert_eq!(
+            vm.global_obj.props.get("foo"),
+            Some(&Value::Primitive(Primitive::Str("hello world".to_string()))),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn string_concat() -> Result<(), VmError> {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#""hello" ++ "world""#).parse_expr(0)?)?;
+        assert_eq!(
+            val,
+            Value::Primitive(Primitive::Str("helloworld".to_string()))
+        );
         Ok(())
     }
 }
