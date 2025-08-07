@@ -20,6 +20,14 @@ pub enum Stmt {
         cons: Box<Stmt>,
         alt: Option<Box<Stmt>>,
     },
+    FuncDecl(FuncDecl),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct FuncDecl {
+    pub name: String,
+    pub params: Vec<String>,
+    pub body: Box<Stmt>,
 }
 
 #[derive(Debug, PartialEq, Clone)]

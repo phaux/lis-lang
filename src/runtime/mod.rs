@@ -100,6 +100,9 @@ impl Runtime {
                     .insert(name.to_owned(), value);
                 Ok(())
             }
+            Stmt::FuncDecl(_func) => {
+                todo!()
+            }
             Stmt::Print(expr) => {
                 let value = self.eval_expr(expr)?;
                 println!("{value:?}");

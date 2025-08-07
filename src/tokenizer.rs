@@ -4,6 +4,7 @@ use std::str::Chars;
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Let,
+    Fn,
     Print,
     Ident(String),
     Num(f64),
@@ -114,6 +115,7 @@ impl Iterator for Tokens<'_> {
                     }
                     match ident.as_str() {
                         "let" => Some(Token::Let),
+                        "fn" => Some(Token::Fn),
                         "print" => Some(Token::Print),
                         "if" => Some(Token::If),
                         "then" => Some(Token::Then),

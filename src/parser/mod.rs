@@ -28,6 +28,18 @@ pub enum ParseError {
     ObjExpectedColon(Option<Token>),
     #[error("unexpected {0:?} where comma or closing brace of object was expected")]
     PropInvalidEnd(Option<Token>),
+    #[error("unexpected {0:?} where a function name was expected")]
+    FnExpectedName(Option<Token>),
+    #[error("unexpected {0:?} where a function parenthesis was expected")]
+    FnExpectedParen(Option<Token>),
+    #[error("unexpected {0:?} where a function body was expected")]
+    FnExpectedBody(Option<Token>),
+    #[error("unexpected {0:?} where a function parameter name was expected")]
+    ParamExpectedIdent(Option<Token>),
+    #[error(
+        "unexpected {0:?} where a comma or closing parenthesis of function parameters was expected"
+    )]
+    ParamInvalidEnd(Option<Token>),
 }
 
 type Result<T> = std::result::Result<T, ParseError>;
@@ -56,9 +68,9 @@ impl<'a> Parser<'a> {
             Some(Token::Semi) => Ok(Stmt::Noop),
             Some(Token::CurlyL) => self.parse_block_stmt(),
             Some(Token::Let) => self.parse_let_stmt(),
+            Some(Token::Fn) => self.parse_func_decl(),
             Some(Token::Print) => self.parse_print_stmt(),
             Some(Token::If) => self.parse_if_stmt(),
-            // Handle expression statement
             Some(_) => Ok(Stmt::Expr(self.parse_expr(0)?)),
             None => return Err(ParseError::StmtInvalidStart(None)),
         }?;
@@ -90,6 +102,50 @@ impl<'a> Parser<'a> {
         }
         let expr = self.parse_expr(0)?;
         Ok(Stmt::Let { ident, expr })
+    }
+
+    fn parse_func_decl(&mut self) -> Result<Stmt> {
+        // Consume 'fn' token
+        self.tokens.next();
+
+        // Parse function name
+        let name = match self.tokens.next() {
+            Some(Token::Ident(name)) => name,
+            token => return Err(ParseError::FnExpectedName(token)),
+        };
+
+        self.tokens
+            .next_if_eq(&Token::ParenL)
+            .ok_or(ParseError::FnExpectedParen(None))?;
+
+        // Parse parameters
+        let mut params = Vec::new();
+        while self.tokens.next_if_eq(&Token::ParenR).is_none() {
+            let Token::Ident(param) = self.tokens.next().unwrap() else {
+                return Err(ParseError::ParamExpectedIdent(None));
+            };
+            params.push(param);
+
+            match self.tokens.peek() {
+                Some(Token::Comma) => {
+                    self.tokens.next();
+                }
+                Some(Token::ParenR) => {}
+                _ => return Err(ParseError::ParamInvalidEnd(self.tokens.next())),
+            }
+        }
+
+        // Parse function body (must be a block statement)
+        let body = match self.tokens.peek() {
+            Some(Token::CurlyL) => self.parse_block_stmt()?,
+            _ => return Err(ParseError::FnExpectedBody(self.tokens.next())),
+        };
+
+        Ok(Stmt::FuncDecl(ast::FuncDecl {
+            name,
+            params,
+            body: Box::new(body),
+        }))
     }
 
     fn parse_print_stmt(&mut self) -> Result<Stmt> {

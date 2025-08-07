@@ -305,6 +305,61 @@ fn property_access_with_expressions() -> Result<()> {
 }
 
 #[test]
+fn function_declaration() -> Result<()> {
+    let prog = Parser::new("fn add(a, b) { a + b; }").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+                name: "add".to_string(),
+                params: vec!["a".to_string(), "b".to_string()],
+                body: Box::new(Stmt::Block(vec![Stmt::Expr(Expr::BinOp {
+                    left: Box::new(Expr::Var("a".to_string())),
+                    op: BinOp::Add,
+                    right: Box::new(Expr::Var("b".to_string())),
+                })])),
+            })]
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn function_with_no_params() -> Result<()> {
+    let prog = Parser::new("fn sayHello() { }").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+                name: "sayHello".to_string(),
+                params: vec![],
+                body: Box::new(Stmt::Block(vec![])),
+            })]
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn function_declaration_errors() {
+    // Missing function name
+    let prog = Parser::new("fn (a, b) { a + b; }").parse_prog();
+    assert!(matches!(prog, Err(ParseError::FnExpectedName(_))));
+
+    // Missing parameters
+    let prog = Parser::new("fn add { 1 + 2; }").parse_prog();
+    assert!(matches!(prog, Err(ParseError::FnExpectedParen(_))));
+
+    // Missing body
+    let prog = Parser::new("fn add(a, b)").parse_prog();
+    assert!(matches!(prog, Err(ParseError::FnExpectedBody(_))));
+
+    // Missing closing brace
+    let prog = Parser::new("fn add(a, b) { a + b").parse_prog();
+    assert!(matches!(prog, Err(ParseError::StmtInvalidStart(_))));
+}
+
+#[test]
 fn object_with_expressions() -> Result<()> {
     let expr = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0)?;
     assert_eq!(
