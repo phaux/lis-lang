@@ -1,13 +1,12 @@
 #![warn(clippy::pedantic)]
 
-mod ast;
 mod parser;
+mod runtime;
 mod tokenizer;
-mod vm;
 
 use std::io::Read;
 
-use vm::Vm;
+use runtime::Runtime;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = if let Some(filename) = std::env::args().nth(1) {
@@ -17,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::io::stdin().read_to_string(&mut buffer)?;
         buffer
     };
-    let mut vm = Vm::new();
+    let mut vm = Runtime::new();
     vm.exec_str(&input)?;
     Ok(())
 }

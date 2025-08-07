@@ -31,19 +31,19 @@ pub enum Token {
     Invalid(char),
 }
 
-pub struct Tokenizer<'a> {
+pub struct Tokens<'a> {
     input: Peekable<Chars<'a>>,
 }
 
-impl<'a> Tokenizer<'a> {
+impl<'a> Tokens<'a> {
     pub fn new(input: &'a str) -> Self {
-        Tokenizer {
+        Tokens {
             input: input.chars().peekable(),
         }
     }
 }
 
-impl Iterator for Tokenizer<'_> {
+impl Iterator for Tokens<'_> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -144,7 +144,7 @@ mod tests {
     #[test]
     fn simple() {
         let input = "let x = 5;";
-        let mut tokenizer = Tokenizer::new(input);
+        let mut tokenizer = Tokens::new(input);
         assert_eq!(tokenizer.next(), Some(Token::Let));
         assert_eq!(tokenizer.next(), Some(Token::Ident("x".to_string())));
         assert_eq!(tokenizer.next(), Some(Token::Eq));
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn string_with_escapes() {
         let input = r#""hello\nworld\twith\\quotes\"""#;
-        let mut tokenizer = Tokenizer::new(input);
+        let mut tokenizer = Tokens::new(input);
         assert_eq!(
             tokenizer.next(),
             Some(Token::Str("hello\nworld\twith\\quotes\"".to_string()))
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn string_concat_operator() {
         let input = "hello ++ world";
-        let mut tokenizer = Tokenizer::new(input);
+        let mut tokenizer = Tokens::new(input);
         assert_eq!(tokenizer.next(), Some(Token::Ident("hello".to_string())));
         assert_eq!(tokenizer.next(), Some(Token::PlusPlus));
         assert_eq!(tokenizer.next(), Some(Token::Ident("world".to_string())));

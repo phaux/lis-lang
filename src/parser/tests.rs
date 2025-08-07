@@ -1,0 +1,318 @@
+use super::ast::*;
+use super::*;
+
+#[test]
+fn empty_prog() -> Result<()> {
+    let prog = Parser::new("").parse_prog()?;
+    assert_eq!(prog.stmts.len(), 0);
+    Ok(())
+}
+
+#[test]
+fn many_semis_prog() -> Result<()> {
+    let prog = Parser::new("print 1;;;;;").parse_prog()?;
+    assert_eq!(prog.stmts.len(), 1);
+    Ok(())
+}
+
+#[test]
+fn only_semis_prog() {
+    let prog = Parser::new(";;;;").parse_prog();
+    assert_eq!(prog, Err(ParseError::InvalidStmtStart(Some(Token::Semi))));
+}
+
+#[test]
+fn unclosed_paren() {
+    let prog = Parser::new("(1 + 2;").parse_expr(0);
+    assert_eq!(prog, Err(ParseError::UnclosedExprParen(Some(Token::Semi))));
+}
+
+#[test]
+fn assignment_prog() -> Result<()> {
+    let prog = Parser::new("let x = 1;").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::Let {
+                ident: "x".to_string(),
+                expr: Expr::Num(1.0),
+            }],
+        },
+    );
+    Ok(())
+}
+
+#[test]
+fn print_stmt() -> Result<()> {
+    let stmt = Parser::new("print 1").parse_stmt()?;
+    assert_eq!(stmt, Stmt::Print(Expr::Num(1.0)));
+    Ok(())
+}
+
+#[test]
+fn unary_ops() -> Result<()> {
+    let expr = Parser::new("+-1").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::UnaryOp {
+            op: UnaryOp::Pos,
+            expr: Box::new(Expr::UnaryOp {
+                op: UnaryOp::Neg,
+                expr: Box::new(Expr::Num(1.0))
+            })
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn binary_ops() -> Result<()> {
+    let expr = Parser::new("1 + 2 * 3").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::BinOp {
+            left: Box::new(Expr::Num(1.0)),
+            op: BinOp::Add,
+            right: Box::new(Expr::BinOp {
+                left: Box::new(Expr::Num(2.0)),
+                op: BinOp::Mul,
+                right: Box::new(Expr::Num(3.0)),
+            }),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn binary_and_unary_ops() -> Result<()> {
+    let expr = Parser::new("1 + -2 * 3").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::BinOp {
+            left: Box::new(Expr::Num(1.0)),
+            op: BinOp::Add,
+            right: Box::new(Expr::BinOp {
+                left: Box::new(Expr::UnaryOp {
+                    op: UnaryOp::Neg,
+                    expr: Box::new(Expr::Num(2.0)),
+                }),
+                op: BinOp::Mul,
+                right: Box::new(Expr::Num(3.0)),
+            }),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn parens() -> Result<()> {
+    let expr = Parser::new("(1 + 2) * 3").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::BinOp {
+            left: Box::new(Expr::BinOp {
+                left: Box::new(Expr::Num(1.0)),
+                op: BinOp::Add,
+                right: Box::new(Expr::Num(2.0)),
+            }),
+            op: BinOp::Mul,
+            right: Box::new(Expr::Num(3.0)),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn if_statement() -> Result<()> {
+    let stmt = Parser::new("if 1 then { print 1 } else { print 2 }").parse_stmt()?;
+    assert!(matches!(
+        stmt,
+        Stmt::If {
+            cond: Expr::Num(1.0),
+            cons: _,
+            alt: _
+        }
+    ));
+    Ok(())
+}
+
+#[test]
+fn unclosed_curly() {
+    let stmt = Parser::new("if 1 then { print 1").parse_stmt();
+    assert_eq!(stmt, Err(ParseError::InvalidStmtStart(None)));
+}
+
+#[test]
+fn if_else_statement() -> Result<()> {
+    let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt()?;
+    assert_eq!(
+        stmt,
+        Stmt::If {
+            cond: Expr::Var("x".to_string()),
+            cons: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(1.0))])),
+            alt: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(0.0))]))),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn print_string_literal() -> Result<()> {
+    let stmt = Parser::new(r#"print "hello\nworld""#).parse_stmt()?;
+    assert_eq!(stmt, Stmt::Print(Expr::Str("hello\nworld".to_string())));
+    Ok(())
+}
+
+#[test]
+fn string_concat() -> Result<()> {
+    let expr = Parser::new(r#""hello" ++ "world""#).parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::BinOp {
+            left: Box::new(Expr::Str("hello".to_string())),
+            op: BinOp::Concat,
+            right: Box::new(Expr::Str("world".to_string())),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn object_literal() -> Result<()> {
+    let expr = Parser::new("{ a: 1, b: 2 }").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::Obj {
+            props: vec![
+                Prop {
+                    key: "a".to_string(),
+                    val: Expr::Num(1.0),
+                },
+                Prop {
+                    key: "b".to_string(),
+                    val: Expr::Num(2.0),
+                },
+            ],
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn object_property_access() -> Result<()> {
+    let expr = Parser::new("obj.a.b.c").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::PropAccess {
+            obj: Box::new(Expr::PropAccess {
+                obj: Box::new(Expr::PropAccess {
+                    obj: Box::new(Expr::Var("obj".to_string())),
+                    prop: "a".to_string(),
+                }),
+                prop: "b".to_string(),
+            }),
+            prop: "c".to_string(),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn empty_object() -> Result<()> {
+    let expr = Parser::new("{}").parse_expr(0)?;
+    assert_eq!(expr, Expr::Obj { props: vec![] });
+    Ok(())
+}
+
+#[test]
+fn object_with_string_keys() -> Result<()> {
+    let expr = Parser::new(r#"{ "name": "john", "age": 25 }"#).parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::Obj {
+            props: vec![
+                Prop {
+                    key: "name".to_string(),
+                    val: Expr::Str("john".to_string()),
+                },
+                Prop {
+                    key: "age".to_string(),
+                    val: Expr::Num(25.0),
+                },
+            ],
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn nested_object() -> Result<()> {
+    let expr = Parser::new("{ user: { name: \"john\", age: 25 } }").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::Obj {
+            props: vec![Prop {
+                key: "user".to_string(),
+                val: Expr::Obj {
+                    props: vec![
+                        Prop {
+                            key: "name".to_string(),
+                            val: Expr::Str("john".to_string()),
+                        },
+                        Prop {
+                            key: "age".to_string(),
+                            val: Expr::Num(25.0),
+                        },
+                    ],
+                },
+            }],
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn property_access_with_expressions() -> Result<()> {
+    let expr = Parser::new("(1 + 2).toString").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::PropAccess {
+            obj: Box::new(Expr::BinOp {
+                left: Box::new(Expr::Num(1.0)),
+                op: BinOp::Add,
+                right: Box::new(Expr::Num(2.0)),
+            }),
+            prop: "toString".to_string(),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn object_with_expressions() -> Result<()> {
+    let expr = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::Obj {
+            props: vec![
+                Prop {
+                    key: "x".to_string(),
+                    val: Expr::BinOp {
+                        left: Box::new(Expr::Num(1.0)),
+                        op: BinOp::Add,
+                        right: Box::new(Expr::Num(2.0)),
+                    },
+                },
+                Prop {
+                    key: "y".to_string(),
+                    val: Expr::BinOp {
+                        left: Box::new(Expr::Num(3.0)),
+                        op: BinOp::Mul,
+                        right: Box::new(Expr::Num(4.0)),
+                    },
+                },
+            ],
+        }
+    );
+    Ok(())
+}
