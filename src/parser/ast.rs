@@ -55,6 +55,10 @@ pub enum Expr {
         obj: Box<Expr>,
         prop: String,
     },
+    FuncCall {
+        func: Box<Expr>,
+        args: Vec<Expr>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]

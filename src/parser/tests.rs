@@ -220,7 +220,7 @@ fn object_literal() -> Result<()> {
 }
 
 #[test]
-fn object_property_access() -> Result<()> {
+fn prop_access() -> Result<()> {
     let expr = Parser::new("obj.a.b.c").parse_expr(0)?;
     assert_eq!(
         expr,
@@ -233,6 +233,121 @@ fn object_property_access() -> Result<()> {
                 prop: "b".to_string(),
             }),
             prop: "c".to_string(),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn func_call() -> Result<()> {
+    let expr = Parser::new("func(a, b)").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::FuncCall {
+            func: Box::new(Expr::Var("func".to_string())),
+            args: vec![Expr::Var("a".to_string()), Expr::Var("b".to_string())]
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn method_call() -> Result<()> {
+    let expr = Parser::new("obj.method()").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::FuncCall {
+            func: Box::new(Expr::PropAccess {
+                obj: Box::new(Expr::Var("obj".to_string())),
+                prop: "method".to_string(),
+            }),
+            args: vec![],
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn func_call_missing_paren() {
+    let result = Parser::new("func(a, b").parse_expr(0);
+    assert_eq!(result, Err(ParseError::ArgInvalidEnd(None)));
+}
+
+#[test]
+fn func_call_trailing_comma() {
+    let result = Parser::new("func(a, )").parse_expr(0);
+    assert_eq!(
+        result,
+        Ok(Expr::FuncCall {
+            func: Box::new(Expr::Var("func".to_string())),
+            args: vec![Expr::Var("a".to_string())]
+        })
+    );
+}
+
+#[test]
+fn func_call_missing_comma() {
+    let result = Parser::new("func(a b)").parse_expr(0);
+    assert_eq!(
+        result,
+        Err(ParseError::ArgInvalidEnd(Some(Token::Ident(
+            "b".to_string()
+        ))))
+    );
+}
+
+#[test]
+fn func_call_just_comma() {
+    let result = Parser::new("func(,)").parse_expr(0);
+    assert_eq!(
+        result,
+        Err(ParseError::ExprInvalidStart(Some(Token::Comma)))
+    );
+}
+
+#[test]
+fn func_call_missing_first_arg() {
+    let result = Parser::new("func(,a)").parse_expr(0);
+    assert_eq!(
+        result,
+        Err(ParseError::ExprInvalidStart(Some(Token::Comma)))
+    );
+}
+
+#[test]
+fn prop_call_assign_bin_expr() -> Result<()> {
+    let expr = Parser::new("func().prop = 1 + 2").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::Assign {
+            place: Box::new(Expr::PropAccess {
+                obj: Box::new(Expr::FuncCall {
+                    func: Box::new(Expr::Var("func".to_string())),
+                    args: vec![],
+                }),
+                prop: "prop".to_string(),
+            }),
+            expr: Box::new(Expr::BinOp {
+                left: Box::new(Expr::Num(1.0)),
+                op: BinOp::Add,
+                right: Box::new(Expr::Num(2.0)),
+            }),
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn call_result_prop_access() -> Result<()> {
+    let expr = Parser::new("func().prop").parse_expr(0)?;
+    assert_eq!(
+        expr,
+        Expr::PropAccess {
+            obj: Box::new(Expr::FuncCall {
+                func: Box::new(Expr::Var("func".to_string())),
+                args: vec![],
+            }),
+            prop: "prop".to_string(),
         }
     );
     Ok(())

@@ -40,6 +40,10 @@ pub enum ParseError {
         "unexpected {0:?} where a comma or closing parenthesis of function parameters was expected"
     )]
     ParamInvalidEnd(Option<Token>),
+    #[error(
+        "unexpected {0:?} where a comma or closing parenthesis of function arguments was expected"
+    )]
+    ArgInvalidEnd(Option<Token>),
 }
 
 type Result<T> = std::result::Result<T, ParseError>;
@@ -186,8 +190,18 @@ impl<'a> Parser<'a> {
     pub fn parse_expr(&mut self, precedence: u8) -> Result<Expr> {
         let mut left = self.parse_operand()?;
 
-        // Handle property access (highest precedence)
-        left = self.parse_prop_access(left)?;
+        // Handle property access and function calls (highest precedence)
+        loop {
+            // Handle property access
+            left = match self.tokens.peek() {
+                Some(&Token::Dot) => self.parse_prop_access(left)?,
+                Some(&Token::ParenL) => Expr::FuncCall {
+                    func: Box::new(left),
+                    args: self.parse_func_call()?,
+                },
+                _ => break,
+            };
+        }
 
         // Handle assignment expression (right associative)
         if let Some(Token::Eq) = self.tokens.peek() {
@@ -250,6 +264,36 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_prop_access(&mut self, obj: Expr) -> Result<Expr> {
+        self.tokens.next(); // Consume '.'
+        let prop = match self.tokens.next() {
+            Some(Token::Ident(name)) => name,
+            t => return Err(ParseError::ExprInvalidStart(t)),
+        };
+        Ok(Expr::PropAccess {
+            obj: Box::new(obj),
+            prop,
+        })
+    }
+
+    fn parse_func_call(&mut self) -> Result<Vec<Expr>> {
+        self.tokens.next(); // Consume '('
+
+        let mut args = Vec::new();
+        while self.tokens.next_if_eq(&Token::ParenR).is_none() {
+            args.push(self.parse_expr(0)?);
+
+            match self.tokens.peek() {
+                Some(Token::Comma) => {
+                    self.tokens.next(); // Consume ','
+                }
+                Some(Token::ParenR) => {}
+                t => return Err(ParseError::ArgInvalidEnd(t.cloned())),
+            }
+        }
+        Ok(args)
+    }
+
     fn parse_obj(&mut self) -> Result<Expr> {
         let mut props = Vec::new();
 
@@ -276,31 +320,12 @@ impl<'a> Parser<'a> {
                 Some(Token::Comma) => {
                     self.tokens.next(); // consume comma
                 }
-                Some(Token::CurlyR) => {
-                    self.tokens.next(); // consume closing brace
-                    break;
-                }
+                Some(Token::CurlyR) => {}
                 t => return Err(ParseError::PropInvalidEnd(t.cloned())),
             }
         }
 
         Ok(Expr::Obj { props })
-    }
-
-    fn parse_prop_access(&mut self, mut obj: Expr) -> Result<Expr> {
-        while self.tokens.next_if_eq(&Token::Dot).is_some() {
-            let prop = match self.tokens.next() {
-                Some(Token::Ident(name)) => name,
-                t => return Err(ParseError::ExprInvalidStart(t)),
-            };
-
-            obj = Expr::PropAccess {
-                obj: Box::new(obj),
-                prop,
-            };
-        }
-
-        Ok(obj)
     }
 }
 

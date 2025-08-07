@@ -159,6 +159,9 @@ impl Runtime {
                 },
                 v @ Val::Prim(_) => Err(RuntimeError::InvalidPropAccess(v.type_of())),
             },
+            Expr::FuncCall { func: _, args: _ } => {
+                todo!()
+            }
         }
     }
 
