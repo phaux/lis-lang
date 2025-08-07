@@ -1,5 +1,6 @@
 use crate::{ast, parser::ParseError, parser::Parser};
 use std::collections::HashMap;
+use std::rc::Rc;
 use thiserror::Error;
 
 /// Custom error type for VM operations
@@ -21,6 +22,9 @@ pub enum VmError {
         right: Type,
     },
 
+    #[error("invalid property access on {0:?}")]
+    InvalidPropAccess(Type),
+
     #[error("parse error: {0}")]
     ParseError(#[from] ParseError),
 }
@@ -29,43 +33,47 @@ pub enum VmError {
 #[derive(Debug)]
 pub struct Vm {
     /// The global object contains all the defined variables as its properties.
-    global_obj: Object,
+    global_obj: Obj,
 }
 
+/// Any runtime value.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Primitive(Primitive),
-    // Object(Rc<Object>),
+pub enum Val {
+    /// A primitive value.
+    Prim(Prim),
+    /// A composite value.
+    Comp(Rc<Obj>),
 }
 
-impl Value {
+impl Val {
     pub fn type_of(&self) -> Type {
         match self {
-            Value::Primitive(Primitive::Nil) => Type::Nil,
-            Value::Primitive(Primitive::Bool(_)) => Type::Bool,
-            Value::Primitive(Primitive::Num(_)) => Type::Num,
-            Value::Primitive(Primitive::Str(_)) => Type::String,
-            // Value::Object(_) => Type::Obj,
+            Val::Prim(Prim::Nil) => Type::Nil,
+            Val::Prim(Prim::Bool(_)) => Type::Bool,
+            Val::Prim(Prim::Num(_)) => Type::Num,
+            Val::Prim(Prim::Str(_)) => Type::Str,
+            Val::Comp(_) => Type::Obj,
         }
     }
 }
 
+/// The type of a value.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Nil,
     Bool,
     Num,
-    String,
-    // Obj,
+    Str,
+    Obj,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Object {
-    props: HashMap<String, Value>,
+pub struct Obj {
+    props: HashMap<String, Val>,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Primitive {
+pub enum Prim {
     /// A special value that represents the absence of a value.
     Nil,
     Num(f64),
@@ -76,7 +84,7 @@ pub enum Primitive {
 impl Vm {
     pub fn new() -> Self {
         Self {
-            global_obj: Object {
+            global_obj: Obj {
                 props: HashMap::new(),
             },
         }
@@ -112,137 +120,107 @@ impl Vm {
                 println!("{value:?}");
                 Ok(())
             }
-            ast::Stmt::If {
-                condition,
-                consequent: then_branch,
-                alternate: else_branch,
-            } => {
-                let condition = self.eval_expr(condition)?;
-                if let Value::Primitive(Primitive::Bool(cond)) = condition {
+            ast::Stmt::If { cond, cons, alt } => {
+                let cond = self.eval_expr(cond)?;
+                if let Val::Prim(Prim::Bool(cond)) = cond {
                     if cond {
-                        self.exec_stmt(then_branch)
-                    } else if let Some(else_branch) = else_branch {
-                        self.exec_stmt(else_branch)
+                        self.exec_stmt(cons)
+                    } else if let Some(alt) = alt {
+                        self.exec_stmt(alt)
                     } else {
                         Ok(())
                     }
                 } else {
-                    Err(VmError::InvalidCond(condition.type_of()))
+                    Err(VmError::InvalidCond(cond.type_of()))
                 }
             }
         }
     }
 
-    fn eval_expr(&self, expr: &ast::Expr) -> Result<Value, VmError> {
+    fn eval_expr(&self, expr: &ast::Expr) -> Result<Val, VmError> {
         match expr {
-            ast::Expr::Num(n) => Ok(Value::Primitive(Primitive::Num(*n))),
-            ast::Expr::Str(s) => Ok(Value::Primitive(Primitive::Str(s.clone()))),
+            ast::Expr::Num(n) => Ok(Val::Prim(Prim::Num(*n))),
+            ast::Expr::Str(s) => Ok(Val::Prim(Prim::Str(s.clone()))),
             ast::Expr::Var(name) => match self.global_obj.props.get(name) {
                 Some(value) => Ok(value.clone()),
-                None => Ok(Value::Primitive(Primitive::Nil)),
+                None => Ok(Val::Prim(Prim::Nil)),
             },
-            ast::Expr::UnaryOp { op, expr } => {
-                let val = self.eval_expr(expr)?;
-                match op {
-                    ast::UnaryOp::Pos => match val {
-                        Value::Primitive(Primitive::Num(n)) => {
-                            Ok(Value::Primitive(Primitive::Num(n)))
-                        }
-                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
-                            op: *op,
-                            ty: val.type_of(),
-                        }),
-                    },
-                    ast::UnaryOp::Neg => match val {
-                        Value::Primitive(Primitive::Num(n)) => {
-                            Ok(Value::Primitive(Primitive::Num(-n)))
-                        }
-                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
-                            op: *op,
-                            ty: val.type_of(),
-                        }),
-                    },
-                    ast::UnaryOp::Not => match val {
-                        Value::Primitive(Primitive::Bool(b)) => {
-                            Ok(Value::Primitive(Primitive::Bool(!b)))
-                        }
-                        Value::Primitive(_) => Err(VmError::InvalidUnaryOp {
-                            op: *op,
-                            ty: val.type_of(),
-                        }),
-                    },
+            ast::Expr::UnaryOp { op, expr } => self.eval_unary_op(*op, expr),
+            ast::Expr::BinOp { left, op, right } => self.eval_bin_op(left, *op, right),
+            ast::Expr::Obj { props } => {
+                let mut obj = Obj {
+                    props: HashMap::new(),
+                };
+                for prop in props {
+                    let val = self.eval_expr(&prop.val)?;
+                    obj.props.insert(prop.key.clone(), val);
                 }
+                Ok(Val::Comp(Rc::new(obj)))
             }
-            ast::Expr::BinOp { left, op, right } => {
-                let left_val = self.eval_expr(left)?;
-                let right_val = self.eval_expr(right)?;
-                match op {
-                    ast::BinOp::Add => match (&left_val, &right_val) {
-                        (
-                            Value::Primitive(Primitive::Num(l)),
-                            Value::Primitive(Primitive::Num(r)),
-                        ) => Ok(Value::Primitive(Primitive::Num(l + r))),
-                        _ => Err(VmError::InvalidBinaryOp {
-                            op: *op,
-                            left: left_val.type_of(),
-                            right: right_val.type_of(),
-                        }),
-                    },
-                    ast::BinOp::Sub => match (&left_val, &right_val) {
-                        (
-                            Value::Primitive(Primitive::Num(l)),
-                            Value::Primitive(Primitive::Num(r)),
-                        ) => Ok(Value::Primitive(Primitive::Num(l - r))),
-                        _ => Err(VmError::InvalidBinaryOp {
-                            op: *op,
-                            left: left_val.type_of(),
-                            right: right_val.type_of(),
-                        }),
-                    },
-                    ast::BinOp::Mul => match (&left_val, &right_val) {
-                        (
-                            Value::Primitive(Primitive::Num(l)),
-                            Value::Primitive(Primitive::Num(r)),
-                        ) => Ok(Value::Primitive(Primitive::Num(l * r))),
-                        _ => Err(VmError::InvalidBinaryOp {
-                            op: *op,
-                            left: left_val.type_of(),
-                            right: right_val.type_of(),
-                        }),
-                    },
-                    ast::BinOp::Div => match (&left_val, &right_val) {
-                        (
-                            Value::Primitive(Primitive::Num(l)),
-                            Value::Primitive(Primitive::Num(r)),
-                        ) => {
-                            if *r == 0.0 {
-                                return Err(VmError::DivByZero);
-                            }
-                            Ok(Value::Primitive(Primitive::Num(l / r)))
-                        }
-                        _ => Err(VmError::InvalidBinaryOp {
-                            op: *op,
-                            left: left_val.type_of(),
-                            right: right_val.type_of(),
-                        }),
-                    },
-                    ast::BinOp::Eq => Ok(Value::Primitive(Primitive::Bool(left_val == right_val))),
-                    ast::BinOp::NotEq => {
-                        Ok(Value::Primitive(Primitive::Bool(left_val != right_val)))
-                    }
-                    ast::BinOp::Concat => match (&left_val, &right_val) {
-                        (
-                            Value::Primitive(Primitive::Str(l)),
-                            Value::Primitive(Primitive::Str(r)),
-                        ) => Ok(Value::Primitive(Primitive::Str(format!("{}{}", l, r)))),
-                        _ => Err(VmError::InvalidBinaryOp {
-                            op: *op,
-                            left: left_val.type_of(),
-                            right: right_val.type_of(),
-                        }),
-                    },
+            ast::Expr::PropAccess { obj: object, prop } => match self.eval_expr(object)? {
+                Val::Comp(obj) => match obj.props.get(prop) {
+                    Some(value) => Ok(value.clone()),
+                    None => Ok(Val::Prim(Prim::Nil)),
+                },
+                v @ Val::Prim(_) => Err(VmError::InvalidPropAccess(v.type_of())),
+            },
+        }
+    }
+
+    fn eval_bin_op(
+        &self,
+        left: &ast::Expr,
+        op: ast::BinOp,
+        right: &ast::Expr,
+    ) -> Result<Val, VmError> {
+        let left_val = self.eval_expr(left)?;
+        let right_val = self.eval_expr(right)?;
+
+        match (op, left_val, right_val) {
+            (ast::BinOp::Add, Val::Prim(Prim::Num(l)), Val::Prim(Prim::Num(r))) => {
+                Ok(Val::Prim(Prim::Num(l + r)))
+            }
+
+            (ast::BinOp::Sub, Val::Prim(Prim::Num(l)), Val::Prim(Prim::Num(r))) => {
+                Ok(Val::Prim(Prim::Num(l - r)))
+            }
+
+            (ast::BinOp::Mul, Val::Prim(Prim::Num(l)), Val::Prim(Prim::Num(r))) => {
+                Ok(Val::Prim(Prim::Num(l * r)))
+            }
+
+            (ast::BinOp::Div, Val::Prim(Prim::Num(l)), Val::Prim(Prim::Num(r))) => {
+                if r == 0.0 {
+                    return Err(VmError::DivByZero);
                 }
+                Ok(Val::Prim(Prim::Num(l / r)))
             }
+
+            (ast::BinOp::Eq, l, r) => Ok(Val::Prim(Prim::Bool(l == r))),
+            (ast::BinOp::NotEq, l, r) => Ok(Val::Prim(Prim::Bool(l != r))),
+
+            (ast::BinOp::Concat, Val::Prim(Prim::Str(l)), Val::Prim(Prim::Str(r))) => {
+                Ok(Val::Prim(Prim::Str(format!("{l}{r}"))))
+            }
+
+            (op, l, r) => Err(VmError::InvalidBinaryOp {
+                op,
+                left: l.type_of(),
+                right: r.type_of(),
+            }),
+        }
+    }
+
+    fn eval_unary_op(&self, op: ast::UnaryOp, expr: &ast::Expr) -> Result<Val, VmError> {
+        let val = self.eval_expr(expr)?;
+        match (op, val) {
+            (ast::UnaryOp::Pos, Val::Prim(Prim::Num(n))) => Ok(Val::Prim(Prim::Num(n))),
+            (ast::UnaryOp::Neg, Val::Prim(Prim::Num(n))) => Ok(Val::Prim(Prim::Num(-n))),
+            (ast::UnaryOp::Not, Val::Prim(Prim::Bool(b))) => Ok(Val::Prim(Prim::Bool(!b))),
+            (op, v) => Err(VmError::InvalidUnaryOp {
+                op,
+                ty: v.type_of(),
+            }),
         }
     }
 }
@@ -262,11 +240,11 @@ mod test {
         )?;
         assert_eq!(
             vm.global_obj.props.get("foo"),
-            Some(&Value::Primitive(Primitive::Num(2.0))),
+            Some(&Val::Prim(Prim::Num(2.0))),
         );
         assert_eq!(
             vm.global_obj.props.get("bar"),
-            Some(&Value::Primitive(Primitive::Num(3.0))),
+            Some(&Val::Prim(Prim::Num(3.0))),
         );
         Ok(())
     }
@@ -286,7 +264,7 @@ mod test {
         )?;
         assert_eq!(
             vm.global_obj.props.get("bar"),
-            Some(&Value::Primitive(Primitive::Num(1.0))),
+            Some(&Val::Prim(Prim::Num(1.0))),
         );
         Ok(())
     }
@@ -295,7 +273,7 @@ mod test {
     fn eval_expr() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"1").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Num(1.0)));
+        assert_eq!(val, Val::Prim(Prim::Num(1.0)));
         Ok(())
     }
 
@@ -303,7 +281,7 @@ mod test {
     fn eval_bin_op() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"1 + 2 * 3").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Num(7.0)));
+        assert_eq!(val, Val::Prim(Prim::Num(7.0)));
         Ok(())
     }
 
@@ -311,7 +289,7 @@ mod test {
     fn eval_unary_num_op() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"+-(10)").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Num(-10.0)));
+        assert_eq!(val, Val::Prim(Prim::Num(-10.0)));
         Ok(())
     }
 
@@ -319,7 +297,7 @@ mod test {
     fn eval_unary_bool_op() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"!!!(1==1)").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+        assert_eq!(val, Val::Prim(Prim::Bool(false)));
         Ok(())
     }
 
@@ -327,9 +305,9 @@ mod test {
     fn eval_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"1 == 1").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
+        assert_eq!(val, Val::Prim(Prim::Bool(true)));
         let val = vm.eval_expr(&Parser::new(r"1 == 2").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+        assert_eq!(val, Val::Prim(Prim::Bool(false)));
         Ok(())
     }
 
@@ -337,9 +315,9 @@ mod test {
     fn eval_not_eq_op() -> Result<(), VmError> {
         let vm = Vm::new();
         let val = vm.eval_expr(&Parser::new(r"1 != 1").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Bool(false)));
+        assert_eq!(val, Val::Prim(Prim::Bool(false)));
         let val = vm.eval_expr(&Parser::new(r"1 != 2").parse_expr(0)?)?;
-        assert_eq!(val, Value::Primitive(Primitive::Bool(true)));
+        assert_eq!(val, Val::Prim(Prim::Bool(true)));
         Ok(())
     }
 
@@ -349,19 +327,79 @@ mod test {
         vm.exec_str(r#"let foo = "hello world""#)?;
         assert_eq!(
             vm.global_obj.props.get("foo"),
-            Some(&Value::Primitive(Primitive::Str("hello world".to_string()))),
+            Some(&Val::Prim(Prim::Str("hello world".to_string()))),
         );
         Ok(())
     }
 
     #[test]
     fn string_concat() -> Result<(), VmError> {
-        let vm = Vm::new();
-        let val = vm.eval_expr(&Parser::new(r#""hello" ++ "world""#).parse_expr(0)?)?;
+        let mut vm = Vm::new();
+        vm.exec_str(r#"let foo = "hello" ++ "world";"#)?;
         assert_eq!(
-            val,
-            Value::Primitive(Primitive::Str("helloworld".to_string()))
+            vm.global_obj.props.get("foo"),
+            Some(&Val::Prim(Prim::Str("helloworld".to_string()))),
         );
+        Ok(())
+    }
+
+    #[test]
+    fn object_literal() -> Result<(), VmError> {
+        let vm = Vm::new();
+        let val = vm.eval_expr(&Parser::new(r#"{ name: "john", age: 25 }"#).parse_expr(0)?)?;
+        match val {
+            Val::Comp(obj) => {
+                assert_eq!(
+                    obj.props.get("name"),
+                    Some(&Val::Prim(Prim::Str("john".to_string())))
+                );
+                assert_eq!(obj.props.get("age"), Some(&Val::Prim(Prim::Num(25.0))));
+            }
+            Val::Prim(_) => panic!("Expected object value"),
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn object_property_access() -> Result<(), VmError> {
+        let mut vm = Vm::new();
+        vm.exec_str(r#"let obj = { name: "john", age: 25 };"#)?;
+
+        // Test property access
+        let val = vm.eval_expr(&Parser::new("obj.name").parse_expr(0)?)?;
+        assert_eq!(val, Val::Prim(Prim::Str("john".to_string())));
+
+        let val = vm.eval_expr(&Parser::new("obj.age").parse_expr(0)?)?;
+        assert_eq!(val, Val::Prim(Prim::Num(25.0)));
+
+        // Test non-existent property
+        let val = vm.eval_expr(&Parser::new("obj.nonexistent").parse_expr(0)?)?;
+        assert_eq!(val, Val::Prim(Prim::Nil));
+
+        Ok(())
+    }
+
+    #[test]
+    fn nested_object() -> Result<(), VmError> {
+        let vm = Vm::new();
+        let val =
+            vm.eval_expr(&Parser::new(r#"{ user: { name: "john", age: 25 } }"#).parse_expr(0)?)?;
+        match val {
+            Val::Comp(obj) => {
+                let user = obj.props.get("user").unwrap();
+                match user {
+                    Val::Comp(user_obj) => {
+                        assert_eq!(
+                            user_obj.props.get("name"),
+                            Some(&Val::Prim(Prim::Str("john".to_string())))
+                        );
+                        assert_eq!(user_obj.props.get("age"), Some(&Val::Prim(Prim::Num(25.0))));
+                    }
+                    Val::Prim(_) => panic!("Expected nested object"),
+                }
+            }
+            Val::Prim(_) => panic!("Expected object value"),
+        }
         Ok(())
     }
 }

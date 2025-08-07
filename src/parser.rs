@@ -7,7 +7,7 @@ use crate::tokenizer::{Token, Tokenizer};
 #[derive(Error, Debug, PartialEq)]
 pub enum ParseError {
     #[error("unexpected {0:?} where statement was expected")]
-    InvalidStmt(Option<Token>),
+    InvalidStmtStart(Option<Token>),
     #[error("unexpected {0:?} where identifier of let statement was expected")]
     InvalidLetIdent(Option<Token>),
     #[error("unexpected {0:?} where '=' of let statement was expected")]
@@ -15,9 +15,15 @@ pub enum ParseError {
     #[error("unexpected {0:?} where 'then' of if statement was expected")]
     InvalidIfThen(Option<Token>),
     #[error("unexpected {0:?} where expression was expected")]
-    InvalidExpr(Option<Token>),
+    InvalidExprStart(Option<Token>),
     #[error("unexpected {0:?} where a closing parenthesis of expression was expected")]
     UnclosedExprParen(Option<Token>),
+    #[error("unexpected {0:?} where object key was expected")]
+    InvalidObjKey(Option<Token>),
+    #[error("unexpected {0:?} where ':' of object property was expected")]
+    InvalidObjColon(Option<Token>),
+    #[error("unexpected {0:?} where comma or closing brace of object was expected")]
+    InvalidObjEnd(Option<Token>),
 }
 
 type Result<T> = std::result::Result<T, ParseError>;
@@ -47,7 +53,7 @@ impl<'a> Parser<'a> {
             Some(Token::Let) => self.parse_let_stmt(),
             Some(Token::Print) => self.parse_print_stmt(),
             Some(Token::If) => self.parse_if_stmt(),
-            tok => return Err(ParseError::InvalidStmt(tok.cloned())),
+            tok => return Err(ParseError::InvalidStmtStart(tok.cloned())),
         }?;
         // consume semis
         while self.tokenizer.next_if_eq(&Token::Semi).is_some() {}
@@ -102,19 +108,23 @@ impl<'a> Parser<'a> {
         };
 
         Ok(ast::Stmt::If {
-            condition,
-            consequent,
-            alternate,
+            cond: condition,
+            cons: consequent,
+            alt: alternate,
         })
     }
 
     pub fn parse_expr(&mut self, precedence: u8) -> Result<ast::Expr> {
         let mut left = self.parse_operand()?;
+
+        // Handle property access (highest precedence)
+        left = self.parse_prop_access(left)?;
+
         loop {
             let Some(tok) = self.tokenizer.peek() else {
                 break;
             };
-            let Ok(op) = ast::BinOp::try_from(tok) else {
+            let Some(op) = ast::BinOp::try_from_token(tok) else {
                 break;
             };
             let next_prec = op.get_precedence();
@@ -145,18 +155,72 @@ impl<'a> Parser<'a> {
                 }
                 Ok(expr)
             }
+            Some(Token::CurlyL) => self.parse_obj(),
             t => {
-                let op = t.as_ref().and_then(|t| ast::UnaryOp::try_from(t).ok());
+                let op = t.as_ref().and_then(ast::UnaryOp::try_from_token);
                 if let Some(op) = op {
                     Ok(ast::Expr::UnaryOp {
                         op,
                         expr: Box::new(self.parse_operand()?),
                     })
                 } else {
-                    Err(ParseError::InvalidExpr(t))
+                    Err(ParseError::InvalidExprStart(t))
                 }
             }
         }
+    }
+
+    fn parse_obj(&mut self) -> Result<ast::Expr> {
+        let mut props = Vec::new();
+
+        while self.tokenizer.next_if_eq(&Token::CurlyR).is_none() {
+            // Parse property key (identifier or string literal)
+            let key = match self.tokenizer.next() {
+                Some(Token::Ident(name)) => name,
+                Some(Token::Str(s)) => s,
+                t => return Err(ParseError::InvalidObjKey(t)),
+            };
+
+            // Expect colon
+            match self.tokenizer.next() {
+                Some(Token::Colon) => {}
+                t => return Err(ParseError::InvalidObjColon(t)),
+            }
+
+            // Parse property value
+            let val = self.parse_expr(0)?;
+            props.push(ast::Prop { key, val });
+
+            // Check for comma or closing brace
+            match self.tokenizer.peek() {
+                Some(Token::Comma) => {
+                    self.tokenizer.next(); // consume comma
+                }
+                Some(Token::CurlyR) => {
+                    self.tokenizer.next(); // consume closing brace
+                    break;
+                }
+                t => return Err(ParseError::InvalidObjEnd(t.cloned())),
+            }
+        }
+
+        Ok(ast::Expr::Obj { props })
+    }
+
+    fn parse_prop_access(&mut self, mut obj: ast::Expr) -> Result<ast::Expr> {
+        while self.tokenizer.next_if_eq(&Token::Dot).is_some() {
+            let prop = match self.tokenizer.next() {
+                Some(Token::Ident(name)) => name,
+                t => return Err(ParseError::InvalidExprStart(t)),
+            };
+
+            obj = ast::Expr::PropAccess {
+                obj: Box::new(obj),
+                prop,
+            };
+        }
+
+        Ok(obj)
     }
 }
 
@@ -182,7 +246,7 @@ mod tests {
     #[test]
     fn only_semis_prog() {
         let prog = Parser::new(";;;;").parse_prog();
-        assert_eq!(prog, Err(ParseError::InvalidStmt(Some(Token::Semi))));
+        assert_eq!(prog, Err(ParseError::InvalidStmtStart(Some(Token::Semi))));
     }
 
     #[test]
@@ -292,9 +356,9 @@ mod tests {
         assert!(matches!(
             stmt,
             Stmt::If {
-                condition: Expr::Num(1.0),
-                consequent: _,
-                alternate: _
+                cond: Expr::Num(1.0),
+                cons: _,
+                alt: _
             }
         ));
         Ok(())
@@ -303,7 +367,7 @@ mod tests {
     #[test]
     fn unclosed_curly() {
         let stmt = Parser::new("if 1 then { print 1").parse_stmt();
-        assert_eq!(stmt, Err(ParseError::InvalidStmt(None)));
+        assert_eq!(stmt, Err(ParseError::InvalidStmtStart(None)));
     }
 
     #[test]
@@ -312,9 +376,9 @@ mod tests {
         assert_eq!(
             stmt,
             Stmt::If {
-                condition: Expr::Var("x".to_string()),
-                consequent: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(1.0))])),
-                alternate: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(0.0))]))),
+                cond: Expr::Var("x".to_string()),
+                cons: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(1.0))])),
+                alt: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(0.0))]))),
             }
         );
         Ok(())
@@ -336,6 +400,146 @@ mod tests {
                 left: Box::new(Expr::Str("hello".to_string())),
                 op: BinOp::Concat,
                 right: Box::new(Expr::Str("world".to_string())),
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn object_literal() -> Result<()> {
+        let expr = Parser::new("{ a: 1, b: 2 }").parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::Obj {
+                props: vec![
+                    Prop {
+                        key: "a".to_string(),
+                        val: Expr::Num(1.0),
+                    },
+                    Prop {
+                        key: "b".to_string(),
+                        val: Expr::Num(2.0),
+                    },
+                ],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn object_property_access() -> Result<()> {
+        let expr = Parser::new("obj.a.b.c").parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::PropAccess {
+                obj: Box::new(Expr::PropAccess {
+                    obj: Box::new(Expr::PropAccess {
+                        obj: Box::new(Expr::Var("obj".to_string())),
+                        prop: "a".to_string(),
+                    }),
+                    prop: "b".to_string(),
+                }),
+                prop: "c".to_string(),
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn empty_object() -> Result<()> {
+        let expr = Parser::new("{}").parse_expr(0)?;
+        assert_eq!(expr, Expr::Obj { props: vec![] });
+        Ok(())
+    }
+
+    #[test]
+    fn object_with_string_keys() -> Result<()> {
+        let expr = Parser::new(r#"{ "name": "john", "age": 25 }"#).parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::Obj {
+                props: vec![
+                    Prop {
+                        key: "name".to_string(),
+                        val: Expr::Str("john".to_string()),
+                    },
+                    Prop {
+                        key: "age".to_string(),
+                        val: Expr::Num(25.0),
+                    },
+                ],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nested_object() -> Result<()> {
+        let expr = Parser::new("{ user: { name: \"john\", age: 25 } }").parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::Obj {
+                props: vec![Prop {
+                    key: "user".to_string(),
+                    val: Expr::Obj {
+                        props: vec![
+                            Prop {
+                                key: "name".to_string(),
+                                val: Expr::Str("john".to_string()),
+                            },
+                            Prop {
+                                key: "age".to_string(),
+                                val: Expr::Num(25.0),
+                            },
+                        ],
+                    },
+                }],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn property_access_with_expressions() -> Result<()> {
+        let expr = Parser::new("(1 + 2).toString").parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::PropAccess {
+                obj: Box::new(Expr::BinOp {
+                    left: Box::new(Expr::Num(1.0)),
+                    op: BinOp::Add,
+                    right: Box::new(Expr::Num(2.0)),
+                }),
+                prop: "toString".to_string(),
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn object_with_expressions() -> Result<()> {
+        let expr = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0)?;
+        assert_eq!(
+            expr,
+            Expr::Obj {
+                props: vec![
+                    Prop {
+                        key: "x".to_string(),
+                        val: Expr::BinOp {
+                            left: Box::new(Expr::Num(1.0)),
+                            op: BinOp::Add,
+                            right: Box::new(Expr::Num(2.0)),
+                        },
+                    },
+                    Prop {
+                        key: "y".to_string(),
+                        val: Expr::BinOp {
+                            left: Box::new(Expr::Num(3.0)),
+                            op: BinOp::Mul,
+                            right: Box::new(Expr::Num(4.0)),
+                        },
+                    },
+                ],
             }
         );
         Ok(())

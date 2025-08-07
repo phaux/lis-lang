@@ -14,9 +14,9 @@ pub enum Stmt {
     Print(Expr),
     Block(Vec<Stmt>),
     If {
-        condition: Expr,
-        consequent: Box<Stmt>,
-        alternate: Option<Box<Stmt>>,
+        cond: Expr,
+        cons: Box<Stmt>,
+        alt: Option<Box<Stmt>>,
     },
 }
 
@@ -33,6 +33,13 @@ pub enum Expr {
     UnaryOp {
         op: UnaryOp,
         expr: Box<Expr>,
+    },
+    Obj {
+        props: Vec<Prop>,
+    },
+    PropAccess {
+        obj: Box<Expr>,
+        prop: String,
     },
 }
 
@@ -54,20 +61,37 @@ pub enum UnaryOp {
     Not,
 }
 
-impl TryFrom<&Token> for UnaryOp {
-    type Error = Token;
+#[derive(Debug, PartialEq, Clone)]
+pub struct Prop {
+    pub key: String,
+    pub val: Expr,
+}
 
-    fn try_from(token: &Token) -> Result<Self, Self::Error> {
+impl UnaryOp {
+    pub fn try_from_token(token: &Token) -> Option<Self> {
         match token {
-            Token::Plus => Ok(UnaryOp::Pos),
-            Token::Minus => Ok(UnaryOp::Neg),
-            Token::Bang => Ok(UnaryOp::Not),
-            _ => Err(token.clone()),
+            Token::Plus => Some(UnaryOp::Pos),
+            Token::Minus => Some(UnaryOp::Neg),
+            Token::Bang => Some(UnaryOp::Not),
+            _ => None,
         }
     }
 }
 
 impl BinOp {
+    pub fn try_from_token(token: &Token) -> Option<Self> {
+        match token {
+            Token::Plus => Some(BinOp::Add),
+            Token::PlusPlus => Some(BinOp::Concat),
+            Token::Minus => Some(BinOp::Sub),
+            Token::Star => Some(BinOp::Mul),
+            Token::Slash => Some(BinOp::Div),
+            Token::EqEq => Some(BinOp::Eq),
+            Token::BangEq => Some(BinOp::NotEq),
+            _ => None,
+        }
+    }
+
     pub fn get_precedence(self) -> u8 {
         match self {
             // BinOp::Or => 1,
@@ -79,24 +103,6 @@ impl BinOp {
             // BinOp::Mod => 7,
             // BinOp::Pow => 8,
             // BinOp::Default => 9,
-            // BinOp::Member => 10,
-        }
-    }
-}
-
-impl TryFrom<&Token> for BinOp {
-    type Error = Token;
-
-    fn try_from(token: &Token) -> Result<Self, Self::Error> {
-        match token {
-            Token::Plus => Ok(BinOp::Add),
-            Token::PlusPlus => Ok(BinOp::Concat),
-            Token::Minus => Ok(BinOp::Sub),
-            Token::Star => Ok(BinOp::Mul),
-            Token::Slash => Ok(BinOp::Div),
-            Token::EqEq => Ok(BinOp::Eq),
-            Token::BangEq => Ok(BinOp::NotEq),
-            _ => Err(token.clone()),
         }
     }
 }
