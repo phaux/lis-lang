@@ -5,9 +5,9 @@ fn assign() -> Result<(), RuntimeError> {
     let mut vm = Runtime::new();
     vm.exec_str(
         r"
-                let foo = 2;
-                let bar = 3;
-            ",
+        let foo = 2;
+        let bar = 3;
+        ",
     )?;
     assert_eq!(
         vm.current_scope.vars.borrow().get("foo"),
@@ -21,22 +21,61 @@ fn assign() -> Result<(), RuntimeError> {
 }
 
 #[test]
+fn increment() -> Result<(), RuntimeError> {
+    let mut vm = Runtime::new();
+    vm.exec_str(
+        r"
+        let foo = 1;
+        {foo = foo + 1};
+        foo = foo + 1;
+        ",
+    )?;
+    assert_eq!(
+        vm.current_scope.vars.borrow().get("foo"),
+        Some(&Val::Prim(Prim::Num(3.0))),
+    );
+    Ok(())
+}
+
+#[test]
+fn assign_chain() -> Result<(), RuntimeError> {
+    let mut vm = Runtime::new();
+    vm.exec_str(
+        r"
+        let foo = 0;
+        let bar = 0;
+        foo = bar = 1;
+        ",
+    )?;
+    assert_eq!(
+        vm.current_scope.vars.borrow().get("foo"),
+        Some(&Val::Prim(Prim::Num(1.0))),
+    );
+    assert_eq!(
+        vm.current_scope.vars.borrow().get("bar"),
+        Some(&Val::Prim(Prim::Num(1.0))),
+    );
+    Ok(())
+}
+
+#[test]
 fn if_stmt() -> Result<(), RuntimeError> {
     let mut vm = Runtime::new();
     vm.exec_str(
         r"
-            let foo = 1 + 1;
-            if foo == 2 then {
-                let bar = 1;
-            } else {
-                let bar = 0;
-            }
-            ",
+        let bar = -1;
+        let foo = 1 + 1;
+        if foo == 2 then {
+            bar = 1;
+        } else {
+            bar = 0;
+        }
+        ",
     )?;
-    // assert_eq!(
-    //     vm.scope.vars.borrow().get("bar"),
-    //     Some(&Val::Prim(Prim::Num(1.0))),
-    // );
+    assert_eq!(
+        vm.current_scope.vars.borrow().get("bar"),
+        Some(&Val::Prim(Prim::Num(1.0))),
+    );
     Ok(())
 }
 
@@ -58,6 +97,15 @@ fn scopes() -> Result<(), RuntimeError> {
         Some(&Val::Prim(Prim::Num(1.0))),
     );
     Ok(())
+}
+
+#[test]
+fn invalid_assign() {
+    let mut vm = Runtime::new();
+    assert_eq!(
+        vm.exec_str(r"+1 = +2"),
+        Err(RuntimeError::InvalidAssignment)
+    );
 }
 
 #[test]

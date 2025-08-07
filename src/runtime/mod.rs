@@ -31,6 +31,12 @@ pub enum RuntimeError {
     #[error("invalid property access on {0:?}")]
     InvalidPropAccess(Type),
 
+    #[error("undefined variable {name:?}")]
+    UndefVar { name: String },
+
+    #[error("invalid assignment lhs")]
+    InvalidAssignment,
+
     #[error("parse error: {0}")]
     ParseError(#[from] ParseError),
 }
@@ -65,6 +71,11 @@ impl Runtime {
 
     fn exec_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
+            Stmt::Noop => Ok(()),
+            Stmt::Expr(expr) => {
+                self.eval_expr(expr)?;
+                Ok(())
+            }
             Stmt::Block(stmts) => {
                 let prev_scope = Rc::clone(&self.current_scope);
                 self.current_scope = Rc::new(Scope {
@@ -125,6 +136,7 @@ impl Runtime {
                 }
                 Ok(Val::Prim(Prim::Nil))
             }
+            Expr::Assign { place, expr } => self.exec_assign(place, expr),
             Expr::UnaryOp { op, expr } => self.eval_unary_op(*op, expr),
             Expr::BinOp { left, op, right } => self.eval_bin_op(left, *op, right),
             Expr::Obj { props } => {
@@ -184,6 +196,31 @@ impl Runtime {
                 right: r.type_of(),
             }),
         }
+    }
+
+    fn exec_assign(&self, place: &Expr, expr: &Expr) -> Result<Val, RuntimeError> {
+        let Expr::Var(name) = place else {
+            return Err(RuntimeError::InvalidAssignment);
+        };
+        let val = self.eval_expr(expr)?;
+
+        // Find the variable in the current or parent scopes and update it
+        let mut current = Some(&self.current_scope);
+        while let Some(scope) = current {
+            if scope.vars.borrow().contains_key(name) {
+                scope
+                    .vars
+                    .borrow_mut()
+                    .insert(name.to_string(), val.clone());
+                return Ok(val);
+            }
+            current = scope.parent.as_ref();
+        }
+
+        // If variable not found, return error
+        Err(RuntimeError::UndefVar {
+            name: name.to_string(),
+        })
     }
 
     fn eval_unary_op(&self, op: UnaryOp, expr: &Expr) -> Result<Val, RuntimeError> {

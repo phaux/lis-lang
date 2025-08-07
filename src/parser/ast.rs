@@ -7,6 +7,8 @@ pub struct Prog {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
+    Noop,
+    Expr(Expr),
     Let {
         ident: String,
         expr: Expr,
@@ -32,6 +34,10 @@ pub enum Expr {
     },
     UnaryOp {
         op: UnaryOp,
+        expr: Box<Expr>,
+    },
+    Assign {
+        place: Box<Expr>,
         expr: Box<Expr>,
     },
     Obj {
@@ -94,15 +100,15 @@ impl BinOp {
 
     pub fn get_precedence(self) -> u8 {
         match self {
-            // BinOp::Or => 1,
-            // BinOp::And => 2,
-            BinOp::Eq | BinOp::NotEq => 3,
-            BinOp::Concat => 4,
-            BinOp::Add | BinOp::Sub => 5,
-            BinOp::Mul | BinOp::Div => 6,
-            // BinOp::Mod => 7,
-            // BinOp::Pow => 8,
-            // BinOp::Default => 9,
+            // BinOp::Or => 2,
+            // BinOp::And => 3,
+            BinOp::Eq | BinOp::NotEq => 4,
+            BinOp::Concat => 5,
+            BinOp::Add | BinOp::Sub => 6,
+            BinOp::Mul | BinOp::Div => 7,
+            // BinOp::Mod => 8,
+            // BinOp::Pow => 9,
+            // BinOp::Default => 10,
         }
     }
 }

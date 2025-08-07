@@ -1,30 +1,33 @@
 use std::iter::Peekable;
 use thiserror::Error;
 
-use crate::tokenizer::{Token, Tokens};
+use crate::{
+    parser::ast::{BinOp, Expr, Prog, Prop, Stmt, UnaryOp},
+    tokenizer::{Token, Tokens},
+};
 
 pub mod ast;
 
 #[derive(Error, Debug, PartialEq)]
 pub enum ParseError {
     #[error("unexpected {0:?} where statement was expected")]
-    InvalidStmtStart(Option<Token>),
+    StmtInvalidStart(Option<Token>),
     #[error("unexpected {0:?} where identifier of let statement was expected")]
-    InvalidLetIdent(Option<Token>),
+    LetExpectedIdent(Option<Token>),
     #[error("unexpected {0:?} where '=' of let statement was expected")]
-    InvalidLetEq(Option<Token>),
+    LetExpectedEq(Option<Token>),
     #[error("unexpected {0:?} where 'then' of if statement was expected")]
-    InvalidIfThen(Option<Token>),
+    IfExpectedThen(Option<Token>),
     #[error("unexpected {0:?} where expression was expected")]
-    InvalidExprStart(Option<Token>),
+    ExprInvalidStart(Option<Token>),
     #[error("unexpected {0:?} where a closing parenthesis of expression was expected")]
-    UnclosedExprParen(Option<Token>),
+    ExprUnclosedParen(Option<Token>),
     #[error("unexpected {0:?} where object key was expected")]
-    InvalidObjKey(Option<Token>),
+    ObjExpectedKey(Option<Token>),
     #[error("unexpected {0:?} where ':' of object property was expected")]
-    InvalidObjColon(Option<Token>),
+    ObjExpectedColon(Option<Token>),
     #[error("unexpected {0:?} where comma or closing brace of object was expected")]
-    InvalidObjEnd(Option<Token>),
+    PropInvalidEnd(Option<Token>),
 }
 
 type Result<T> = std::result::Result<T, ParseError>;
@@ -40,64 +43,69 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse_prog(&mut self) -> Result<ast::Prog> {
+    pub fn parse_prog(&mut self) -> Result<Prog> {
         let mut stmts = Vec::new();
         while self.tokens.peek().is_some() {
             stmts.push(self.parse_stmt()?);
         }
-        Ok(ast::Prog { stmts })
+        Ok(Prog { stmts })
     }
 
-    fn parse_stmt(&mut self) -> Result<ast::Stmt> {
+    fn parse_stmt(&mut self) -> Result<Stmt> {
         let stmt = match self.tokens.peek() {
+            Some(Token::Semi) => Ok(Stmt::Noop),
             Some(Token::CurlyL) => self.parse_block_stmt(),
             Some(Token::Let) => self.parse_let_stmt(),
             Some(Token::Print) => self.parse_print_stmt(),
             Some(Token::If) => self.parse_if_stmt(),
-            tok => return Err(ParseError::InvalidStmtStart(tok.cloned())),
+            // Handle expression statement
+            Some(_) => Ok(Stmt::Expr(self.parse_expr(0)?)),
+            None => return Err(ParseError::StmtInvalidStart(None)),
         }?;
-        // consume semis
-        while self.tokens.next_if_eq(&Token::Semi).is_some() {}
+
+        // Consume semi after the statement
+        self.tokens.next_if_eq(&Token::Semi);
+
         Ok(stmt)
     }
 
-    fn parse_block_stmt(&mut self) -> Result<ast::Stmt> {
+    fn parse_block_stmt(&mut self) -> Result<Stmt> {
         self.tokens.next(); // Consume '{'
         let mut stmts = Vec::new();
         while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
             stmts.push(self.parse_stmt()?);
         }
-        Ok(ast::Stmt::Block(stmts))
+        Ok(Stmt::Block(stmts))
     }
 
-    fn parse_let_stmt(&mut self) -> Result<ast::Stmt> {
+    fn parse_let_stmt(&mut self) -> Result<Stmt> {
         self.tokens.next(); // Consume 'let'
         let ident = match self.tokens.next() {
             Some(Token::Ident(name)) => name,
-            t => return Err(ParseError::InvalidLetIdent(t)),
+            t => return Err(ParseError::LetExpectedIdent(t)),
         };
         match self.tokens.next() {
             Some(Token::Eq) => {}
-            t => return Err(ParseError::InvalidLetEq(t)),
+            t => return Err(ParseError::LetExpectedEq(t)),
         }
         let expr = self.parse_expr(0)?;
-        Ok(ast::Stmt::Let { ident, expr })
+        Ok(Stmt::Let { ident, expr })
     }
 
-    fn parse_print_stmt(&mut self) -> Result<ast::Stmt> {
+    fn parse_print_stmt(&mut self) -> Result<Stmt> {
         self.tokens.next(); // Consume 'print'
         let expr = self.parse_expr(0)?;
-        Ok(ast::Stmt::Print(expr))
+        Ok(Stmt::Print(expr))
     }
 
-    fn parse_if_stmt(&mut self) -> Result<ast::Stmt> {
+    fn parse_if_stmt(&mut self) -> Result<Stmt> {
         self.tokens.next(); // Consume 'if'
         let condition = self.parse_expr(0)?;
 
         // Parse then branch
         let then_token = self.tokens.next();
         if then_token != Some(Token::Then) {
-            return Err(ParseError::InvalidIfThen(then_token));
+            return Err(ParseError::IfExpectedThen(then_token));
         }
         let consequent = Box::new(self.parse_stmt()?);
 
@@ -108,24 +116,35 @@ impl<'a> Parser<'a> {
             None
         };
 
-        Ok(ast::Stmt::If {
+        Ok(Stmt::If {
             cond: condition,
             cons: consequent,
             alt: alternate,
         })
     }
 
-    pub fn parse_expr(&mut self, precedence: u8) -> Result<ast::Expr> {
+    pub fn parse_expr(&mut self, precedence: u8) -> Result<Expr> {
         let mut left = self.parse_operand()?;
 
         // Handle property access (highest precedence)
         left = self.parse_prop_access(left)?;
 
+        // Handle assignment expression (right associative)
+        if let Some(Token::Eq) = self.tokens.peek() {
+            self.tokens.next(); // Consume '='
+            let right = self.parse_expr(0)?;
+            left = Expr::Assign {
+                place: Box::new(left),
+                expr: Box::new(right),
+            };
+        }
+
+        // Handle binary operations
         loop {
             let Some(tok) = self.tokens.peek() else {
                 break;
             };
-            let Some(op) = ast::BinOp::try_from_token(tok) else {
+            let Some(op) = BinOp::try_from_token(tok) else {
                 break;
             };
             let next_prec = op.get_precedence();
@@ -134,7 +153,7 @@ impl<'a> Parser<'a> {
             }
             self.tokens.next(); // Consume operator
             let right = self.parse_expr(next_prec)?;
-            left = ast::Expr::BinOp {
+            left = Expr::BinOp {
                 left: Box::new(left),
                 op,
                 right: Box::new(right),
@@ -143,35 +162,35 @@ impl<'a> Parser<'a> {
         Ok(left)
     }
 
-    fn parse_operand(&mut self) -> Result<ast::Expr> {
+    fn parse_operand(&mut self) -> Result<Expr> {
         match self.tokens.next() {
-            Some(Token::Num(n)) => Ok(ast::Expr::Num(n)),
-            Some(Token::Ident(name)) => Ok(ast::Expr::Var(name)),
-            Some(Token::Str(s)) => Ok(ast::Expr::Str(s)),
+            Some(Token::Num(n)) => Ok(Expr::Num(n)),
+            Some(Token::Ident(name)) => Ok(Expr::Var(name)),
+            Some(Token::Str(s)) => Ok(Expr::Str(s)),
             Some(Token::ParenL) => {
                 let expr = self.parse_expr(0)?;
                 let paren = self.tokens.next();
                 if paren != Some(Token::ParenR) {
-                    return Err(ParseError::UnclosedExprParen(paren));
+                    return Err(ParseError::ExprUnclosedParen(paren));
                 }
                 Ok(expr)
             }
             Some(Token::CurlyL) => self.parse_obj(),
             t => {
-                let op = t.as_ref().and_then(ast::UnaryOp::try_from_token);
+                let op = t.as_ref().and_then(UnaryOp::try_from_token);
                 if let Some(op) = op {
-                    Ok(ast::Expr::UnaryOp {
+                    Ok(Expr::UnaryOp {
                         op,
                         expr: Box::new(self.parse_operand()?),
                     })
                 } else {
-                    Err(ParseError::InvalidExprStart(t))
+                    Err(ParseError::ExprInvalidStart(t))
                 }
             }
         }
     }
 
-    fn parse_obj(&mut self) -> Result<ast::Expr> {
+    fn parse_obj(&mut self) -> Result<Expr> {
         let mut props = Vec::new();
 
         while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
@@ -179,18 +198,18 @@ impl<'a> Parser<'a> {
             let key = match self.tokens.next() {
                 Some(Token::Ident(name)) => name,
                 Some(Token::Str(s)) => s,
-                t => return Err(ParseError::InvalidObjKey(t)),
+                t => return Err(ParseError::ObjExpectedKey(t)),
             };
 
             // Expect colon
             match self.tokens.next() {
                 Some(Token::Colon) => {}
-                t => return Err(ParseError::InvalidObjColon(t)),
+                t => return Err(ParseError::ObjExpectedColon(t)),
             }
 
             // Parse property value
             let val = self.parse_expr(0)?;
-            props.push(ast::Prop { key, val });
+            props.push(Prop { key, val });
 
             // Check for comma or closing brace
             match self.tokens.peek() {
@@ -201,21 +220,21 @@ impl<'a> Parser<'a> {
                     self.tokens.next(); // consume closing brace
                     break;
                 }
-                t => return Err(ParseError::InvalidObjEnd(t.cloned())),
+                t => return Err(ParseError::PropInvalidEnd(t.cloned())),
             }
         }
 
-        Ok(ast::Expr::Obj { props })
+        Ok(Expr::Obj { props })
     }
 
-    fn parse_prop_access(&mut self, mut obj: ast::Expr) -> Result<ast::Expr> {
+    fn parse_prop_access(&mut self, mut obj: Expr) -> Result<Expr> {
         while self.tokens.next_if_eq(&Token::Dot).is_some() {
             let prop = match self.tokens.next() {
                 Some(Token::Ident(name)) => name,
-                t => return Err(ParseError::InvalidExprStart(t)),
+                t => return Err(ParseError::ExprInvalidStart(t)),
             };
 
-            obj = ast::Expr::PropAccess {
+            obj = Expr::PropAccess {
                 obj: Box::new(obj),
                 prop,
             };

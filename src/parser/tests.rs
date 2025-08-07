@@ -1,4 +1,3 @@
-use super::ast::*;
 use super::*;
 
 #[test]
@@ -9,22 +8,39 @@ fn empty_prog() -> Result<()> {
 }
 
 #[test]
-fn many_semis_prog() -> Result<()> {
-    let prog = Parser::new("print 1;;;;;").parse_prog()?;
-    assert_eq!(prog.stmts.len(), 1);
+fn only_semis_prog() -> Result<()> {
+    let prog = Parser::new(";;;;;").parse_prog()?;
+    assert_eq!(prog.stmts.len(), 5);
+    assert!(prog.stmts.iter().all(|stmt| matches!(stmt, Stmt::Noop)));
     Ok(())
-}
-
-#[test]
-fn only_semis_prog() {
-    let prog = Parser::new(";;;;").parse_prog();
-    assert_eq!(prog, Err(ParseError::InvalidStmtStart(Some(Token::Semi))));
 }
 
 #[test]
 fn unclosed_paren() {
     let prog = Parser::new("(1 + 2;").parse_expr(0);
-    assert_eq!(prog, Err(ParseError::UnclosedExprParen(Some(Token::Semi))));
+    assert_eq!(prog, Err(ParseError::ExprUnclosedParen(Some(Token::Semi))));
+}
+
+#[test]
+fn lone_else() {
+    let prog = Parser::new("if 1 then a;b; else c;").parse_prog();
+    assert_eq!(prog, Err(ParseError::ExprInvalidStart(Some(Token::Else))));
+}
+
+#[test]
+fn just_1s() {
+    let prog = Parser::new("1 1 1").parse_prog();
+    // TODO: make this error
+    assert_eq!(
+        prog,
+        Ok(Prog {
+            stmts: vec![
+                Stmt::Expr(Expr::Num(1.0)),
+                Stmt::Expr(Expr::Num(1.0)),
+                Stmt::Expr(Expr::Num(1.0)),
+            ]
+        })
+    );
 }
 
 #[test]
@@ -139,7 +155,7 @@ fn if_statement() -> Result<()> {
 #[test]
 fn unclosed_curly() {
     let stmt = Parser::new("if 1 then { print 1").parse_stmt();
-    assert_eq!(stmt, Err(ParseError::InvalidStmtStart(None)));
+    assert_eq!(stmt, Err(ParseError::StmtInvalidStart(None)));
 }
 
 #[test]
