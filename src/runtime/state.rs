@@ -1,6 +1,13 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 use std::rc::Rc;
+
+#[derive(Debug)]
+pub struct Scope {
+    pub vars: RefCell<HashMap<String, Val>>,
+    pub parent: Option<Rc<Scope>>,
+}
 
 /// Any runtime value.
 #[derive(Debug, Clone, PartialEq)]

@@ -1,13 +1,16 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 use thiserror::Error;
+
+mod state;
 
 use crate::{
     parser::{
         ParseError, Parser,
         ast::{BinOp, Expr, Prog, Stmt, UnaryOp},
     },
-    runtime::state::{Obj, Prim, Type, Val},
+    runtime::state::{Obj, Prim, Scope, Type, Val},
 };
 
 /// Custom error type for VM operations
@@ -35,18 +38,16 @@ pub enum RuntimeError {
 /// A single virtual machine instance.
 #[derive(Debug)]
 pub struct Runtime {
-    /// The global object contains all the defined variables as its properties.
-    global_obj: Obj,
+    current_scope: Rc<Scope>,
 }
-
-mod state;
 
 impl Runtime {
     pub fn new() -> Self {
         Self {
-            global_obj: Obj {
-                props: HashMap::new(),
-            },
+            current_scope: Rc::new(Scope {
+                vars: RefCell::new(HashMap::new()),
+                parent: None,
+            }),
         }
     }
 
@@ -65,14 +66,27 @@ impl Runtime {
     fn exec_stmt(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
         match stmt {
             Stmt::Block(stmts) => {
+                let prev_scope = Rc::clone(&self.current_scope);
+                self.current_scope = Rc::new(Scope {
+                    vars: RefCell::new(HashMap::new()),
+                    parent: Some(prev_scope),
+                });
                 for stmt in stmts {
                     self.exec_stmt(stmt)?;
                 }
+                self.current_scope = self
+                    .current_scope
+                    .parent
+                    .clone()
+                    .expect("block scope must have a parent");
                 Ok(())
             }
             Stmt::Let { ident: name, expr } => {
                 let value = self.eval_expr(expr)?;
-                self.global_obj.props.insert(name.to_owned(), value);
+                self.current_scope
+                    .vars
+                    .borrow_mut()
+                    .insert(name.to_owned(), value);
                 Ok(())
             }
             Stmt::Print(expr) => {
@@ -101,10 +115,16 @@ impl Runtime {
         match expr {
             Expr::Num(n) => Ok(Val::Prim(Prim::Num(*n))),
             Expr::Str(s) => Ok(Val::Prim(Prim::Str(s.clone()))),
-            Expr::Var(name) => match self.global_obj.props.get(name) {
-                Some(value) => Ok(value.clone()),
-                None => Ok(Val::Prim(Prim::Nil)),
-            },
+            Expr::Var(name) => {
+                let mut current = Some(&self.current_scope);
+                while let Some(scope) = current {
+                    if let Some(value) = scope.vars.borrow().get(name) {
+                        return Ok(value.clone());
+                    }
+                    current = scope.parent.as_ref();
+                }
+                Ok(Val::Prim(Prim::Nil))
+            }
             Expr::UnaryOp { op, expr } => self.eval_unary_op(*op, expr),
             Expr::BinOp { left, op, right } => self.eval_bin_op(left, *op, right),
             Expr::Obj { props } => {

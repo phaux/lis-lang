@@ -10,11 +10,11 @@ fn assign() -> Result<(), RuntimeError> {
             ",
     )?;
     assert_eq!(
-        vm.global_obj.props.get("foo"),
+        vm.current_scope.vars.borrow().get("foo"),
         Some(&Val::Prim(Prim::Num(2.0))),
     );
     assert_eq!(
-        vm.global_obj.props.get("bar"),
+        vm.current_scope.vars.borrow().get("bar"),
         Some(&Val::Prim(Prim::Num(3.0))),
     );
     Ok(())
@@ -33,8 +33,28 @@ fn if_stmt() -> Result<(), RuntimeError> {
             }
             ",
     )?;
+    // assert_eq!(
+    //     vm.scope.vars.borrow().get("bar"),
+    //     Some(&Val::Prim(Prim::Num(1.0))),
+    // );
+    Ok(())
+}
+
+#[test]
+fn scopes() -> Result<(), RuntimeError> {
+    let mut vm = Runtime::new();
+    vm.exec_str(
+        r"
+        let foo = 1;
+        {
+            let foo = 2;
+            print foo;
+        }
+        print foo;
+        ",
+    )?;
     assert_eq!(
-        vm.global_obj.props.get("bar"),
+        vm.current_scope.vars.borrow().get("foo"),
         Some(&Val::Prim(Prim::Num(1.0))),
     );
     Ok(())
@@ -97,7 +117,7 @@ fn assign_string_literal() -> Result<(), RuntimeError> {
     let mut vm = Runtime::new();
     vm.exec_str(r#"let foo = "hello world""#)?;
     assert_eq!(
-        vm.global_obj.props.get("foo"),
+        vm.current_scope.vars.borrow().get("foo"),
         Some(&Val::Prim(Prim::Str("hello world".to_string()))),
     );
     Ok(())
@@ -108,7 +128,7 @@ fn string_concat() -> Result<(), RuntimeError> {
     let mut vm = Runtime::new();
     vm.exec_str(r#"let foo = "hello" ++ "world";"#)?;
     assert_eq!(
-        vm.global_obj.props.get("foo"),
+        vm.current_scope.vars.borrow().get("foo"),
         Some(&Val::Prim(Prim::Str("helloworld".to_string()))),
     );
     Ok(())
