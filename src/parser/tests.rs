@@ -24,7 +24,12 @@ fn unclosed_paren() {
 #[test]
 fn lone_else() {
     let prog = Parser::new("if 1 then a;b; else c;").parse_prog();
-    assert_eq!(prog, Err(ParseError::ExprInvalidStart(Some(Token::Else))));
+    assert_eq!(
+        prog,
+        Err(ParseError::ExprInvalidStart(Some(Token::Keyword(
+            Keyword::Else
+        ))))
+    );
 }
 
 #[test]

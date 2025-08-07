@@ -3,15 +3,10 @@ use std::str::Chars;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
-    Let,
-    Fn,
-    Print,
+    Keyword(Keyword),
     Ident(String),
     Num(f64),
     Str(String),
-    If,
-    Then,
-    Else,
     Eq,
     EqEq,
     Bang,
@@ -29,7 +24,49 @@ pub enum Token {
     ParenR,
     CurlyL,
     CurlyR,
-    Invalid(char),
+    Invalid(String),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Keyword {
+    True,
+    False,
+    Nil,
+    Let,
+    Fn,
+    Print,
+    If,
+    Then,
+    Else,
+    For,
+    While,
+    Do,
+    Break,
+    Continue,
+    Return,
+}
+
+impl Keyword {
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s {
+            "true" => Some(Keyword::True),
+            "false" => Some(Keyword::False),
+            "nil" => Some(Keyword::Nil),
+            "let" => Some(Keyword::Let),
+            "fn" => Some(Keyword::Fn),
+            "print" => Some(Keyword::Print),
+            "if" => Some(Keyword::If),
+            "then" => Some(Keyword::Then),
+            "else" => Some(Keyword::Else),
+            "for" => Some(Keyword::For),
+            "while" => Some(Keyword::While),
+            "do" => Some(Keyword::Do),
+            "break" => Some(Keyword::Break),
+            "continue" => Some(Keyword::Continue),
+            "return" => Some(Keyword::Return),
+            _ => None,
+        }
+    }
 }
 
 pub struct Tokens<'a> {
@@ -83,59 +120,63 @@ impl Iterator for Tokens<'_> {
                 ')' => Some(Token::ParenR),
                 '{' => Some(Token::CurlyL),
                 '}' => Some(Token::CurlyR),
-                '"' => {
-                    let mut string_content = String::new();
-                    while let Some(ch) = self.input.next() {
-                        match ch {
-                            '"' => break,
-                            '\\' => {
-                                if let Some(escaped) = self.input.next() {
-                                    match escaped {
-                                        'n' => string_content.push('\n'),
-                                        't' => string_content.push('\t'),
-                                        'r' => string_content.push('\r'),
-                                        '\\' => string_content.push('\\'),
-                                        '"' => string_content.push('"'),
-                                        _ => string_content.push(escaped),
-                                    }
-                                } else {
-                                    return Some(Token::Invalid('\\'));
-                                }
-                            }
-                            _ => string_content.push(ch),
-                        }
-                    }
-                    Some(Token::Str(string_content))
-                }
-                ch if ch.is_alphabetic() => {
-                    let mut ident = String::new();
-                    ident.push(ch);
-                    while let Some(ch) = self.input.next_if(|ch| ch.is_alphanumeric()) {
-                        ident.push(ch);
-                    }
-                    match ident.as_str() {
-                        "let" => Some(Token::Let),
-                        "fn" => Some(Token::Fn),
-                        "print" => Some(Token::Print),
-                        "if" => Some(Token::If),
-                        "then" => Some(Token::Then),
-                        "else" => Some(Token::Else),
-                        _ => Some(Token::Ident(ident)),
-                    }
-                }
-                ch if ch.is_ascii_digit() => {
-                    let mut num_str = String::new();
-                    num_str.push(ch);
-                    while let Some(ch) = self.input.next_if(|ch| ch.is_ascii_digit() || *ch == '.')
-                    {
-                        num_str.push(ch);
-                    }
-                    let num = num_str.parse().unwrap();
-                    Some(Token::Num(num))
-                }
-                ch => Some(Token::Invalid(ch)),
+                '"' => Some(self.parse_str()),
+                ch if ch.is_alphabetic() => Some(self.parse_word(ch)),
+                ch if ch.is_ascii_digit() => Some(self.parse_num(ch)),
+                ch => Some(Token::Invalid(ch.to_string())),
             };
         }
+    }
+}
+
+impl Tokens<'_> {
+    fn parse_num(&mut self, first: char) -> Token {
+        let mut num_str = String::new();
+        num_str.push(first);
+        while let Some(ch) = self.input.next_if(|ch| ch.is_ascii_digit() || *ch == '.') {
+            num_str.push(ch);
+        }
+        let Ok(num) = num_str.parse::<f64>() else {
+            return Token::Invalid(num_str);
+        };
+        Token::Num(num)
+    }
+
+    fn parse_word(&mut self, first: char) -> Token {
+        let mut ident = String::new();
+        ident.push(first);
+        while let Some(ch) = self.input.next_if(|ch| ch.is_alphanumeric()) {
+            ident.push(ch);
+        }
+        match Keyword::from_str(&ident) {
+            Some(keyword) => Token::Keyword(keyword),
+            None => Token::Ident(ident),
+        }
+    }
+
+    fn parse_str(&mut self) -> Token {
+        let mut string_content = String::new();
+        while let Some(ch) = self.input.next() {
+            match ch {
+                '"' => break,
+                '\\' => {
+                    if let Some(escaped) = self.input.next() {
+                        match escaped {
+                            'n' => string_content.push('\n'),
+                            't' => string_content.push('\t'),
+                            'r' => string_content.push('\r'),
+                            '\\' => string_content.push('\\'),
+                            '"' => string_content.push('"'),
+                            _ => string_content.push(escaped),
+                        }
+                    } else {
+                        return Token::Invalid("\\".to_string());
+                    }
+                }
+                _ => string_content.push(ch),
+            }
+        }
+        Token::Str(string_content)
     }
 }
 
@@ -147,7 +188,7 @@ mod tests {
     fn simple() {
         let input = "let x = 5;";
         let mut tokenizer = Tokens::new(input);
-        assert_eq!(tokenizer.next(), Some(Token::Let));
+        assert_eq!(tokenizer.next(), Some(Token::Keyword(Keyword::Let)));
         assert_eq!(tokenizer.next(), Some(Token::Ident("x".to_string())));
         assert_eq!(tokenizer.next(), Some(Token::Eq));
         assert_eq!(tokenizer.next(), Some(Token::Num(5.0)));

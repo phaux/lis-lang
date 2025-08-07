@@ -3,7 +3,7 @@ use thiserror::Error;
 
 use crate::{
     parser::ast::{BinOp, Expr, Prog, Prop, Stmt, UnaryOp},
-    tokenizer::{Token, Tokens},
+    tokenizer::{Keyword, Token, Tokens},
 };
 
 pub mod ast;
@@ -67,10 +67,10 @@ impl<'a> Parser<'a> {
         let stmt = match self.tokens.peek() {
             Some(Token::Semi) => Ok(Stmt::Noop),
             Some(Token::CurlyL) => self.parse_block_stmt(),
-            Some(Token::Let) => self.parse_let_stmt(),
-            Some(Token::Fn) => self.parse_func_decl(),
-            Some(Token::Print) => self.parse_print_stmt(),
-            Some(Token::If) => self.parse_if_stmt(),
+            Some(Token::Keyword(Keyword::Let)) => self.parse_let_stmt(),
+            Some(Token::Keyword(Keyword::Fn)) => self.parse_func_decl(),
+            Some(Token::Keyword(Keyword::Print)) => self.parse_print_stmt(),
+            Some(Token::Keyword(Keyword::If)) => self.parse_if_stmt(),
             Some(_) => Ok(Stmt::Expr(self.parse_expr(0)?)),
             None => return Err(ParseError::StmtInvalidStart(None)),
         }?;
@@ -160,13 +160,17 @@ impl<'a> Parser<'a> {
 
         // Parse then branch
         let then_token = self.tokens.next();
-        if then_token != Some(Token::Then) {
+        if then_token != Some(Token::Keyword(Keyword::Then)) {
             return Err(ParseError::IfExpectedThen(then_token));
         }
         let consequent = Box::new(self.parse_stmt()?);
 
         // Parse optional else branch
-        let alternate = if self.tokens.next_if_eq(&Token::Else).is_some() {
+        let alternate = if self
+            .tokens
+            .next_if_eq(&Token::Keyword(Keyword::Else))
+            .is_some()
+        {
             Some(Box::new(self.parse_stmt()?))
         } else {
             None
