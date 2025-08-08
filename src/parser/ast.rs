@@ -20,6 +20,7 @@ pub enum Stmt {
         cons: Box<Stmt>,
         alt: Option<Box<Stmt>>,
     },
+    Return(Option<Expr>),
     FuncDecl(FuncDecl),
 }
 

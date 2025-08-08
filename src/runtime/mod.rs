@@ -103,6 +103,7 @@ impl Runtime {
             Stmt::FuncDecl(_func) => {
                 todo!()
             }
+            Stmt::Return(_expr) => todo!(),
             Stmt::Print(expr) => {
                 let value = self.eval_expr(expr)?;
                 println!("{value:?}");

@@ -75,6 +75,7 @@ impl<'a> Parser<'a> {
             Some(Token::Keyword(Keyword::Fn)) => self.parse_func_decl(),
             Some(Token::Keyword(Keyword::Print)) => self.parse_print_stmt(),
             Some(Token::Keyword(Keyword::If)) => self.parse_if_stmt(),
+            Some(Token::Keyword(Keyword::Return)) => self.parse_return_stmt(),
             Some(_) => Ok(Stmt::Expr(self.parse_expr(0)?)),
             None => return Err(ParseError::StmtInvalidStart(None)),
         }?;
@@ -156,6 +157,15 @@ impl<'a> Parser<'a> {
         self.tokens.next(); // Consume 'print'
         let expr = self.parse_expr(0)?;
         Ok(Stmt::Print(expr))
+    }
+
+    fn parse_return_stmt(&mut self) -> Result<Stmt> {
+        self.tokens.next(); // Consume 'return'
+        if self.tokens.peek() == Some(&Token::Semi) || self.tokens.peek().is_none() {
+            return Ok(Stmt::Return(None));
+        }
+        let expr = self.parse_expr(0)?;
+        Ok(Stmt::Return(Some(expr)))
     }
 
     fn parse_if_stmt(&mut self) -> Result<Stmt> {

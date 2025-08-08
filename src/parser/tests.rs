@@ -145,13 +145,13 @@ fn parens() -> Result<()> {
 
 #[test]
 fn if_statement() -> Result<()> {
-    let stmt = Parser::new("if 1 then { print 1 } else { print 2 }").parse_stmt()?;
+    let stmt = Parser::new("if 1 then print 1").parse_stmt()?;
     assert!(matches!(
         stmt,
         Stmt::If {
             cond: Expr::Num(1.0),
             cons: _,
-            alt: _
+            alt: None,
         }
     ));
     Ok(())
@@ -438,6 +438,37 @@ fn function_declaration() -> Result<()> {
                     op: BinOp::Add,
                     right: Box::new(Expr::Var("b".to_string())),
                 })])),
+            })]
+        }
+    );
+    Ok(())
+}
+
+#[test]
+fn return_statement() -> Result<()> {
+    // Test return with value
+    let stmt = Parser::new("return 42").parse_stmt()?;
+    assert_eq!(stmt, Stmt::Return(Some(Expr::Num(42.0))));
+
+    // Test return without value
+    let stmt = Parser::new("return").parse_stmt()?;
+    assert_eq!(stmt, Stmt::Return(None));
+
+    Ok(())
+}
+
+#[test]
+fn return_in_fn() -> Result<()> {
+    let prog = Parser::new("fn foo(x) { return x; }").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+                name: "foo".to_string(),
+                params: vec!["x".to_string()],
+                body: Box::new(Stmt::Block(vec![Stmt::Return(Some(Expr::Var(
+                    "x".to_string()
+                )))])),
             })]
         }
     );

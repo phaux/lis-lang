@@ -187,14 +187,14 @@ fn object_literal() -> Result<(), RuntimeError> {
     let vm = Runtime::new();
     let val = vm.eval_expr(&Parser::new(r#"{ name: "john", age: 25 }"#).parse_expr(0)?)?;
     match val {
-        state::Val::Comp(obj) => {
+        Val::Comp(obj) => {
             assert_eq!(
                 obj.props.get("name"),
                 Some(&Val::Prim(Prim::Str("john".to_string())))
             );
             assert_eq!(obj.props.get("age"), Some(&Val::Prim(Prim::Num(25.0))));
         }
-        state::Val::Prim(_) => panic!("Expected object value"),
+        Val::Prim(_) => panic!("Expected object value"),
     }
     Ok(())
 }
@@ -224,20 +224,20 @@ fn nested_object() -> Result<(), RuntimeError> {
     let val =
         vm.eval_expr(&Parser::new(r#"{ user: { name: "john", age: 25 } }"#).parse_expr(0)?)?;
     match val {
-        state::Val::Comp(obj) => {
+        Val::Comp(obj) => {
             let user = obj.props.get("user").unwrap();
             match user {
-                state::Val::Comp(user_obj) => {
+                Val::Comp(user_obj) => {
                     assert_eq!(
                         user_obj.props.get("name"),
                         Some(&Val::Prim(Prim::Str("john".to_string())))
                     );
                     assert_eq!(user_obj.props.get("age"), Some(&Val::Prim(Prim::Num(25.0))));
                 }
-                state::Val::Prim(_) => panic!("Expected nested object"),
+                Val::Prim(_) => panic!("Expected nested object"),
             }
         }
-        state::Val::Prim(_) => panic!("Expected object value"),
+        Val::Prim(_) => panic!("Expected object value"),
     }
     Ok(())
 }
