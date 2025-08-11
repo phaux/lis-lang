@@ -3,7 +3,7 @@ use ::std::iter::Peekable;
 use thiserror::Error;
 
 use crate::{
-    ast::{BinOp, Expr, FuncDecl, Prog, Prop, Stmt, UnaryOp},
+    ast::{BinOp, Expr, FuncDecl, Pat, Prog, Stmt, UnaryOp},
     tokenizer::{Keyword, Token, Tokens},
 };
 
@@ -12,7 +12,7 @@ pub enum ParseError {
     #[error("unexpected {0:?} where statement was expected")]
     StmtInvalidStart(Option<Token>),
     #[error("unexpected {0:?} where identifier of let statement was expected")]
-    LetExpectedIdent(Option<Token>),
+    PatExpectedIdent(Option<Token>),
     #[error("unexpected {0:?} where '=' of let statement was expected")]
     LetExpectedEq(Option<Token>),
     #[error("unexpected {0:?} where 'then' of if statement was expected")]
@@ -26,7 +26,7 @@ pub enum ParseError {
     #[error("unexpected {0:?} where ':' of object property was expected")]
     ObjExpectedColon(Option<Token>),
     #[error("unexpected {0:?} where comma or closing brace of object was expected")]
-    PropInvalidEnd(Option<Token>),
+    ObjInvalidEnd(Option<Token>),
     #[error("unexpected {0:?} where a function name was expected")]
     FnExpectedName(Option<Token>),
     #[error("unexpected {0:?} where a function parenthesis was expected")]
@@ -38,11 +38,11 @@ pub enum ParseError {
     #[error(
         "unexpected {0:?} where a comma or closing parenthesis of function parameters was expected"
     )]
-    ParamInvalidEnd(Option<Token>),
+    ParamsInvalidEnd(Option<Token>),
     #[error(
         "unexpected {0:?} where a comma or closing parenthesis of function arguments was expected"
     )]
-    ArgInvalidEnd(Option<Token>),
+    ArgsInvalidEnd(Option<Token>),
 }
 
 type Result<T> = std::result::Result<T, ParseError>;
@@ -98,11 +98,8 @@ impl<'a> Parser<'a> {
     fn parse_let_stmt(&mut self) -> Result<Stmt> {
         self.tokens.next(); // Consume 'let'
 
-        // Parse identifier
-        let ident = match self.tokens.next() {
-            Some(Token::Ident(name)) => name,
-            t => return Err(ParseError::LetExpectedIdent(t)),
-        };
+        // Parse the pattern
+        let pattern = self.parse_pattern()?;
 
         // Expect '='
         match self.tokens.next() {
@@ -113,7 +110,43 @@ impl<'a> Parser<'a> {
         // Parse expression
         let expr = self.parse_expr(0)?;
 
-        Ok(Stmt::Let { ident, expr })
+        Ok(Stmt::Let { pat: pattern, expr })
+    }
+
+    fn parse_pattern(&mut self) -> Result<Pat> {
+        match self.tokens.next() {
+            Some(Token::Ident(name)) => Ok(Pat::Ident(name)),
+            Some(Token::CurlyL) => {
+                let mut props = Vec::new();
+                while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
+                    // Parse property name
+                    let key = match self.tokens.next() {
+                        Some(Token::Ident(name)) => name,
+                        t => return Err(ParseError::ObjExpectedKey(t)),
+                    };
+
+                    // Check for nested pattern
+                    let pat = if self.tokens.next_if_eq(&Token::Colon).is_some() {
+                        self.parse_pattern()?
+                    } else {
+                        Pat::Ident(key.clone())
+                    };
+
+                    props.push((key, pat));
+
+                    // Check for comma or closing brace
+                    match self.tokens.peek() {
+                        Some(Token::Comma) => {
+                            self.tokens.next(); // consume comma
+                        }
+                        Some(Token::CurlyR) => {}
+                        t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
+                    }
+                }
+                Ok(Pat::Obj { props })
+            }
+            t => Err(ParseError::PatExpectedIdent(t)),
+        }
     }
 
     fn parse_func_decl(&mut self) -> Result<Stmt> {
@@ -146,7 +179,7 @@ impl<'a> Parser<'a> {
                     self.tokens.next();
                 }
                 Some(Token::ParenR) => {}
-                _ => return Err(ParseError::ParamInvalidEnd(self.tokens.next())),
+                _ => return Err(ParseError::ParamsInvalidEnd(self.tokens.next())),
             }
         }
 
@@ -311,7 +344,7 @@ impl<'a> Parser<'a> {
                     self.tokens.next(); // Consume ','
                 }
                 Some(Token::ParenR) => {}
-                t => return Err(ParseError::ArgInvalidEnd(t.cloned())),
+                t => return Err(ParseError::ArgsInvalidEnd(t.cloned())),
             }
         }
 
@@ -337,7 +370,7 @@ impl<'a> Parser<'a> {
 
             // Parse property value
             let val = self.parse_expr(0)?;
-            props.push(Prop { key, val });
+            props.push((key, val));
 
             // Check for comma or closing brace
             match self.tokens.peek() {
@@ -345,7 +378,7 @@ impl<'a> Parser<'a> {
                     self.tokens.next(); // consume comma
                 }
                 Some(Token::CurlyR) => {}
-                t => return Err(ParseError::PropInvalidEnd(t.cloned())),
+                t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
             }
         }
 

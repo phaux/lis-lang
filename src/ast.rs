@@ -10,7 +10,7 @@ pub enum Stmt {
     Noop,
     Expr(Expr),
     Let {
-        ident: String,
+        pat: Pat,
         expr: Expr,
     },
     Print(Expr),
@@ -22,6 +22,12 @@ pub enum Stmt {
     },
     Return(Option<Expr>),
     FuncDecl(FuncDecl),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum Pat {
+    Ident(String),
+    Obj { props: Vec<(String, Pat)> },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -50,7 +56,7 @@ pub enum Expr {
         expr: Box<Expr>,
     },
     Obj {
-        props: Vec<Prop>,
+        props: Vec<(String, Expr)>,
     },
     PropAccess {
         obj: Box<Expr>,
@@ -78,12 +84,6 @@ pub enum UnaryOp {
     Pos,
     Neg,
     Not,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct Prop {
-    pub key: String,
-    pub val: Expr,
 }
 
 impl UnaryOp {

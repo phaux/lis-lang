@@ -85,6 +85,63 @@ fn invalid_assign() {
 }
 
 #[test]
+fn obj_pat() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("a", Val::default());
+    scope.declare("b", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {x: 1, y: 2};
+        let {x, y} = o;
+        a = x;
+        b = y;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("a"), Some(Val::Num(1.0)),);
+    assert_eq!(scope.lookup("b"), Some(Val::Num(2.0)),);
+}
+
+#[test]
+fn nested_obj_pat() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("x", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {a: {b: {c: 100}}};
+        let {a: {b: {c}}} = o;
+        x = c;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("x"), Some(Val::Num(100.0)),);
+}
+
+#[test]
+fn obj_pat_rename() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("x", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {x: 1};
+        let {x: y} = o;
+        x = y;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("x"), Some(Val::Num(1.0)),);
+}
+
+#[test]
+fn invalid_destructuring() {
+    let result = exec_str(Rc::new(Scope::default()), r"let {x, y} = 1;");
+    assert!(matches!(result, Err(ExecError::InvalidDestructuring)));
+}
+
+#[test]
 fn undef_var() {
     let val = eval_str(&Rc::new(Scope::default()), r"foo").unwrap();
     assert_eq!(val, Val::Nil);

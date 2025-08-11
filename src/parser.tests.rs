@@ -72,7 +72,7 @@ fn assignment_prog() -> Result<()> {
         prog,
         Prog {
             stmts: vec![Stmt::Let {
-                ident: "x".to_string(),
+                pat: Pat::Ident("x".to_string()),
                 expr: Expr::Num(1.0),
             }],
         },
@@ -84,6 +84,65 @@ fn assignment_prog() -> Result<()> {
 fn print_stmt() -> Result<()> {
     let stmt = Parser::new("print 1").parse_stmt()?;
     assert_eq!(stmt, Stmt::Print(Expr::Num(1.0)));
+    Ok(())
+}
+
+#[test]
+fn obj_pat() -> Result<()> {
+    let prog = Parser::new("let {x, y} = obj;").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::Let {
+                pat: Pat::Obj {
+                    props: vec![
+                        ("x".to_string(), Pat::Ident("x".to_string())),
+                        ("y".to_string(), Pat::Ident("y".to_string())),
+                    ],
+                },
+                expr: Expr::Var("obj".to_string()),
+            }],
+        },
+    );
+    Ok(())
+}
+
+#[test]
+fn nested_obj_pat() -> Result<()> {
+    let prog = Parser::new("let {x: {y}} = obj;").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::Let {
+                pat: Pat::Obj {
+                    props: vec![(
+                        "x".to_string(),
+                        Pat::Obj {
+                            props: vec![("y".to_string(), Pat::Ident("y".to_string())),],
+                        }
+                    ),],
+                },
+                expr: Expr::Var("obj".to_string()),
+            }],
+        },
+    );
+    Ok(())
+}
+
+#[test]
+fn obj_pat_rename() -> Result<()> {
+    let prog = Parser::new("let {x: y} = obj;").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![Stmt::Let {
+                pat: Pat::Obj {
+                    props: vec![("x".to_string(), Pat::Ident("y".to_string()))],
+                },
+                expr: Expr::Var("obj".to_string()),
+            }],
+        },
+    );
     Ok(())
 }
 
@@ -188,14 +247,8 @@ fn obj_literal() -> Result<()> {
         expr,
         Expr::Obj {
             props: vec![
-                Prop {
-                    key: "a".to_string(),
-                    val: Expr::Num(1.0),
-                },
-                Prop {
-                    key: "b".to_string(),
-                    val: Expr::Num(2.0),
-                },
+                ("a".to_string(), Expr::Num(1.0)),
+                ("b".to_string(), Expr::Num(2.0)),
             ],
         }
     );
@@ -253,7 +306,7 @@ fn method_call() -> Result<()> {
 #[test]
 fn func_call_missing_paren() {
     let result = Parser::new("func(a, b").parse_expr(0);
-    assert_eq!(result, Err(ParseError::ArgInvalidEnd(None)));
+    assert_eq!(result, Err(ParseError::ArgsInvalidEnd(None)));
 }
 
 #[test]
@@ -273,7 +326,7 @@ fn func_call_missing_comma() {
     let result = Parser::new("func(a b)").parse_expr(0);
     assert_eq!(
         result,
-        Err(ParseError::ArgInvalidEnd(Some(Token::Ident(
+        Err(ParseError::ArgsInvalidEnd(Some(Token::Ident(
             "b".to_string()
         ))))
     );
@@ -350,14 +403,8 @@ fn obj_with_str_keys() -> Result<()> {
         expr,
         Expr::Obj {
             props: vec![
-                Prop {
-                    key: "name".to_string(),
-                    val: Expr::Str("john".to_string()),
-                },
-                Prop {
-                    key: "age".to_string(),
-                    val: Expr::Num(25.0),
-                },
+                ("name".to_string(), Expr::Str("john".to_string())),
+                ("age".to_string(), Expr::Num(25.0)),
             ],
         }
     );
@@ -370,21 +417,15 @@ fn nested_obj() -> Result<()> {
     assert_eq!(
         expr,
         Expr::Obj {
-            props: vec![Prop {
-                key: "user".to_string(),
-                val: Expr::Obj {
+            props: vec![(
+                "user".to_string(),
+                Expr::Obj {
                     props: vec![
-                        Prop {
-                            key: "name".to_string(),
-                            val: Expr::Str("john".to_string()),
-                        },
-                        Prop {
-                            key: "age".to_string(),
-                            val: Expr::Num(25.0),
-                        },
+                        ("name".to_string(), Expr::Str("john".to_string())),
+                        ("age".to_string(), Expr::Num(25.0)),
                     ],
-                },
-            }],
+                }
+            ),],
         }
     );
     Ok(())
@@ -505,22 +546,22 @@ fn obj_with_expr() -> Result<()> {
         expr,
         Expr::Obj {
             props: vec![
-                Prop {
-                    key: "x".to_string(),
-                    val: Expr::BinOp {
+                (
+                    "x".to_string(),
+                    Expr::BinOp {
                         left: Box::new(Expr::Num(1.0)),
                         op: BinOp::Add,
                         right: Box::new(Expr::Num(2.0)),
-                    },
-                },
-                Prop {
-                    key: "y".to_string(),
-                    val: Expr::BinOp {
+                    }
+                ),
+                (
+                    "y".to_string(),
+                    Expr::BinOp {
                         left: Box::new(Expr::Num(3.0)),
                         op: BinOp::Mul,
                         right: Box::new(Expr::Num(4.0)),
-                    },
-                },
+                    }
+                ),
             ],
         }
     );

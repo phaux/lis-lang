@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use crate::{
-    ast::{BinOp, Expr, Prog, Stmt, UnaryOp},
+    ast::{BinOp, Expr, Pat, Prog, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
 };
 
@@ -36,6 +36,9 @@ pub enum ExecError {
 
     #[error("not a function: {0:?}")]
     NotAFunc(Type),
+
+    #[error("cannot destructure non-object value")]
+    InvalidDestructuring,
 }
 
 #[must_use]
@@ -72,9 +75,9 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Stmt) -> Result<ExecResult, ExecError> {
             }
             Ok(ExecResult::Void)
         }
-        Stmt::Let { ident: name, expr } => {
+        Stmt::Let { pat, expr } => {
             let val = eval_expr(&scope, expr)?;
-            scope.declare(name, val);
+            match_pattern(&scope, pat, val)?;
             Ok(ExecResult::Void)
         }
         Stmt::FuncDecl(func) => {
@@ -130,9 +133,9 @@ fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
             let mut obj = Obj {
                 props: HashMap::new(),
             };
-            for prop in props {
-                let val = eval_expr(scope, &prop.val)?;
-                obj.props.insert(prop.key.clone(), val);
+            for (key, val) in props {
+                let val = eval_expr(scope, val)?;
+                obj.props.insert(key.clone(), val);
             }
             Ok(Val::Obj(Rc::new(obj)))
         }
@@ -217,6 +220,24 @@ fn exec_assign(scope: &Rc<Scope>, place: &Expr, expr: &Expr) -> Result<Val, Exec
         });
     }
     Ok(val)
+}
+
+fn match_pattern(scope: &Rc<Scope>, pattern: &Pat, value: Val) -> Result<(), ExecError> {
+    match pattern {
+        Pat::Ident(name) => {
+            scope.declare(name.as_str(), value);
+        }
+        Pat::Obj { props } => {
+            let Val::Obj(obj) = value else {
+                return Err(ExecError::InvalidDestructuring);
+            };
+            for (name, pattern) in props {
+                let prop_val = obj.props.get(name).cloned().unwrap_or_default();
+                match_pattern(scope, pattern, prop_val)?;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn eval_unary_op(scope: &Rc<Scope>, op: UnaryOp, expr: &Expr) -> Result<Val, ExecError> {
