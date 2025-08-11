@@ -31,9 +31,6 @@ pub enum ExecError {
     #[error("invalid assignment lhs")]
     InvalidAssignment,
 
-    #[error("return statement outside of a function")]
-    ReturnOutsideFunc,
-
     #[error("not a function: {0:?}")]
     NotAFunc(Type),
 
@@ -48,15 +45,15 @@ enum ExecResult {
     Return(Val),
 }
 
-pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<(), ExecError> {
+pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<Val, ExecError> {
     let prog_scope = Rc::new(Scope::new(global_scope));
     for stmt in &prog.stmts {
         match exec_stmt(Rc::clone(&prog_scope), stmt)? {
             ExecResult::Void => {}
-            ExecResult::Return(_) => return Err(ExecError::ReturnOutsideFunc),
+            ExecResult::Return(val) => return Ok(val),
         }
     }
-    Ok(())
+    Ok(Val::Nil)
 }
 
 fn exec_stmt(scope: Rc<Scope>, stmt: &Stmt) -> Result<ExecResult, ExecError> {
