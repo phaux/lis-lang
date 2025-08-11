@@ -31,9 +31,6 @@ pub enum ExecError {
     #[error("invalid assignment lhs")]
     InvalidAssignment,
 
-    #[error("expected {expected} arguments, got {got}")]
-    WrongArgCount { expected: usize, got: usize },
-
     #[error("return statement outside of a function")]
     ReturnOutsideFunc,
 
@@ -152,13 +149,6 @@ fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
                 return Err(ExecError::NotAFunc(func.type_of()));
             };
 
-            if func.params.len() != args.len() {
-                return Err(ExecError::WrongArgCount {
-                    expected: func.params.len(),
-                    got: args.len(),
-                });
-            }
-
             let mut arg_values = Vec::new();
             for arg in args {
                 arg_values.push(eval_expr(scope, arg)?);
@@ -166,8 +156,10 @@ fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
 
             let func_scope = Scope::new(Rc::clone(&func.closure_scope));
 
-            for (param, val) in func.params.iter().zip(arg_values) {
-                func_scope.declare(param, val);
+            // For each parameter, either use the provided argument or default to Nil
+            for (idx, name) in func.params.iter().enumerate() {
+                let val = arg_values.get(idx).cloned().unwrap_or(Val::Nil);
+                func_scope.declare(name, val);
             }
 
             match exec_stmt(Rc::new(func_scope), &func.body)? {

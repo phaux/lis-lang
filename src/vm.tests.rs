@@ -259,3 +259,40 @@ fn recursive_func() {
     .unwrap();
     assert_eq!(scope.lookup("result"), Some(Val::Num(120.0)));
 }
+
+#[test]
+fn too_few_args() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("a1", Val::default());
+    scope.declare("a2", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        fn foo(x, y) {
+            a1 = x;
+            a2 = y;
+        }
+        foo(1)
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("a1"), Some(Val::Num(1.0)));
+    assert_eq!(scope.lookup("a2"), Some(Val::Nil));
+}
+
+#[test]
+fn too_many_args() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("result", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        fn foo(x, y) {
+            return x + y;
+        }
+        result = foo(1, 2, 3);
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("result"), Some(Val::Num(3.0)));
+}
