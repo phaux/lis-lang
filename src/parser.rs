@@ -101,7 +101,7 @@ impl<'a> Parser<'a> {
         // Parse the pattern
         let pattern = self.parse_pattern()?;
 
-        // Expect '='
+        // Expect '=' after pattern in let statement
         match self.tokens.next() {
             Some(Token::Eq) => {}
             t => return Err(ParseError::LetExpectedEq(t)),
@@ -116,37 +116,48 @@ impl<'a> Parser<'a> {
     fn parse_pattern(&mut self) -> Result<Pat> {
         match self.tokens.next() {
             Some(Token::Ident(name)) => Ok(Pat::Ident(name)),
-            Some(Token::CurlyL) => {
-                let mut props = Vec::new();
-                while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
-                    // Parse property name
-                    let key = match self.tokens.next() {
-                        Some(Token::Ident(name)) => name,
-                        t => return Err(ParseError::ObjExpectedKey(t)),
-                    };
-
-                    // Check for nested pattern
-                    let pat = if self.tokens.next_if_eq(&Token::Colon).is_some() {
-                        self.parse_pattern()?
-                    } else {
-                        Pat::Ident(key.clone())
-                    };
-
-                    props.push((key, pat));
-
-                    // Check for comma or closing brace
-                    match self.tokens.peek() {
-                        Some(Token::Comma) => {
-                            self.tokens.next(); // consume comma
-                        }
-                        Some(Token::CurlyR) => {}
-                        t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
-                    }
-                }
-                Ok(Pat::Obj { props })
-            }
+            Some(Token::CurlyL) => self.parse_obj_pat(),
             t => Err(ParseError::PatExpectedIdent(t)),
         }
+    }
+
+    fn parse_obj_pat(&mut self) -> Result<Pat> {
+        let mut props = Vec::new();
+        while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
+            // Parse property name
+            let key = match self.tokens.next() {
+                Some(Token::Ident(name)) => name,
+                t => return Err(ParseError::ObjExpectedKey(t)),
+            };
+
+            // Check for nested pattern
+            let mut pat = if self.tokens.next_if_eq(&Token::Colon).is_some() {
+                self.parse_pattern()?
+            } else {
+                Pat::Ident(key.clone())
+            };
+
+            // Check for default value after pattern
+            if self.tokens.next_if_eq(&Token::Eq).is_some() {
+                let default = self.parse_expr(0)?;
+                pat = Pat::Default {
+                    pat: Box::new(pat),
+                    default,
+                };
+            }
+
+            props.push((key, pat));
+
+            // Check for comma or closing brace
+            match self.tokens.peek() {
+                Some(Token::Comma) => {
+                    self.tokens.next(); // consume comma
+                }
+                Some(Token::CurlyR) => {}
+                t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
+            }
+        }
+        Ok(Pat::Obj { props })
     }
 
     fn parse_func_decl(&mut self) -> Result<Stmt> {
@@ -287,9 +298,10 @@ impl<'a> Parser<'a> {
 
     fn parse_operand(&mut self) -> Result<Expr> {
         match self.tokens.next() {
+            Some(Token::Keyword(Keyword::Nil)) => Ok(Expr::Nil),
             Some(Token::Num(n)) => Ok(Expr::Num(n)),
-            Some(Token::Ident(name)) => Ok(Expr::Var(name)),
             Some(Token::Str(s)) => Ok(Expr::Str(s)),
+            Some(Token::Ident(name)) => Ok(Expr::Var(name)),
             Some(Token::ParenL) => {
                 // Parse parenthesized expression
                 let expr = self.parse_expr(0)?;

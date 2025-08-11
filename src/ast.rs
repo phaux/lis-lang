@@ -28,6 +28,7 @@ pub enum Stmt {
 pub enum Pat {
     Ident(String),
     Obj { props: Vec<(String, Pat)> },
+    Default { pat: Box<Pat>, default: Expr },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -39,9 +40,10 @@ pub struct FuncDecl {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
+    Nil,
     Num(f64),
-    Var(String),
     Str(String),
+    Var(String),
     BinOp {
         left: Box<Expr>,
         op: BinOp,

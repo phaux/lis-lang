@@ -123,6 +123,7 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Stmt) -> Result<ExecResult, ExecError> {
 
 fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
     match expr {
+        Expr::Nil => Ok(Val::Nil),
         Expr::Num(n) => Ok(Val::Num(*n)),
         Expr::Str(s) => Ok(Val::Str(s.clone())),
         Expr::Var(name) => Ok(scope.lookup(name).unwrap_or_default()),
@@ -222,19 +223,33 @@ fn exec_assign(scope: &Rc<Scope>, place: &Expr, expr: &Expr) -> Result<Val, Exec
     Ok(val)
 }
 
-fn match_pattern(scope: &Rc<Scope>, pattern: &Pat, value: Val) -> Result<(), ExecError> {
-    match pattern {
+fn match_pattern(scope: &Rc<Scope>, pat: &Pat, matched_val: Val) -> Result<(), ExecError> {
+    match pat {
         Pat::Ident(name) => {
-            scope.declare(name.as_str(), value);
+            // Identifier pattern binds the matched value to a variable
+            scope.declare(name.as_str(), matched_val);
         }
         Pat::Obj { props } => {
-            let Val::Obj(obj) = value else {
+            // Object pattern matches each property of the matched value
+            let Val::Obj(matched_obj) = matched_val else {
                 return Err(ExecError::InvalidDestructuring);
             };
-            for (name, pattern) in props {
-                let prop_val = obj.props.get(name).cloned().unwrap_or_default();
-                match_pattern(scope, pattern, prop_val)?;
+            for (prop_name, prop_pat) in props {
+                let val = matched_obj
+                    .props
+                    .get(prop_name)
+                    .cloned()
+                    .unwrap_or(Val::Nil);
+                match_pattern(scope, prop_pat, val)?;
             }
+        }
+        Pat::Default { pat, default } => {
+            // Default pattern puts a default value in place of a nil matched value
+            let matched_val = match matched_val {
+                Val::Nil => eval_expr(scope, default)?,
+                val => val,
+            };
+            match_pattern(scope, pat, matched_val)?;
         }
     }
     Ok(())

@@ -136,6 +136,63 @@ fn obj_pat_rename() {
 }
 
 #[test]
+fn obj_pat_default() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("a", Val::default());
+    scope.declare("b", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {x: 1};
+        let {x = 0, y = 2} = o;
+        a = x;
+        b = y;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("a"), Some(Val::Num(1.0)));
+    assert_eq!(scope.lookup("b"), Some(Val::Num(2.0)));
+}
+
+#[test]
+fn obj_pat_nested_default() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("x", Val::default());
+    scope.declare("y", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {x: {a: 1}};
+        let {x: {a = 0, b = 2} = {}} = o;
+        x = a;
+        y = b;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("x"), Some(Val::Num(1.0)));
+    assert_eq!(scope.lookup("y"), Some(Val::Num(2.0)));
+}
+
+#[test]
+fn obj_pat_default_with_nil() {
+    let scope = Rc::new(Scope::default());
+    scope.declare("x", Val::default());
+    scope.declare("y", Val::default());
+    exec_str(
+        Rc::clone(&scope),
+        r"
+        let o = {a: nil, b: 2};
+        let {a = 1, b = 0} = o;
+        x = a;
+        y = b;
+        ",
+    )
+    .unwrap();
+    assert_eq!(scope.lookup("x"), Some(Val::Num(1.0)));
+    assert_eq!(scope.lookup("y"), Some(Val::Num(2.0)));
+}
+
+#[test]
 fn invalid_destructuring() {
     let result = exec_str(Rc::new(Scope::default()), r"let {x, y} = 1;");
     assert!(matches!(result, Err(ExecError::InvalidDestructuring)));
