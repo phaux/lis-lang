@@ -71,41 +71,7 @@ fn print_stmt() -> Result<()> {
 }
 
 #[test]
-fn unary_ops() -> Result<()> {
-    let expr = Parser::new("+-1").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::UnaryOp {
-            op: UnaryOp::Pos,
-            expr: Box::new(Expr::UnaryOp {
-                op: UnaryOp::Neg,
-                expr: Box::new(Expr::Num(1.0))
-            })
-        }
-    );
-    Ok(())
-}
-
-#[test]
-fn binary_ops() -> Result<()> {
-    let expr = Parser::new("1 + 2 * 3").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::BinOp {
-            left: Box::new(Expr::Num(1.0)),
-            op: BinOp::Add,
-            right: Box::new(Expr::BinOp {
-                left: Box::new(Expr::Num(2.0)),
-                op: BinOp::Mul,
-                right: Box::new(Expr::Num(3.0)),
-            }),
-        }
-    );
-    Ok(())
-}
-
-#[test]
-fn binary_and_unary_ops() -> Result<()> {
+fn ops() -> Result<()> {
     let expr = Parser::new("1 + -2 * 3").parse_expr(0)?;
     assert_eq!(
         expr,
@@ -144,7 +110,7 @@ fn parens() -> Result<()> {
 }
 
 #[test]
-fn if_statement() -> Result<()> {
+fn if_stmt() -> Result<()> {
     let stmt = Parser::new("if 1 then print 1").parse_stmt()?;
     assert!(matches!(
         stmt,
@@ -164,7 +130,7 @@ fn unclosed_curly() {
 }
 
 #[test]
-fn if_else_statement() -> Result<()> {
+fn if_else_stmt() -> Result<()> {
     let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt()?;
     assert_eq!(
         stmt,
@@ -178,14 +144,14 @@ fn if_else_statement() -> Result<()> {
 }
 
 #[test]
-fn print_string_literal() -> Result<()> {
+fn print_str() -> Result<()> {
     let stmt = Parser::new(r#"print "hello\nworld""#).parse_stmt()?;
     assert_eq!(stmt, Stmt::Print(Expr::Str("hello\nworld".to_string())));
     Ok(())
 }
 
 #[test]
-fn string_concat() -> Result<()> {
+fn str_concat() -> Result<()> {
     let expr = Parser::new(r#""hello" ++ "world""#).parse_expr(0)?;
     assert_eq!(
         expr,
@@ -199,7 +165,7 @@ fn string_concat() -> Result<()> {
 }
 
 #[test]
-fn object_literal() -> Result<()> {
+fn obj_literal() -> Result<()> {
     let expr = Parser::new("{ a: 1, b: 2 }").parse_expr(0)?;
     assert_eq!(
         expr,
@@ -306,7 +272,7 @@ fn func_call_just_comma() {
 }
 
 #[test]
-fn func_call_missing_first_arg() {
+fn func_call_missing_arg() {
     let result = Parser::new("func(,a)").parse_expr(0);
     assert_eq!(
         result,
@@ -354,14 +320,14 @@ fn call_result_prop_access() -> Result<()> {
 }
 
 #[test]
-fn empty_object() -> Result<()> {
+fn empty_obj() -> Result<()> {
     let expr = Parser::new("{}").parse_expr(0)?;
     assert_eq!(expr, Expr::Obj { props: vec![] });
     Ok(())
 }
 
 #[test]
-fn object_with_string_keys() -> Result<()> {
+fn obj_with_str_keys() -> Result<()> {
     let expr = Parser::new(r#"{ "name": "john", "age": 25 }"#).parse_expr(0)?;
     assert_eq!(
         expr,
@@ -382,7 +348,7 @@ fn object_with_string_keys() -> Result<()> {
 }
 
 #[test]
-fn nested_object() -> Result<()> {
+fn nested_obj() -> Result<()> {
     let expr = Parser::new("{ user: { name: \"john\", age: 25 } }").parse_expr(0)?;
     assert_eq!(
         expr,
@@ -408,7 +374,7 @@ fn nested_object() -> Result<()> {
 }
 
 #[test]
-fn property_access_with_expressions() -> Result<()> {
+fn prop_access_with_expr() -> Result<()> {
     let expr = Parser::new("(1 + 2).toString").parse_expr(0)?;
     assert_eq!(
         expr,
@@ -425,12 +391,12 @@ fn property_access_with_expressions() -> Result<()> {
 }
 
 #[test]
-fn function_declaration() -> Result<()> {
+fn func_decl() -> Result<()> {
     let prog = Parser::new("fn add(a, b) { a + b; }").parse_prog()?;
     assert_eq!(
         prog,
         Prog {
-            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+            stmts: vec![Stmt::FuncDecl(FuncDecl {
                 name: "add".to_string(),
                 params: vec!["a".to_string(), "b".to_string()],
                 body: Box::new(Stmt::Block(vec![Stmt::Expr(Expr::BinOp {
@@ -445,7 +411,7 @@ fn function_declaration() -> Result<()> {
 }
 
 #[test]
-fn return_statement() -> Result<()> {
+fn return_stmt() -> Result<()> {
     // Test return with value
     let stmt = Parser::new("return 42").parse_stmt()?;
     assert_eq!(stmt, Stmt::Return(Some(Expr::Num(42.0))));
@@ -458,12 +424,12 @@ fn return_statement() -> Result<()> {
 }
 
 #[test]
-fn return_in_fn() -> Result<()> {
+fn return_in_func() -> Result<()> {
     let prog = Parser::new("fn foo(x) { return x; }").parse_prog()?;
     assert_eq!(
         prog,
         Prog {
-            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+            stmts: vec![Stmt::FuncDecl(FuncDecl {
                 name: "foo".to_string(),
                 params: vec!["x".to_string()],
                 body: Box::new(Stmt::Block(vec![Stmt::Return(Some(Expr::Var(
@@ -476,12 +442,12 @@ fn return_in_fn() -> Result<()> {
 }
 
 #[test]
-fn function_with_no_params() -> Result<()> {
+fn func_with_no_params() -> Result<()> {
     let prog = Parser::new("fn sayHello() { }").parse_prog()?;
     assert_eq!(
         prog,
         Prog {
-            stmts: vec![Stmt::FuncDecl(ast::FuncDecl {
+            stmts: vec![Stmt::FuncDecl(FuncDecl {
                 name: "sayHello".to_string(),
                 params: vec![],
                 body: Box::new(Stmt::Block(vec![])),
@@ -492,26 +458,31 @@ fn function_with_no_params() -> Result<()> {
 }
 
 #[test]
-fn function_declaration_errors() {
-    // Missing function name
+fn func_decl_missing_name() {
     let prog = Parser::new("fn (a, b) { a + b; }").parse_prog();
     assert!(matches!(prog, Err(ParseError::FnExpectedName(_))));
+}
 
-    // Missing parameters
+#[test]
+fn func_decl_missing_params() {
     let prog = Parser::new("fn add { 1 + 2; }").parse_prog();
     assert!(matches!(prog, Err(ParseError::FnExpectedParen(_))));
+}
 
-    // Missing body
+#[test]
+fn func_decl_missing_body() {
     let prog = Parser::new("fn add(a, b)").parse_prog();
     assert!(matches!(prog, Err(ParseError::FnExpectedBody(_))));
+}
 
-    // Missing closing brace
+#[test]
+fn func_decl_missing_brace() {
     let prog = Parser::new("fn add(a, b) { a + b").parse_prog();
     assert!(matches!(prog, Err(ParseError::StmtInvalidStart(_))));
 }
 
 #[test]
-fn object_with_expressions() -> Result<()> {
+fn obj_with_expr() -> Result<()> {
     let expr = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0)?;
     assert_eq!(
         expr,

@@ -87,6 +87,7 @@ pub struct Prop {
 }
 
 impl UnaryOp {
+    #[must_use]
     pub fn try_from_token(token: &Token) -> Option<Self> {
         match token {
             Token::Plus => Some(UnaryOp::Pos),
@@ -98,6 +99,7 @@ impl UnaryOp {
 }
 
 impl BinOp {
+    #[must_use]
     pub fn try_from_token(token: &Token) -> Option<Self> {
         match token {
             Token::Plus => Some(BinOp::Add),
@@ -111,6 +113,7 @@ impl BinOp {
         }
     }
 
+    #[must_use]
     pub fn get_precedence(self) -> u8 {
         match self {
             // BinOp::Or => 2,

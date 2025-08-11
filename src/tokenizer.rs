@@ -1,5 +1,5 @@
 use std::iter::Peekable;
-use std::str::Chars;
+use std::str::{Chars, FromStr};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
@@ -46,25 +46,27 @@ pub enum Keyword {
     Return,
 }
 
-impl Keyword {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for Keyword {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "true" => Some(Keyword::True),
-            "false" => Some(Keyword::False),
-            "nil" => Some(Keyword::Nil),
-            "let" => Some(Keyword::Let),
-            "fn" => Some(Keyword::Fn),
-            "print" => Some(Keyword::Print),
-            "if" => Some(Keyword::If),
-            "then" => Some(Keyword::Then),
-            "else" => Some(Keyword::Else),
-            "for" => Some(Keyword::For),
-            "while" => Some(Keyword::While),
-            "do" => Some(Keyword::Do),
-            "break" => Some(Keyword::Break),
-            "continue" => Some(Keyword::Continue),
-            "return" => Some(Keyword::Return),
-            _ => None,
+            "true" => Ok(Keyword::True),
+            "false" => Ok(Keyword::False),
+            "nil" => Ok(Keyword::Nil),
+            "let" => Ok(Keyword::Let),
+            "fn" => Ok(Keyword::Fn),
+            "print" => Ok(Keyword::Print),
+            "if" => Ok(Keyword::If),
+            "then" => Ok(Keyword::Then),
+            "else" => Ok(Keyword::Else),
+            "for" => Ok(Keyword::For),
+            "while" => Ok(Keyword::While),
+            "do" => Ok(Keyword::Do),
+            "break" => Ok(Keyword::Break),
+            "continue" => Ok(Keyword::Continue),
+            "return" => Ok(Keyword::Return),
+            _ => Err(()),
         }
     }
 }
@@ -74,6 +76,7 @@ pub struct Tokens<'a> {
 }
 
 impl<'a> Tokens<'a> {
+    #[must_use]
     pub fn new(input: &'a str) -> Self {
         Tokens {
             input: input.chars().peekable(),
@@ -149,8 +152,8 @@ impl Tokens<'_> {
             ident.push(ch);
         }
         match Keyword::from_str(&ident) {
-            Some(keyword) => Token::Keyword(keyword),
-            None => Token::Ident(ident),
+            Ok(keyword) => Token::Keyword(keyword),
+            Err(()) => Token::Ident(ident),
         }
     }
 
