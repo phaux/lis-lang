@@ -143,30 +143,35 @@ fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
             },
             v => Err(ExecError::InvalidPropAccess(v.type_of())),
         },
-        Expr::FuncCall { func, args } => {
-            let func = eval_expr(scope, func)?;
-            let Val::Func(func) = func else {
-                return Err(ExecError::NotAFunc(func.type_of()));
-            };
+        Expr::FuncCall { func, args } => eval_func_call(scope, func, args),
+    }
+}
 
-            let mut arg_values = Vec::new();
-            for arg in args {
-                arg_values.push(eval_expr(scope, arg)?);
-            }
+fn eval_func_call(scope: &Rc<Scope>, func: &Expr, args: &[Expr]) -> Result<Val, ExecError> {
+    // Evaluate the callee
+    let func = eval_expr(scope, func)?;
+    let Val::Func(func) = func else {
+        return Err(ExecError::NotAFunc(func.type_of()));
+    };
 
-            let func_scope = Scope::new(Rc::clone(&func.closure_scope));
+    // Evaluate the arguments
+    let mut arg_values = Vec::new();
+    for arg in args {
+        arg_values.push(eval_expr(scope, arg)?);
+    }
 
-            // For each parameter, either use the provided argument or default to Nil
-            for (idx, name) in func.params.iter().enumerate() {
-                let val = arg_values.get(idx).cloned().unwrap_or(Val::Nil);
-                func_scope.declare(name, val);
-            }
+    // Create a new scope for the function
+    let func_scope = Scope::new(Rc::clone(&func.closure_scope));
+    for (idx, name) in func.params.iter().enumerate() {
+        // For each parameter, either use the provided argument or default to Nil
+        let val = arg_values.get(idx).cloned().unwrap_or(Val::Nil);
+        func_scope.declare(name, val);
+    }
 
-            match exec_stmt(Rc::new(func_scope), &func.body)? {
-                ExecResult::Return(val) => Ok(val),
-                ExecResult::Void => Ok(Val::Nil),
-            }
-        }
+    // Execute the function body
+    match exec_stmt(Rc::new(func_scope), &func.body)? {
+        ExecResult::Return(val) => Ok(val),
+        ExecResult::Void => Ok(Val::Nil),
     }
 }
 
@@ -206,13 +211,11 @@ fn exec_assign(scope: &Rc<Scope>, place: &Expr, expr: &Expr) -> Result<Val, Exec
         return Err(ExecError::InvalidAssignment);
     };
     let val = eval_expr(scope, expr)?;
-
     if !scope.assign(name, val.clone()) {
         return Err(ExecError::UndefVar {
             name: name.to_string(),
         });
     }
-
     Ok(val)
 }
 
@@ -222,9 +225,9 @@ fn eval_unary_op(scope: &Rc<Scope>, op: UnaryOp, expr: &Expr) -> Result<Val, Exe
         (UnaryOp::Pos, Val::Num(n)) => Ok(Val::Num(n)),
         (UnaryOp::Neg, Val::Num(n)) => Ok(Val::Num(-n)),
         (UnaryOp::Not, Val::Bool(b)) => Ok(Val::Bool(!b)),
-        (op, v) => Err(ExecError::InvalidUnaryOp {
+        (op, val) => Err(ExecError::InvalidUnaryOp {
             op,
-            ty: v.type_of(),
+            ty: val.type_of(),
         }),
     }
 }
