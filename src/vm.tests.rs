@@ -123,7 +123,7 @@ fn prop_access() {
     let val = eval_str(&scope, "obj.age").unwrap();
     assert_eq!(val, Val::Num(25.0));
     // Test non-existent property
-    let val = eval_str(&scope, "obj.nonexistent").unwrap();
+    let val = eval_str(&scope, "obj.non_existent").unwrap();
     assert_eq!(val, Val::Nil);
 }
 
@@ -136,10 +136,10 @@ fn nested_object() {
     let val = eval_str(&scope, "obj.user.name").unwrap();
     assert_eq!(val, Val::Str("Alice".to_string()));
     // Test non-existent nested property
-    let val = eval_str(&scope, "obj.user.nonexistent").unwrap();
+    let val = eval_str(&scope, "obj.user.non_existent").unwrap();
     assert_eq!(val, Val::Nil);
     // Test non-existent property
-    let result = eval_str(&scope, "obj.nonexistent.name");
+    let result = eval_str(&scope, "obj.non_existent.name");
     assert_eq!(result, Err(ExecError::InvalidPropAccess(Type::Nil)));
 }
 

@@ -16,6 +16,23 @@ fn only_semis_prog() -> Result<()> {
 }
 
 #[test]
+fn vars() -> Result<()> {
+    let prog = Parser::new("a123; foo_bar; _foo; fooBar;").parse_prog()?;
+    assert_eq!(
+        prog,
+        Prog {
+            stmts: vec![
+                Stmt::Expr(Expr::Var("a123".to_string())),
+                Stmt::Expr(Expr::Var("foo_bar".to_string())),
+                Stmt::Expr(Expr::Var("_foo".to_string())),
+                Stmt::Expr(Expr::Var("fooBar".to_string())),
+            ],
+        },
+    );
+    Ok(())
+}
+
+#[test]
 fn unclosed_paren() {
     let prog = Parser::new("(1 + 2;").parse_expr(0);
     assert_eq!(prog, Err(ParseError::ExprUnclosedParen(Some(Token::Semi))));

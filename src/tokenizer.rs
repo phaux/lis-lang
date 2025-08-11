@@ -124,7 +124,7 @@ impl Iterator for Tokens<'_> {
                 '{' => Some(Token::CurlyL),
                 '}' => Some(Token::CurlyR),
                 '"' => Some(self.parse_str()),
-                ch if ch.is_alphabetic() => Some(self.parse_word(ch)),
+                ch if ch.is_alphabetic() || ch == '_' => Some(self.parse_word(ch)),
                 ch if ch.is_ascii_digit() => Some(self.parse_num(ch)),
                 ch => Some(Token::Invalid(ch.to_string())),
             };
@@ -148,7 +148,7 @@ impl Tokens<'_> {
     fn parse_word(&mut self, first: char) -> Token {
         let mut ident = String::new();
         ident.push(first);
-        while let Some(ch) = self.input.next_if(|ch| ch.is_alphanumeric()) {
+        while let Some(ch) = self.input.next_if(|ch| ch.is_alphanumeric() || *ch == '_') {
             ident.push(ch);
         }
         match Keyword::from_str(&ident) {
