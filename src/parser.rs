@@ -299,6 +299,8 @@ impl<'a> Parser<'a> {
     fn parse_operand(&mut self) -> Result<Expr> {
         match self.tokens.next() {
             Some(Token::Keyword(Keyword::Nil)) => Ok(Expr::Nil),
+            Some(Token::Keyword(Keyword::True)) => Ok(Expr::Bool(true)),
+            Some(Token::Keyword(Keyword::False)) => Ok(Expr::Bool(false)),
             Some(Token::Num(n)) => Ok(Expr::Num(n)),
             Some(Token::Str(s)) => Ok(Expr::Str(s)),
             Some(Token::Ident(name)) => Ok(Expr::Var(name)),

@@ -1,4 +1,4 @@
-use crate::tokenizer::Token;
+use crate::tokenizer::{Keyword, Token};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Prog {
@@ -41,6 +41,7 @@ pub struct FuncDecl {
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Nil,
+    Bool(bool),
     Num(f64),
     Str(String),
     Var(String),
@@ -72,6 +73,8 @@ pub enum Expr {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum BinOp {
+    Or,
+    And,
     Add,
     Sub,
     Mul,
@@ -104,6 +107,8 @@ impl BinOp {
     #[must_use]
     pub fn try_from_token(token: &Token) -> Option<Self> {
         match token {
+            Token::Keyword(Keyword::Or) => Some(BinOp::Or),
+            Token::Keyword(Keyword::And) => Some(BinOp::And),
             Token::Plus => Some(BinOp::Add),
             Token::PlusPlus => Some(BinOp::Concat),
             Token::Minus => Some(BinOp::Sub),
@@ -118,15 +123,12 @@ impl BinOp {
     #[must_use]
     pub fn get_precedence(self) -> u8 {
         match self {
-            // BinOp::Or => 2,
-            // BinOp::And => 3,
+            BinOp::Or => 2,
+            BinOp::And => 3,
             BinOp::Eq | BinOp::NotEq => 4,
             BinOp::Concat => 5,
             BinOp::Add | BinOp::Sub => 6,
             BinOp::Mul | BinOp::Div => 7,
-            // BinOp::Mod => 8,
-            // BinOp::Pow => 9,
-            // BinOp::Default => 10,
         }
     }
 }

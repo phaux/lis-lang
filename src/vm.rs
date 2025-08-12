@@ -121,6 +121,7 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Stmt) -> Result<ExecResult, ExecError> {
 fn eval_expr(scope: &Rc<Scope>, expr: &Expr) -> Result<Val, ExecError> {
     match expr {
         Expr::Nil => Ok(Val::Nil),
+        Expr::Bool(b) => Ok(Val::Bool(*b)),
         Expr::Num(n) => Ok(Val::Num(*n)),
         Expr::Str(s) => Ok(Val::Str(s.clone())),
         Expr::Var(name) => Ok(scope.lookup(name).unwrap_or_default()),
@@ -177,33 +178,63 @@ fn eval_func_call(scope: &Rc<Scope>, func: &Expr, args: &[Expr]) -> Result<Val, 
 }
 
 fn eval_bin_op(scope: &Rc<Scope>, left: &Expr, op: BinOp, right: &Expr) -> Result<Val, ExecError> {
-    let left_val = eval_expr(scope, left)?;
-    let right_val = eval_expr(scope, right)?;
-
-    match (op, left_val, right_val) {
-        (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l + r)),
-
-        (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
-
-        (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
-
-        (BinOp::Div, Val::Num(l), Val::Num(r)) => {
-            if r == 0.0 {
-                return Err(ExecError::DivByZero);
+    // Handle short-circuit evaluation for logical operators
+    match op {
+        BinOp::Or => {
+            let left_val = eval_expr(scope, left)?;
+            if let Val::Bool(true) = left_val {
+                return Ok(Val::Bool(true));
             }
-            Ok(Val::Num(l / r))
+            let right_val = eval_expr(scope, right)?;
+            match (left_val, right_val) {
+                (Val::Bool(l), Val::Bool(r)) => Ok(Val::Bool(l || r)),
+                (l, r) => Err(ExecError::InvalidBinaryOp {
+                    op,
+                    left: l.type_of(),
+                    right: r.type_of(),
+                }),
+            }
         }
+        BinOp::And => {
+            let left_val = eval_expr(scope, left)?;
+            if let Val::Bool(false) = left_val {
+                return Ok(Val::Bool(false));
+            }
+            let right_val = eval_expr(scope, right)?;
+            match (left_val, right_val) {
+                (Val::Bool(l), Val::Bool(r)) => Ok(Val::Bool(l && r)),
+                (l, r) => Err(ExecError::InvalidBinaryOp {
+                    op,
+                    left: l.type_of(),
+                    right: r.type_of(),
+                }),
+            }
+        }
+        _ => {
+            // For non-short-circuiting operators, evaluate both sides first
+            let left_val = eval_expr(scope, left)?;
+            let right_val = eval_expr(scope, right)?;
 
-        (BinOp::Eq, l, r) => Ok(Val::Bool(l == r)),
-        (BinOp::NotEq, l, r) => Ok(Val::Bool(l != r)),
-
-        (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
-
-        (op, l, r) => Err(ExecError::InvalidBinaryOp {
-            op,
-            left: l.type_of(),
-            right: r.type_of(),
-        }),
+            match (op, left_val, right_val) {
+                (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l + r)),
+                (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
+                (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
+                (BinOp::Div, Val::Num(l), Val::Num(r)) => {
+                    if r == 0.0 {
+                        return Err(ExecError::DivByZero);
+                    }
+                    Ok(Val::Num(l / r))
+                }
+                (BinOp::Eq, l, r) => Ok(Val::Bool(l == r)),
+                (BinOp::NotEq, l, r) => Ok(Val::Bool(l != r)),
+                (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
+                (op, l, r) => Err(ExecError::InvalidBinaryOp {
+                    op,
+                    left: l.type_of(),
+                    right: r.type_of(),
+                }),
+            }
+        }
     }
 }
 

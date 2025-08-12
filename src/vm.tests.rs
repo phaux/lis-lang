@@ -195,11 +195,92 @@ fn eval_numeric() {
 }
 
 #[test]
-fn eval_logical() {
+fn eval_logical_and() {
     let scope = Rc::new(Scope::default());
-    // TODO: implement and test and/or
-    let val = eval_str(&scope, "!!!(1==1)").unwrap();
-    assert_eq!(val, Val::Bool(false));
+    assert_eq!(eval_str(&scope, "true and true").unwrap(), Val::Bool(true));
+    assert_eq!(
+        eval_str(&scope, "true and false").unwrap(),
+        Val::Bool(false)
+    );
+    assert_eq!(
+        eval_str(&scope, "false and true").unwrap(),
+        Val::Bool(false)
+    );
+    assert_eq!(
+        eval_str(&scope, "false and false").unwrap(),
+        Val::Bool(false)
+    );
+}
+
+#[test]
+fn eval_logical_or() {
+    let scope = Rc::new(Scope::default());
+    assert_eq!(eval_str(&scope, "true or true").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "true or false").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "false or true").unwrap(), Val::Bool(true));
+    assert_eq!(
+        eval_str(&scope, "false or false").unwrap(),
+        Val::Bool(false)
+    );
+}
+
+#[test]
+fn eval_logical_operator_precedence() {
+    let scope = Rc::new(Scope::default());
+    assert_eq!(
+        eval_str(&scope, "false and true or true").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "true or true and false").unwrap(),
+        Val::Bool(true)
+    );
+}
+
+#[test]
+fn eval_logical_with_comparison_operators() {
+    let scope = Rc::new(Scope::default());
+    assert_eq!(
+        eval_str(&scope, "1 == 1 and 2 == 2").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "1 != 1 or 2 == 2").unwrap(),
+        Val::Bool(true)
+    );
+}
+
+#[test]
+fn eval_logical_short_circuiting() {
+    let scope = Rc::new(Scope::new(Rc::new(Scope::default())));
+    scope.declare("side_effect", Val::Num(0.0));
+
+    // Should not evaluate the second part due to short-circuiting
+    eval_str(&scope, "false and (side_effect = side_effect + 1.0) == 1.0").unwrap();
+    assert_eq!(scope.lookup("side_effect").unwrap(), Val::Num(0.0));
+
+    // Should evaluate the second part
+    eval_str(&scope, "true and (side_effect = side_effect + 1.0) == 1.0").unwrap();
+    assert_eq!(scope.lookup("side_effect").unwrap(), Val::Num(1.0));
+}
+
+#[test]
+fn eval_logical_with_invalid_types() {
+    let scope = Rc::new(Scope::default());
+    assert!(matches!(
+        eval_str(&scope, "1 and true"),
+        Err(ExecError::InvalidBinaryOp { .. })
+    ));
+    assert!(matches!(
+        eval_str(&scope, r#""string" or false"#),
+        Err(ExecError::InvalidBinaryOp { .. })
+    ));
+}
+
+#[test]
+fn eval_logical_not() {
+    let scope = Rc::new(Scope::default());
+    assert_eq!(eval_str(&scope, "!!!(1==1)").unwrap(), Val::Bool(false));
 }
 
 #[test]

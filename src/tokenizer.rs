@@ -44,6 +44,8 @@ pub enum Keyword {
     Break,
     Continue,
     Return,
+    And,
+    Or,
 }
 
 impl FromStr for Keyword {
@@ -66,6 +68,8 @@ impl FromStr for Keyword {
             "break" => Ok(Keyword::Break),
             "continue" => Ok(Keyword::Continue),
             "return" => Ok(Keyword::Return),
+            "and" => Ok(Keyword::And),
+            "or" => Ok(Keyword::Or),
             _ => Err(()),
         }
     }
