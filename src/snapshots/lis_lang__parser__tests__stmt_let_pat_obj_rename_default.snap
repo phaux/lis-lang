@@ -1,0 +1,66 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..20,
+        node: Let {
+            keyword: Token {
+                sigil: Keyword(
+                    Let,
+                ),
+                range: 0..3,
+            },
+            pat: Node {
+                range: 4..14,
+                node: Obj {
+                    brace_l: Token {
+                        sigil: CurlyL,
+                        range: 4..5,
+                    },
+                    props: [
+                        (
+                            "x",
+                            Node {
+                                range: 8..13,
+                                node: Default {
+                                    pat: Node {
+                                        range: 8..9,
+                                        node: Ident {
+                                            name: "y",
+                                        },
+                                    },
+                                    eq_tok: Token {
+                                        sigil: Eq,
+                                        range: 10..11,
+                                    },
+                                    default: Node {
+                                        range: 12..13,
+                                        node: Num {
+                                            val: 2.0,
+                                        },
+                                    },
+                                },
+                            },
+                        ),
+                    ],
+                    brace_r: Token {
+                        sigil: CurlyR,
+                        range: 13..14,
+                    },
+                },
+            },
+            eq_tok: Token {
+                sigil: Eq,
+                range: 15..16,
+            },
+            init: Node {
+                range: 17..20,
+                node: Var {
+                    name: "obj",
+                },
+            },
+        },
+    },
+)

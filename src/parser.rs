@@ -1,51 +1,27 @@
-use ::std::iter::Peekable;
-
-use thiserror::Error;
+use std::{fmt, iter::Peekable};
 
 use crate::{
-    ast::{BinOp, Expr, FuncDecl, Pat, Prog, Stmt, UnaryOp},
-    tokenizer::{Keyword, Token, Tokens},
+    ast::{BinOp, Expr, Node, Pat, Prog, Stmt, UnaryOp},
+    lexer::{Keyword, Sigil, Token, Tokens},
 };
 
-#[derive(Error, Debug, PartialEq)]
-pub enum ParseError {
-    #[error("unexpected {0:?} where statement was expected")]
-    StmtInvalidStart(Option<Token>),
-    #[error("unexpected {0:?} where identifier of let statement was expected")]
-    PatExpectedIdent(Option<Token>),
-    #[error("unexpected {0:?} where '=' of let statement was expected")]
-    LetExpectedEq(Option<Token>),
-    #[error("unexpected {0:?} where 'then' of if statement was expected")]
-    IfExpectedThen(Option<Token>),
-    #[error("unexpected {0:?} where expression was expected")]
-    ExprInvalidStart(Option<Token>),
-    #[error("unexpected {0:?} where a closing parenthesis of expression was expected")]
-    ExprUnclosedParen(Option<Token>),
-    #[error("unexpected {0:?} where object key was expected")]
-    ObjExpectedKey(Option<Token>),
-    #[error("unexpected {0:?} where ':' of object property was expected")]
-    ObjExpectedColon(Option<Token>),
-    #[error("unexpected {0:?} where comma or closing brace of object was expected")]
-    ObjInvalidEnd(Option<Token>),
-    #[error("unexpected {0:?} where a function name was expected")]
-    FnExpectedName(Option<Token>),
-    #[error("unexpected {0:?} where a function parenthesis was expected")]
-    FnExpectedParen(Option<Token>),
-    #[error("unexpected {0:?} where a function body was expected")]
-    FnExpectedBody(Option<Token>),
-    #[error("unexpected {0:?} where a function parameter name was expected")]
-    ParamExpectedIdent(Option<Token>),
-    #[error(
-        "unexpected {0:?} where a comma or closing parenthesis of function parameters was expected"
-    )]
-    ParamsInvalidEnd(Option<Token>),
-    #[error(
-        "unexpected {0:?} where a comma or closing parenthesis of function arguments was expected"
-    )]
-    ArgsInvalidEnd(Option<Token>),
+#[derive(Debug, PartialEq)]
+pub struct ParseError {
+    pub expected: &'static str,
+    pub found: Option<Token>,
 }
 
-type Result<T> = std::result::Result<T, ParseError>;
+impl std::error::Error for ParseError {}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "unexpected {:?} where {} was expected",
+            self.found, self.expected
+        )
+    }
+}
 
 pub struct Parser<'a> {
     tokens: Peekable<Tokens<'a>>,
@@ -59,344 +35,714 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse_prog(&mut self) -> Result<Prog> {
+    pub fn parse_prog(&mut self) -> Result<Prog, ParseError> {
+        // Parse list of statements until end of input
         let mut stmts = Vec::new();
+        let mut needs_separator = false;
         while self.tokens.peek().is_some() {
-            stmts.push(self.parse_stmt()?);
+            // If needs separator - repeat on semicolon or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.sigil == Sigil::Semi
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "semicolon or end of input",
+                    found: tok,
+                });
+            }
+
+            // Parse statement
+            let stmt = self.parse_stmt()?;
+            needs_separator = stmt.node.needs_separator();
+            stmts.push(stmt);
         }
+
         Ok(Prog { stmts })
     }
 
-    fn parse_stmt(&mut self) -> Result<Stmt> {
-        let stmt = match self.tokens.peek() {
-            Some(Token::Semi) => Ok(Stmt::Noop),
-            Some(Token::CurlyL) => self.parse_block_stmt(),
-            Some(Token::Keyword(Keyword::Let)) => self.parse_let_stmt(),
-            Some(Token::Keyword(Keyword::Fn)) => self.parse_func_decl(),
-            Some(Token::Keyword(Keyword::Print)) => self.parse_print_stmt(),
-            Some(Token::Keyword(Keyword::If)) => self.parse_if_stmt(),
-            Some(Token::Keyword(Keyword::Return)) => self.parse_return_stmt(),
-            Some(_) => Ok(Stmt::Expr(self.parse_expr(0)?)),
-            None => return Err(ParseError::StmtInvalidStart(None)),
-        }?;
-
-        // Consume semi after the statement
-        self.tokens.next_if_eq(&Token::Semi);
-
-        Ok(stmt)
-    }
-
-    fn parse_block_stmt(&mut self) -> Result<Stmt> {
-        self.tokens.next(); // Consume '{'
-        let mut stmts = Vec::new();
-        while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
-            stmts.push(self.parse_stmt()?);
+    fn parse_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Parse statement based on first token
+        if let Some(tok) = self.tokens.peek() {
+            match tok.sigil {
+                Sigil::CurlyL => return self.parse_block_stmt(),
+                Sigil::Keyword(Keyword::Let) => return self.parse_let_stmt(),
+                Sigil::Keyword(Keyword::Fn) => return self.parse_func_decl(),
+                Sigil::Keyword(Keyword::Print) => return self.parse_print_stmt(),
+                Sigil::Keyword(Keyword::If) => return self.parse_if_stmt(),
+                Sigil::Keyword(Keyword::Return) => return self.parse_return_stmt(),
+                _ => {}
+            }
         }
-        Ok(Stmt::Block(stmts))
+
+        // Parse expression statement
+        let expr = self.parse_expr(0)?;
+        Ok(Node {
+            range: expr.range.clone(),
+            node: Stmt::Expr { expr },
+        })
     }
 
-    fn parse_let_stmt(&mut self) -> Result<Stmt> {
-        self.tokens.next(); // Consume 'let'
+    fn parse_block_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume opening brace
+        let brace_l = self.tokens.next().unwrap();
+
+        // Parse a list of statements
+        let mut stmts = Vec::new();
+        let mut needs_separator = false;
+        let brace_r = loop {
+            // Always break on closing brace
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
+                break tok;
+            }
+
+            // If needs separator - repeat on semicolon or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.sigil == Sigil::Semi
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "semicolon or closing brace of block statement",
+                    found: tok,
+                });
+            }
+
+            // Parse statement
+            let stmt = self.parse_stmt()?;
+            needs_separator = stmt.node.needs_separator();
+            stmts.push(stmt);
+        };
+
+        Ok(Node {
+            range: brace_l.range.start..brace_r.range.end,
+            node: Stmt::Block {
+                brace_l,
+                stmts,
+                brace_r,
+            },
+        })
+    }
+
+    fn parse_let_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume 'let' keyword
+        let keyword = self.tokens.next().unwrap();
 
         // Parse the pattern
-        let pattern = self.parse_pattern()?;
+        let pat = self.parse_pattern()?;
 
         // Expect '=' after pattern in let statement
+        let eq_tok = match self.tokens.next() {
+            Some(
+                tok @ Token {
+                    sigil: Sigil::Eq, ..
+                },
+            ) => tok,
+            tok => {
+                return Err(ParseError {
+                    expected: "equals sign of let statement",
+                    found: tok,
+                });
+            }
+        };
+
+        // Parse expression
+        let init = self.parse_expr(0)?;
+
+        Ok(Node {
+            range: keyword.range.start..init.range.end,
+            node: Stmt::Let {
+                keyword,
+                pat,
+                eq_tok,
+                init,
+            },
+        })
+    }
+
+    fn parse_pattern(&mut self) -> Result<Node<Pat>, ParseError> {
         match self.tokens.next() {
-            Some(Token::Eq) => {}
-            t => return Err(ParseError::LetExpectedEq(t)),
+            Some(Token {
+                sigil: Sigil::Ident { name },
+                range,
+            }) => Ok(Node {
+                range,
+                node: Pat::Ident { name },
+            }),
+            Some(
+                tok @ Token {
+                    sigil: Sigil::CurlyL,
+                    ..
+                },
+            ) => self.parse_obj_pat(tok),
+            tok => Err(ParseError {
+                expected: "pattern",
+                found: tok,
+            }),
         }
+    }
+
+    fn parse_obj_pat(&mut self, brace_l: Token) -> Result<Node<Pat>, ParseError> {
+        let mut props = Vec::new();
+        let mut needs_separator = false;
+        let brace_r = loop {
+            // Always break on closing brace
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
+                break tok;
+            }
+
+            // If needs separator - repeat on comma or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.sigil == Sigil::Comma
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "comma or closing brace of object pattern",
+                    found: tok,
+                });
+            }
+
+            // Parse property name
+            let key = match self.tokens.next() {
+                Some(Token {
+                    sigil: Sigil::Ident { name },
+                    range,
+                }) => Node { range, node: name },
+                tok => {
+                    return Err(ParseError {
+                        expected: "key identifier of object pattern",
+                        found: tok,
+                    });
+                }
+            };
+
+            // Parse optional property value pattern
+            let mut pat = if self.tokens.next_if(|t| t.sigil == Sigil::Colon).is_some() {
+                self.parse_pattern()?
+            } else {
+                // No colon - Parse as object property shorthand.
+                Node {
+                    range: key.range.clone(),
+                    node: Pat::Ident {
+                        name: key.node.clone(),
+                    },
+                }
+            };
+
+            // Check for default value after pattern
+            if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
+                let default = self.parse_expr(0)?;
+                pat = Node {
+                    range: pat.range.start..default.range.end,
+                    node: Pat::Default {
+                        pat: Box::new(pat),
+                        eq_tok: eq_token,
+                        default,
+                    },
+                };
+            }
+
+            props.push((key.node.clone(), pat));
+            needs_separator = true;
+        };
+
+        Ok(Node {
+            range: brace_l.range.start..brace_r.range.end,
+            node: Pat::Obj {
+                brace_l,
+                props,
+                brace_r,
+            },
+        })
+    }
+
+    fn parse_func_decl(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume 'fn' keyword
+        let keyword = self.tokens.next().unwrap();
+
+        // Parse function name
+        let name = match self.tokens.next() {
+            Some(Token {
+                sigil: Sigil::Ident { name },
+                ..
+            }) => name,
+            tok => {
+                return Err(ParseError {
+                    expected: "function name identifier",
+                    found: tok,
+                });
+            }
+        };
+
+        // Expect opening parenthesis
+        let param_paren_l = match self.tokens.next() {
+            Some(
+                tok @ Token {
+                    sigil: Sigil::ParenL,
+                    ..
+                },
+            ) => tok,
+            tok => {
+                return Err(ParseError {
+                    expected: "opening parenthesis of function parameters",
+                    found: tok,
+                });
+            }
+        };
+
+        // Parse parameters
+        let mut params = Vec::new();
+        let mut needs_separator = false;
+        let param_paren_r = loop {
+            // Always break on closing parenthesis
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::ParenR) {
+                break tok;
+            }
+
+            // If needs separator - repeat on comma or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.sigil == Sigil::Comma
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "comma or closing parenthesis of function parameters",
+                    found: tok,
+                });
+            }
+
+            // Parse parameter name
+            match self.tokens.next() {
+                Some(Token {
+                    sigil: Sigil::Ident { name },
+                    ..
+                }) => params.push(name),
+                tok => {
+                    return Err(ParseError {
+                        expected: "parameter name identifier",
+                        found: tok,
+                    });
+                }
+            }
+            needs_separator = true;
+        };
+
+        // Parse function body (must be a block statement)
+        let body = match self.tokens.peek() {
+            Some(Token {
+                sigil: Sigil::CurlyL,
+                ..
+            }) => self.parse_block_stmt()?,
+            t => {
+                return Err(ParseError {
+                    expected: "opening brace of function body",
+                    found: t.cloned(),
+                });
+            }
+        };
+
+        Ok(Node {
+            range: keyword.range.start..body.range.end,
+            node: Stmt::FuncDecl {
+                keyword,
+                name,
+                param_paren_l,
+                params,
+                param_paren_r,
+                body: Box::new(body),
+            },
+        })
+    }
+
+    fn parse_print_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume 'print' keyword
+        let keyword = self.tokens.next().unwrap();
 
         // Parse expression
         let expr = self.parse_expr(0)?;
 
-        Ok(Stmt::Let { pat: pattern, expr })
+        Ok(Node {
+            range: keyword.range.start..expr.range.end,
+            node: Stmt::Print { keyword, expr },
+        })
     }
 
-    fn parse_pattern(&mut self) -> Result<Pat> {
-        match self.tokens.next() {
-            Some(Token::Ident(name)) => Ok(Pat::Ident(name)),
-            Some(Token::CurlyL) => self.parse_obj_pat(),
-            t => Err(ParseError::PatExpectedIdent(t)),
-        }
-    }
+    fn parse_return_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume 'return' keyword
+        let keyword = self.tokens.next().unwrap();
 
-    fn parse_obj_pat(&mut self) -> Result<Pat> {
-        let mut props = Vec::new();
-        while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
-            // Parse property name
-            let key = match self.tokens.next() {
-                Some(Token::Ident(name)) => name,
-                t => return Err(ParseError::ObjExpectedKey(t)),
-            };
-
-            // Check for nested pattern
-            let mut pat = if self.tokens.next_if_eq(&Token::Colon).is_some() {
-                self.parse_pattern()?
-            } else {
-                Pat::Ident(key.clone())
-            };
-
-            // Check for default value after pattern
-            if self.tokens.next_if_eq(&Token::Eq).is_some() {
-                let default = self.parse_expr(0)?;
-                pat = Pat::Default {
-                    pat: Box::new(pat),
-                    default,
-                };
-            }
-
-            props.push((key, pat));
-
-            // Check for comma or closing brace
-            match self.tokens.peek() {
-                Some(Token::Comma) => {
-                    self.tokens.next(); // consume comma
-                }
-                Some(Token::CurlyR) => {}
-                t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
-            }
-        }
-        Ok(Pat::Obj { props })
-    }
-
-    fn parse_func_decl(&mut self) -> Result<Stmt> {
-        // Consume 'fn'
-        self.tokens.next();
-
-        // Parse function name
-        let name = match self.tokens.next() {
-            Some(Token::Ident(name)) => name,
-            token => return Err(ParseError::FnExpectedName(token)),
-        };
-
-        // Expect '('
-        match self.tokens.next() {
-            Some(Token::ParenL) => {}
-            t => return Err(ParseError::FnExpectedParen(t)),
-        }
-
-        // Parse parameters
-        let mut params = Vec::new();
-        while self.tokens.next_if_eq(&Token::ParenR).is_none() {
-            // Parse parameter name
-            match self.tokens.next() {
-                Some(Token::Ident(param)) => params.push(param),
-                t => return Err(ParseError::ParamExpectedIdent(t)),
-            }
-            // Expect ',' or ')'
-            match self.tokens.peek() {
-                Some(Token::Comma) => {
-                    self.tokens.next();
-                }
-                Some(Token::ParenR) => {}
-                _ => return Err(ParseError::ParamsInvalidEnd(self.tokens.next())),
-            }
-        }
-
-        // Parse function body (must be a block statement)
-        let body = match self.tokens.peek() {
-            Some(Token::CurlyL) => self.parse_block_stmt()?,
-            t => return Err(ParseError::FnExpectedBody(t.cloned())),
-        };
-
-        Ok(Stmt::FuncDecl(FuncDecl {
-            name,
-            params,
-            body: Box::new(body),
-        }))
-    }
-
-    fn parse_print_stmt(&mut self) -> Result<Stmt> {
-        self.tokens.next(); // Consume 'print'
-        let expr = self.parse_expr(0)?;
-        Ok(Stmt::Print(expr))
-    }
-
-    fn parse_return_stmt(&mut self) -> Result<Stmt> {
-        self.tokens.next(); // Consume 'return'
+        // Parse optional expression
         match self.tokens.peek() {
-            Some(Token::Semi | Token::CurlyR) | None => Ok(Stmt::Return(None)),
-            _ => Ok(Stmt::Return(Some(self.parse_expr(0)?))),
+            Some(Token {
+                sigil: Sigil::Semi | Sigil::CurlyR,
+                ..
+            })
+            | None => Ok(Node {
+                range: keyword.range.clone(),
+                node: Stmt::Return {
+                    keyword,
+                    expr: None,
+                },
+            }),
+            _ => {
+                let expr = self.parse_expr(0)?;
+                Ok(Node {
+                    range: keyword.range.start..expr.range.end,
+                    node: Stmt::Return {
+                        keyword,
+                        expr: Some(expr),
+                    },
+                })
+            }
         }
     }
 
-    fn parse_if_stmt(&mut self) -> Result<Stmt> {
-        self.tokens.next(); // Consume 'if'
+    fn parse_if_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+        // Consume 'if' keyword
+        let keyword = self.tokens.next().unwrap();
 
         // Parse condition
         let condition = self.parse_expr(0)?;
 
         // Expect 'then'
-        match self.tokens.next() {
-            Some(Token::Keyword(Keyword::Then)) => {}
-            t => return Err(ParseError::IfExpectedThen(t)),
-        }
-
-        // Parse consequent branch
-        let consequent = Box::new(self.parse_stmt()?);
-
-        // Parse optional alternate branch
-        let alternate = match self.tokens.next_if_eq(&Token::Keyword(Keyword::Else)) {
-            Some(_) => Some(Box::new(self.parse_stmt()?)),
-            None => None,
+        let then_keyword = match self.tokens.next() {
+            Some(
+                tok @ Token {
+                    sigil: Sigil::Keyword(Keyword::Then),
+                    ..
+                },
+            ) => tok,
+            tok => {
+                return Err(ParseError {
+                    expected: "then keyword of if statement",
+                    found: tok,
+                });
+            }
         };
 
-        Ok(Stmt::If {
-            cond: condition,
-            cons: consequent,
-            alt: alternate,
+        // Parse consequent branch
+        let cons_branch = Box::new(self.parse_stmt()?);
+
+        // Parse optional alternate branch
+        let (else_keyword, alt_branch) = match self
+            .tokens
+            .next_if(|t| t.sigil == Sigil::Keyword(Keyword::Else))
+        {
+            Some(tok) => (Some(tok), Some(Box::new(self.parse_stmt()?))),
+            None => (None, None),
+        };
+
+        let end_node = alt_branch.as_ref().unwrap_or(&cons_branch);
+
+        Ok(Node {
+            range: keyword.range.start..end_node.range.end,
+            node: Stmt::If {
+                keyword,
+                condition,
+                then_keyword,
+                cons_branch,
+                else_keyword,
+                alt_branch,
+            },
         })
     }
 
-    pub fn parse_expr(&mut self, precedence: u8) -> Result<Expr> {
+    pub fn parse_expr(&mut self, precedence: u8) -> Result<Node<Expr>, ParseError> {
         // Parse left operand
         let mut left = self.parse_operand()?;
 
         // Handle property access and function calls (highest precedence)
         loop {
             left = match self.tokens.peek() {
-                Some(&Token::Dot) => self.parse_prop_access(left)?,
-                Some(&Token::ParenL) => Expr::FuncCall {
-                    func: Box::new(left),
-                    args: self.parse_func_call()?,
-                },
+                Some(Token {
+                    sigil: Sigil::Dot, ..
+                }) => self.parse_prop_access(left)?,
+                Some(Token {
+                    sigil: Sigil::ParenL,
+                    ..
+                }) => self.parse_func_call(left)?,
                 _ => break,
             };
         }
 
         // Handle assignment expression (right associative)
-        if self.tokens.next_if_eq(&Token::Eq).is_some() {
-            left = Expr::Assign {
-                place: Box::new(left),
-                expr: Box::new(self.parse_expr(0)?),
+        if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
+            let expr = self.parse_expr(0)?;
+            left = Node {
+                range: left.range.start..expr.range.end,
+                node: Expr::Assign {
+                    place: Box::new(left),
+                    eq_tok: eq_token,
+                    expr: Box::new(expr),
+                },
             };
         }
 
         // Handle binary operations
         loop {
-            let Some(tok) = self.tokens.peek() else {
+            let Some(op_token) = self.tokens.peek() else {
                 break;
             };
-            let Some(op) = BinOp::try_from_token(tok) else {
+            let Some(op) = BinOp::try_from_token(op_token) else {
                 break;
             };
             let next_prec = op.get_precedence();
             if next_prec <= precedence {
                 break;
             }
-            self.tokens.next(); // Consume operator
-            left = Expr::BinOp {
-                left: Box::new(left),
-                op,
-                right: Box::new(self.parse_expr(next_prec)?),
+            let op_tok = self.tokens.next().unwrap(); // Consume operator
+            let right = self.parse_expr(next_prec)?;
+            left = Node {
+                range: left.range.start..right.range.end,
+                node: Expr::BinOp {
+                    left: Box::new(left),
+                    op,
+                    op_tok,
+                    right: Box::new(right),
+                },
             };
         }
 
         Ok(left)
     }
 
-    fn parse_operand(&mut self) -> Result<Expr> {
-        match self.tokens.next() {
-            Some(Token::Keyword(Keyword::Nil)) => Ok(Expr::Nil),
-            Some(Token::Keyword(Keyword::True)) => Ok(Expr::Bool(true)),
-            Some(Token::Keyword(Keyword::False)) => Ok(Expr::Bool(false)),
-            Some(Token::Num(n)) => Ok(Expr::Num(n)),
-            Some(Token::Str(s)) => Ok(Expr::Str(s)),
-            Some(Token::Ident(name)) => Ok(Expr::Var(name)),
-            Some(Token::ParenL) => {
-                // Parse parenthesized expression
-                let expr = self.parse_expr(0)?;
-                match self.tokens.next() {
-                    Some(Token::ParenR) => {}
-                    t => return Err(ParseError::ExprUnclosedParen(t)),
-                }
-                Ok(expr)
+    fn parse_operand(&mut self) -> Result<Node<Expr>, ParseError> {
+        let tok = self.tokens.next();
+
+        if let Some(tok) = &tok {
+            // Handle single token expressions
+            let expr = match &tok.sigil {
+                Sigil::Keyword(keyword) => match keyword {
+                    Keyword::Nil => Some(Expr::Nil),
+                    Keyword::True => Some(Expr::Bool { val: true }),
+                    Keyword::False => Some(Expr::Bool { val: false }),
+                    _ => None,
+                },
+                Sigil::Num { val } => Some(Expr::Num { val: *val }),
+                Sigil::Str { val } => Some(Expr::Str { val: val.clone() }),
+                Sigil::Ident { name } => Some(Expr::Var { name: name.clone() }),
+                _ => None,
+            };
+            if let Some(expr) = expr {
+                return Ok(Node {
+                    range: tok.range.clone(),
+                    node: expr,
+                });
             }
-            Some(Token::CurlyL) => self.parse_obj(),
-            t => {
-                let op = t.as_ref().and_then(UnaryOp::try_from_token);
-                match op {
-                    Some(op) => {
-                        // Parse unary operator
-                        let expr = Box::new(self.parse_operand()?);
-                        Ok(Expr::UnaryOp { op, expr })
-                    }
-                    None => Err(ParseError::ExprInvalidStart(t)),
-                }
+
+            // Handle parenthesized expression
+            if tok.sigil == Sigil::ParenL {
+                return self.parse_paren_expr(tok);
+            }
+
+            // Handle object literal
+            if tok.sigil == Sigil::CurlyL {
+                return self.parse_obj(tok);
+            }
+
+            // Handle unary operator
+            if let Some(op) = UnaryOp::try_from_token(tok) {
+                let expr = Box::new(self.parse_operand()?);
+                return Ok(Node {
+                    range: tok.range.start..expr.range.end,
+                    node: Expr::UnaryOp {
+                        op,
+                        op_tok: tok.clone(),
+                        expr,
+                    },
+                });
             }
         }
-    }
 
-    fn parse_prop_access(&mut self, obj: Expr) -> Result<Expr> {
-        self.tokens.next(); // Consume '.'
-
-        // Parse property name
-        let prop = match self.tokens.next() {
-            Some(Token::Ident(name)) => name,
-            t => return Err(ParseError::ExprInvalidStart(t)),
-        };
-
-        Ok(Expr::PropAccess {
-            obj: Box::new(obj),
-            prop,
+        Err(ParseError {
+            expected: "expression",
+            found: tok,
         })
     }
 
-    fn parse_func_call(&mut self) -> Result<Vec<Expr>> {
-        self.tokens.next(); // Consume '('
+    fn parse_paren_expr(&mut self, paren_l: &Token) -> Result<Node<Expr>, ParseError> {
+        let expr = self.parse_expr(0)?;
+
+        let tok = self.tokens.next();
+        if let Some(paren_r) = &tok
+            && paren_r.sigil == Sigil::ParenR
+        {
+            return Ok(Node {
+                range: paren_l.range.start..paren_r.range.end,
+                node: expr.node,
+            });
+        }
+
+        Err(ParseError {
+            expected: "closing parenthesis of expression",
+            found: tok,
+        })
+    }
+
+    fn parse_prop_access(&mut self, obj: Node<Expr>) -> Result<Node<Expr>, ParseError> {
+        // Consume dot token
+        let dot_tok = self.tokens.next().unwrap();
+
+        // Parse property name
+        let prop = match self.tokens.next() {
+            Some(Token {
+                sigil: Sigil::Ident { name },
+                range,
+            }) => Node { range, node: name },
+            tok => {
+                return Err(ParseError {
+                    expected: "property name identifier of property access",
+                    found: tok,
+                });
+            }
+        };
+
+        Ok(Node {
+            range: obj.range.start..prop.range.end,
+            node: Expr::PropAccess {
+                obj: Box::new(obj),
+                dot_tok,
+                prop: prop.node,
+            },
+        })
+    }
+
+    fn parse_func_call(&mut self, callee: Node<Expr>) -> Result<Node<Expr>, ParseError> {
+        // Consume opening parenthesis
+        let paren_l = self.tokens.next().unwrap();
 
         // Parse arguments
         let mut args = Vec::new();
-        while self.tokens.next_if_eq(&Token::ParenR).is_none() {
+        let mut needs_separator = false;
+        let paren_r = loop {
+            // Always break on closing parenthesis
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::ParenR) {
+                break tok;
+            }
+
+            // If needs separator - repeat on comma or fail
+            if needs_separator {
+                match self.tokens.next() {
+                    Some(Token {
+                        sigil: Sigil::Comma,
+                        ..
+                    }) => {
+                        needs_separator = false;
+                        continue;
+                    }
+                    tok => {
+                        return Err(ParseError {
+                            expected: "comma or closing parenthesis of function arguments",
+                            found: tok,
+                        });
+                    }
+                }
+            }
+
             // Parse argument
             args.push(self.parse_expr(0)?);
+            needs_separator = true;
+        };
 
-            // Check for comma or closing parenthesis
-            match self.tokens.peek() {
-                Some(Token::Comma) => {
-                    self.tokens.next(); // Consume ','
-                }
-                Some(Token::ParenR) => {}
-                t => return Err(ParseError::ArgsInvalidEnd(t.cloned())),
-            }
-        }
-
-        Ok(args)
+        Ok(Node {
+            range: callee.range.start..paren_r.range.end,
+            node: Expr::FuncCall {
+                callee: Box::new(callee),
+                paren_l,
+                args,
+                paren_r,
+            },
+        })
     }
 
-    fn parse_obj(&mut self) -> Result<Expr> {
+    fn parse_obj(&mut self, brace_l: &Token) -> Result<Node<Expr>, ParseError> {
         let mut props = Vec::new();
 
-        while self.tokens.next_if_eq(&Token::CurlyR).is_none() {
+        let mut needs_separator = false;
+        let brace_r = loop {
+            // Always break on closing brace
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
+                break tok;
+            }
+
+            // If needs separator - repeat on comma or fail
+            if needs_separator {
+                match self.tokens.next() {
+                    Some(Token {
+                        sigil: Sigil::Comma,
+                        ..
+                    }) => {
+                        needs_separator = false;
+                        continue;
+                    }
+                    tok => {
+                        return Err(ParseError {
+                            expected: "comma or closing brace of object literal",
+                            found: tok,
+                        });
+                    }
+                }
+            }
+
             // Parse property key (identifier or string literal)
             let key = match self.tokens.next() {
-                Some(Token::Ident(name)) => name,
-                Some(Token::Str(s)) => s,
-                t => return Err(ParseError::ObjExpectedKey(t)),
+                Some(Token {
+                    sigil: Sigil::Ident { name },
+                    ..
+                }) => name,
+                Some(Token {
+                    sigil: Sigil::Str { val },
+                    ..
+                }) => val,
+                tok => {
+                    return Err(ParseError {
+                        expected: "property key of object literal",
+                        found: tok,
+                    });
+                }
             };
 
             // Expect colon
             match self.tokens.next() {
-                Some(Token::Colon) => {}
-                t => return Err(ParseError::ObjExpectedColon(t)),
+                Some(Token {
+                    sigil: Sigil::Colon,
+                    ..
+                }) => {}
+                tok => {
+                    return Err(ParseError {
+                        expected: "colon of object property",
+                        found: tok,
+                    });
+                }
             }
 
             // Parse property value
             let val = self.parse_expr(0)?;
             props.push((key, val));
+            needs_separator = true;
+        };
 
-            // Check for comma or closing brace
-            match self.tokens.peek() {
-                Some(Token::Comma) => {
-                    self.tokens.next(); // consume comma
-                }
-                Some(Token::CurlyR) => {}
-                t => return Err(ParseError::ObjInvalidEnd(t.cloned())),
-            }
-        }
-
-        Ok(Expr::Obj { props })
+        Ok(Node {
+            range: brace_l.range.start..brace_r.range.end,
+            node: Expr::Obj {
+                brace_l: brace_l.clone(),
+                props,
+                brace_r: brace_r.clone(),
+            },
+        })
     }
 }
 

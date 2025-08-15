@@ -1,0 +1,17 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "comma or closing parenthesis of function arguments",
+        found: Some(
+            Token {
+                sigil: Ident {
+                    name: "b",
+                },
+                range: 7..8,
+            },
+        ),
+    },
+)

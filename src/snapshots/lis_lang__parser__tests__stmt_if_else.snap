@@ -1,0 +1,103 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..39,
+        node: If {
+            keyword: Token {
+                sigil: Keyword(
+                    If,
+                ),
+                range: 0..2,
+            },
+            condition: Node {
+                range: 3..4,
+                node: Var {
+                    name: "x",
+                },
+            },
+            then_keyword: Token {
+                sigil: Keyword(
+                    Then,
+                ),
+                range: 5..9,
+            },
+            cons_branch: Node {
+                range: 10..21,
+                node: Block {
+                    brace_l: Token {
+                        sigil: CurlyL,
+                        range: 10..11,
+                    },
+                    stmts: [
+                        Node {
+                            range: 12..19,
+                            node: Print {
+                                keyword: Token {
+                                    sigil: Keyword(
+                                        Print,
+                                    ),
+                                    range: 12..17,
+                                },
+                                expr: Node {
+                                    range: 18..19,
+                                    node: Num {
+                                        val: 1.0,
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    brace_r: Token {
+                        sigil: CurlyR,
+                        range: 20..21,
+                    },
+                },
+            },
+            else_keyword: Some(
+                Token {
+                    sigil: Keyword(
+                        Else,
+                    ),
+                    range: 22..26,
+                },
+            ),
+            alt_branch: Some(
+                Node {
+                    range: 27..39,
+                    node: Block {
+                        brace_l: Token {
+                            sigil: CurlyL,
+                            range: 27..28,
+                        },
+                        stmts: [
+                            Node {
+                                range: 29..36,
+                                node: Print {
+                                    keyword: Token {
+                                        sigil: Keyword(
+                                            Print,
+                                        ),
+                                        range: 29..34,
+                                    },
+                                    expr: Node {
+                                        range: 35..36,
+                                        node: Num {
+                                            val: 0.0,
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                        brace_r: Token {
+                            sigil: CurlyR,
+                            range: 38..39,
+                        },
+                    },
+                },
+            ),
+        },
+    },
+)

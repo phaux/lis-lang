@@ -1,0 +1,28 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..18,
+        node: BinOp {
+            left: Node {
+                range: 0..7,
+                node: Str {
+                    val: "hello",
+                },
+            },
+            op: Concat,
+            op_tok: Token {
+                sigil: PlusPlus,
+                range: 8..10,
+            },
+            right: Node {
+                range: 11..18,
+                node: Str {
+                    val: "world",
+                },
+            },
+        },
+    },
+)

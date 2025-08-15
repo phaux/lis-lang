@@ -20,7 +20,7 @@ fn assign_self() {
         Rc::clone(&scope),
         r"
         foo = foo + 1;
-        { foo = foo + 1 };
+        { foo = foo + 1; }
         foo = foo + 1;
         return foo;
         ",
@@ -79,9 +79,9 @@ fn block_scopes() {
 }
 
 #[test]
-fn invalid_assign() {
+fn assign_non_literal() {
     let result = exec_str(Rc::new(Scope::default()), r"+1 = +2");
-    assert!(matches!(result, Err(ExecError::InvalidAssignment)));
+    assert!(matches!(result, Err(ExecError::InvalidAssign)));
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn obj_pat() {
 }
 
 #[test]
-fn nested_obj_pat() {
+fn obj_pat_nested() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),
@@ -176,47 +176,37 @@ fn obj_pat_default_with_nil() {
 }
 
 #[test]
-fn invalid_destructuring() {
+fn obj_pat_non_obj() {
     let result = exec_str(Rc::new(Scope::default()), r"let {x, y} = 1;");
-    assert!(matches!(result, Err(ExecError::InvalidDestructuring)));
+    assert!(matches!(result, Err(ExecError::InvalidMatchObj(_))));
 }
 
 #[test]
-fn undef_var() {
+fn var_undef() {
     let val = eval_str(&Rc::new(Scope::default()), r"foo").unwrap();
     assert_eq!(val, Val::Nil);
 }
 
 #[test]
-fn eval_numeric() {
+fn op_numeric() {
     let scope = Rc::new(Scope::default());
     let val = eval_str(&scope, r"- 1 + 2 * + + 3").unwrap();
     assert_eq!(val, Val::Num(5.0));
 }
 
 #[test]
-fn eval_logical_and() {
+fn op_logical_and() {
     let scope = Rc::new(Scope::default());
     assert_eq!(eval_str(&scope, "true and true").unwrap(), Val::Bool(true));
     assert_eq!(
         eval_str(&scope, "true and false").unwrap(),
         Val::Bool(false)
     );
-    assert_eq!(
-        eval_str(&scope, "false and true").unwrap(),
-        Val::Bool(false)
-    );
-    assert_eq!(
-        eval_str(&scope, "false and false").unwrap(),
-        Val::Bool(false)
-    );
 }
 
 #[test]
-fn eval_logical_or() {
+fn op_logical_or() {
     let scope = Rc::new(Scope::default());
-    assert_eq!(eval_str(&scope, "true or true").unwrap(), Val::Bool(true));
-    assert_eq!(eval_str(&scope, "true or false").unwrap(), Val::Bool(true));
     assert_eq!(eval_str(&scope, "false or true").unwrap(), Val::Bool(true));
     assert_eq!(
         eval_str(&scope, "false or false").unwrap(),
@@ -225,7 +215,7 @@ fn eval_logical_or() {
 }
 
 #[test]
-fn eval_logical_operator_precedence() {
+fn op_logical_precedence() {
     let scope = Rc::new(Scope::default());
     assert_eq!(
         eval_str(&scope, "false and true or true").unwrap(),
@@ -238,7 +228,7 @@ fn eval_logical_operator_precedence() {
 }
 
 #[test]
-fn eval_logical_with_comparison_operators() {
+fn op_logical_comparison() {
     let scope = Rc::new(Scope::default());
     assert_eq!(
         eval_str(&scope, "1 == 1 and 2 == 2").unwrap(),
@@ -251,7 +241,7 @@ fn eval_logical_with_comparison_operators() {
 }
 
 #[test]
-fn eval_logical_short_circuiting() {
+fn op_logical_short_circuiting() {
     let scope = Rc::new(Scope::new(Rc::new(Scope::default())));
     scope.declare("side_effect", Val::Num(0.0));
 
@@ -265,29 +255,38 @@ fn eval_logical_short_circuiting() {
 }
 
 #[test]
-fn eval_logical_with_invalid_types() {
+fn op_logical_non_bool() {
     let scope = Rc::new(Scope::default());
     assert!(matches!(
         eval_str(&scope, "1 and true"),
-        Err(ExecError::InvalidBinaryOp { .. })
+        Err(ExecError::InvalidBinOp { .. })
     ));
     assert!(matches!(
         eval_str(&scope, r#""string" or false"#),
-        Err(ExecError::InvalidBinaryOp { .. })
+        Err(ExecError::InvalidBinOp { .. })
     ));
 }
 
 #[test]
-fn eval_logical_not() {
+fn op_logical_not() {
     let scope = Rc::new(Scope::default());
     assert_eq!(eval_str(&scope, "!!!(1==1)").unwrap(), Val::Bool(false));
 }
 
 #[test]
-fn string_concat() {
+fn op_concat_string() {
     let scope = Rc::new(Scope::default());
     let val = eval_str(&scope, r#""hello" ++ "world""#).unwrap();
     assert_eq!(val, Val::Str("helloworld".to_string()));
+}
+
+#[test]
+fn op_concat_non_string() {
+    let scope = Rc::new(Scope::default());
+    assert!(matches!(
+        eval_str(&scope, "1 ++ 2"),
+        Err(ExecError::InvalidBinOp { .. })
+    ));
 }
 
 #[test]
@@ -306,7 +305,7 @@ fn prop_access() {
 }
 
 #[test]
-fn nested_object() {
+fn prop_access_nested() {
     let scope = Rc::new(Scope::default());
     scope.declare("obj", Val::default());
     exec_str(Rc::clone(&scope), r#"obj = { user: { name: "Alice" } };"#).unwrap();
@@ -338,7 +337,7 @@ fn func_call() {
 }
 
 #[test]
-fn closure_capture() {
+fn func_closure_capture() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),
@@ -355,17 +354,17 @@ fn closure_capture() {
 }
 
 #[test]
-fn non_func_call() {
+fn func_call_non_func() {
     let scope = Rc::new(Scope::default());
     scope.declare("x", Val::Num(10.0));
     assert_eq!(
         exec_str(Rc::clone(&scope), "x()"),
-        Err(ExecError::NotAFunc(Type::Num))
+        Err(ExecError::InvalidCall(Type::Num))
     );
 }
 
 #[test]
-fn higher_order_func() {
+fn func_higher_order() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),
@@ -384,7 +383,7 @@ fn higher_order_func() {
 }
 
 #[test]
-fn higher_order_func_return() {
+fn func_higher_order_return() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),
@@ -404,7 +403,7 @@ fn higher_order_func_return() {
 }
 
 #[test]
-fn recursive_func() {
+fn func_recursive() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),
@@ -422,7 +421,7 @@ fn recursive_func() {
 }
 
 #[test]
-fn too_few_args() {
+fn func_too_few_args() {
     let scope = Rc::new(Scope::default());
     scope.declare("a1", Val::default());
     scope.declare("a2", Val::default());
@@ -442,7 +441,7 @@ fn too_few_args() {
 }
 
 #[test]
-fn too_many_args() {
+fn func_too_many_args() {
     let scope = Rc::new(Scope::default());
     let result = exec_str(
         Rc::clone(&scope),

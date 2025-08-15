@@ -1,0 +1,67 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..19,
+        node: Assign {
+            place: Node {
+                range: 0..11,
+                node: PropAccess {
+                    obj: Node {
+                        range: 0..6,
+                        node: FuncCall {
+                            callee: Node {
+                                range: 0..4,
+                                node: Var {
+                                    name: "func",
+                                },
+                            },
+                            paren_l: Token {
+                                sigil: ParenL,
+                                range: 4..5,
+                            },
+                            args: [],
+                            paren_r: Token {
+                                sigil: ParenR,
+                                range: 5..6,
+                            },
+                        },
+                    },
+                    dot_tok: Token {
+                        sigil: Dot,
+                        range: 6..7,
+                    },
+                    prop: "prop",
+                },
+            },
+            eq_tok: Token {
+                sigil: Eq,
+                range: 12..13,
+            },
+            expr: Node {
+                range: 14..19,
+                node: BinOp {
+                    left: Node {
+                        range: 14..15,
+                        node: Num {
+                            val: 1.0,
+                        },
+                    },
+                    op: Add,
+                    op_tok: Token {
+                        sigil: Plus,
+                        range: 16..17,
+                    },
+                    right: Node {
+                        range: 18..19,
+                        node: Num {
+                            val: 2.0,
+                        },
+                    },
+                },
+            },
+        },
+    },
+)

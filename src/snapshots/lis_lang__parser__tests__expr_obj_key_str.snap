@@ -1,0 +1,39 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..29,
+        node: Obj {
+            brace_l: Token {
+                sigil: CurlyL,
+                range: 0..1,
+            },
+            props: [
+                (
+                    "name",
+                    Node {
+                        range: 10..16,
+                        node: Str {
+                            val: "john",
+                        },
+                    },
+                ),
+                (
+                    "age",
+                    Node {
+                        range: 25..27,
+                        node: Num {
+                            val: 25.0,
+                        },
+                    },
+                ),
+            ],
+            brace_r: Token {
+                sigil: CurlyR,
+                range: 28..29,
+            },
+        },
+    },
+)

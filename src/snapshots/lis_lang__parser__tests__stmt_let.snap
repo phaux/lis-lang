@@ -1,0 +1,33 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..9,
+        node: Let {
+            keyword: Token {
+                sigil: Keyword(
+                    Let,
+                ),
+                range: 0..3,
+            },
+            pat: Node {
+                range: 4..5,
+                node: Ident {
+                    name: "x",
+                },
+            },
+            eq_tok: Token {
+                sigil: Eq,
+                range: 6..7,
+            },
+            init: Node {
+                range: 8..9,
+                node: Num {
+                    val: 1.0,
+                },
+            },
+        },
+    },
+)

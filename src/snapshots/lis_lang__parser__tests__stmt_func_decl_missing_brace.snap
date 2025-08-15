@@ -1,0 +1,10 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "semicolon or closing brace of block statement",
+        found: None,
+    },
+)

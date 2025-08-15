@@ -1,0 +1,38 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..16,
+        node: PropAccess {
+            obj: Node {
+                range: 0..7,
+                node: BinOp {
+                    left: Node {
+                        range: 1..2,
+                        node: Num {
+                            val: 1.0,
+                        },
+                    },
+                    op: Add,
+                    op_tok: Token {
+                        sigil: Plus,
+                        range: 3..4,
+                    },
+                    right: Node {
+                        range: 5..6,
+                        node: Num {
+                            val: 2.0,
+                        },
+                    },
+                },
+            },
+            dot_tok: Token {
+                sigil: Dot,
+                range: 7..8,
+            },
+            prop: "toString",
+        },
+    },
+)

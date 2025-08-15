@@ -1,73 +1,124 @@
-use crate::tokenizer::{Keyword, Token};
+use std::ops::Range;
+
+use crate::lexer::{Keyword, Sigil, Token};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Prog {
-    pub stmts: Vec<Stmt>,
+    pub stmts: Vec<Node<Stmt>>,
+}
+
+/// A wrapper type which adds properties common to all AST nodes.
+#[derive(Debug, PartialEq, Clone)]
+pub struct Node<T> {
+    pub range: Range<usize>,
+    pub node: T,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
-    Noop,
-    Expr(Expr),
+    Expr {
+        expr: Node<Expr>,
+    },
     Let {
-        pat: Pat,
-        expr: Expr,
+        keyword: Token,
+        pat: Node<Pat>,
+        eq_tok: Token,
+        init: Node<Expr>,
     },
-    Print(Expr),
-    Block(Vec<Stmt>),
+    Print {
+        keyword: Token,
+        expr: Node<Expr>,
+    },
+    Block {
+        brace_l: Token,
+        stmts: Vec<Node<Stmt>>,
+        brace_r: Token,
+    },
     If {
-        cond: Expr,
-        cons: Box<Stmt>,
-        alt: Option<Box<Stmt>>,
+        keyword: Token,
+        condition: Node<Expr>,
+        then_keyword: Token,
+        cons_branch: Box<Node<Stmt>>,
+        else_keyword: Option<Token>,
+        alt_branch: Option<Box<Node<Stmt>>>,
     },
-    Return(Option<Expr>),
-    FuncDecl(FuncDecl),
+    Return {
+        keyword: Token,
+        expr: Option<Node<Expr>>,
+    },
+    FuncDecl {
+        keyword: Token,
+        name: String,
+        param_paren_l: Token,
+        params: Vec<String>,
+        param_paren_r: Token,
+        body: Box<Node<Stmt>>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Pat {
-    Ident(String),
-    Obj { props: Vec<(String, Pat)> },
-    Default { pat: Box<Pat>, default: Expr },
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct FuncDecl {
-    pub name: String,
-    pub params: Vec<String>,
-    pub body: Box<Stmt>,
+    Ident {
+        name: String,
+    },
+    Obj {
+        brace_l: Token,
+        props: Vec<(String, Node<Pat>)>,
+        brace_r: Token,
+    },
+    Default {
+        pat: Box<Node<Pat>>,
+        eq_tok: Token,
+        default: Node<Expr>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Expr {
     Nil,
-    Bool(bool),
-    Num(f64),
-    Str(String),
-    Var(String),
+    Bool {
+        val: bool,
+    },
+    Num {
+        val: f64,
+    },
+    Str {
+        val: String,
+    },
+    Var {
+        name: String,
+    },
     BinOp {
-        left: Box<Expr>,
+        left: Box<Node<Expr>>,
         op: BinOp,
-        right: Box<Expr>,
+        op_tok: Token,
+        right: Box<Node<Expr>>,
     },
     UnaryOp {
         op: UnaryOp,
-        expr: Box<Expr>,
+        op_tok: Token,
+        expr: Box<Node<Expr>>,
     },
     Assign {
-        place: Box<Expr>,
-        expr: Box<Expr>,
+        place: Box<Node<Expr>>,
+        eq_tok: Token,
+        expr: Box<Node<Expr>>,
     },
     Obj {
-        props: Vec<(String, Expr)>,
+        brace_l: Token,
+        props: Vec<(String, Node<Expr>)>,
+        brace_r: Token,
     },
     PropAccess {
-        obj: Box<Expr>,
+        obj: Box<Node<Expr>>,
+        dot_tok: Token,
         prop: String,
     },
     FuncCall {
-        func: Box<Expr>,
-        args: Vec<Expr>,
+        callee: Box<Node<Expr>>,
+        paren_l: Token,
+        args: Vec<Node<Expr>>,
+        paren_r: Token,
     },
 }
 
@@ -93,11 +144,11 @@ pub enum UnaryOp {
 
 impl UnaryOp {
     #[must_use]
-    pub fn try_from_token(token: &Token) -> Option<Self> {
-        match token {
-            Token::Plus => Some(UnaryOp::Pos),
-            Token::Minus => Some(UnaryOp::Neg),
-            Token::Bang => Some(UnaryOp::Not),
+    pub fn try_from_token(tok: &Token) -> Option<Self> {
+        match &tok.sigil {
+            Sigil::Plus => Some(UnaryOp::Pos),
+            Sigil::Minus => Some(UnaryOp::Neg),
+            Sigil::Bang => Some(UnaryOp::Not),
             _ => None,
         }
     }
@@ -105,17 +156,17 @@ impl UnaryOp {
 
 impl BinOp {
     #[must_use]
-    pub fn try_from_token(token: &Token) -> Option<Self> {
-        match token {
-            Token::Keyword(Keyword::Or) => Some(BinOp::Or),
-            Token::Keyword(Keyword::And) => Some(BinOp::And),
-            Token::Plus => Some(BinOp::Add),
-            Token::PlusPlus => Some(BinOp::Concat),
-            Token::Minus => Some(BinOp::Sub),
-            Token::Star => Some(BinOp::Mul),
-            Token::Slash => Some(BinOp::Div),
-            Token::EqEq => Some(BinOp::Eq),
-            Token::BangEq => Some(BinOp::NotEq),
+    pub fn try_from_token(tok: &Token) -> Option<Self> {
+        match &tok.sigil {
+            Sigil::Keyword(Keyword::Or) => Some(BinOp::Or),
+            Sigil::Keyword(Keyword::And) => Some(BinOp::And),
+            Sigil::Plus => Some(BinOp::Add),
+            Sigil::PlusPlus => Some(BinOp::Concat),
+            Sigil::Minus => Some(BinOp::Sub),
+            Sigil::Star => Some(BinOp::Mul),
+            Sigil::Slash => Some(BinOp::Div),
+            Sigil::EqEq => Some(BinOp::Eq),
+            Sigil::BangEq => Some(BinOp::NotEq),
             _ => None,
         }
     }
@@ -129,6 +180,29 @@ impl BinOp {
             BinOp::Concat => 5,
             BinOp::Add | BinOp::Sub => 6,
             BinOp::Mul | BinOp::Div => 7,
+        }
+    }
+}
+
+impl Stmt {
+    /// Whether the statement needs a semicolon after it.
+    /// Statements which use curly braces do not need a semicolon after the closing brace.
+    #[must_use]
+    pub fn needs_separator(&self) -> bool {
+        match self {
+            Stmt::Expr { .. } | Stmt::Let { .. } | Stmt::Print { .. } | Stmt::Return { .. } => true,
+            Stmt::Block { .. } | Stmt::FuncDecl { .. } => false,
+            Stmt::If {
+                cons_branch,
+                alt_branch,
+                ..
+            } => {
+                if let Some(alt_branch) = alt_branch {
+                    alt_branch.node.needs_separator()
+                } else {
+                    cons_branch.node.needs_separator()
+                }
+            }
         }
     }
 }

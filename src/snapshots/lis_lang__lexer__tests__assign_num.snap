@@ -1,0 +1,22 @@
+---
+source: src/lexer.rs
+expression: tokens
+---
+[
+    Token {
+        sigil: Ident {
+            name: "x",
+        },
+        range: 1..2,
+    },
+    Token {
+        sigil: Eq,
+        range: 3..4,
+    },
+    Token {
+        sigil: Num {
+            val: 5.5,
+        },
+        range: 5..8,
+    },
+]

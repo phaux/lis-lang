@@ -1,0 +1,54 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Prog {
+        stmts: [
+            Node {
+                range: 0..4,
+                node: Expr {
+                    expr: Node {
+                        range: 0..4,
+                        node: Var {
+                            name: "a123",
+                        },
+                    },
+                },
+            },
+            Node {
+                range: 6..13,
+                node: Expr {
+                    expr: Node {
+                        range: 6..13,
+                        node: Var {
+                            name: "foo_bar",
+                        },
+                    },
+                },
+            },
+            Node {
+                range: 15..19,
+                node: Expr {
+                    expr: Node {
+                        range: 15..19,
+                        node: Var {
+                            name: "_foo",
+                        },
+                    },
+                },
+            },
+            Node {
+                range: 21..27,
+                node: Expr {
+                    expr: Node {
+                        range: 21..27,
+                        node: Var {
+                            name: "fooBar",
+                        },
+                    },
+                },
+            },
+        ],
+    },
+)

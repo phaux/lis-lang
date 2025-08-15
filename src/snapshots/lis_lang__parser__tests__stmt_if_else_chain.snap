@@ -1,0 +1,123 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 9..78,
+        node: If {
+            keyword: Token {
+                sigil: Keyword(
+                    If,
+                ),
+                range: 9..11,
+            },
+            condition: Node {
+                range: 12..13,
+                node: Var {
+                    name: "x",
+                },
+            },
+            then_keyword: Token {
+                sigil: Keyword(
+                    Then,
+                ),
+                range: 14..18,
+            },
+            cons_branch: Node {
+                range: 19..26,
+                node: Print {
+                    keyword: Token {
+                        sigil: Keyword(
+                            Print,
+                        ),
+                        range: 19..24,
+                    },
+                    expr: Node {
+                        range: 25..26,
+                        node: Num {
+                            val: 1.0,
+                        },
+                    },
+                },
+            },
+            else_keyword: Some(
+                Token {
+                    sigil: Keyword(
+                        Else,
+                    ),
+                    range: 35..39,
+                },
+            ),
+            alt_branch: Some(
+                Node {
+                    range: 40..78,
+                    node: If {
+                        keyword: Token {
+                            sigil: Keyword(
+                                If,
+                            ),
+                            range: 40..42,
+                        },
+                        condition: Node {
+                            range: 43..44,
+                            node: Var {
+                                name: "y",
+                            },
+                        },
+                        then_keyword: Token {
+                            sigil: Keyword(
+                                Then,
+                            ),
+                            range: 45..49,
+                        },
+                        cons_branch: Node {
+                            range: 50..57,
+                            node: Print {
+                                keyword: Token {
+                                    sigil: Keyword(
+                                        Print,
+                                    ),
+                                    range: 50..55,
+                                },
+                                expr: Node {
+                                    range: 56..57,
+                                    node: Num {
+                                        val: 2.0,
+                                    },
+                                },
+                            },
+                        },
+                        else_keyword: Some(
+                            Token {
+                                sigil: Keyword(
+                                    Else,
+                                ),
+                                range: 66..70,
+                            },
+                        ),
+                        alt_branch: Some(
+                            Node {
+                                range: 71..78,
+                                node: Print {
+                                    keyword: Token {
+                                        sigil: Keyword(
+                                            Print,
+                                        ),
+                                        range: 71..76,
+                                    },
+                                    expr: Node {
+                                        range: 77..78,
+                                        node: Num {
+                                            val: 3.0,
+                                        },
+                                    },
+                                },
+                            },
+                        ),
+                    },
+                },
+            ),
+        },
+    },
+)

@@ -1,0 +1,36 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..12,
+        node: FuncCall {
+            callee: Node {
+                range: 0..10,
+                node: PropAccess {
+                    obj: Node {
+                        range: 0..3,
+                        node: Var {
+                            name: "obj",
+                        },
+                    },
+                    dot_tok: Token {
+                        sigil: Dot,
+                        range: 3..4,
+                    },
+                    prop: "method",
+                },
+            },
+            paren_l: Token {
+                sigil: ParenL,
+                range: 10..11,
+            },
+            args: [],
+            paren_r: Token {
+                sigil: ParenR,
+                range: 11..12,
+            },
+        },
+    },
+)

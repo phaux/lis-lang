@@ -1,0 +1,17 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "semicolon or end of input",
+        found: Some(
+            Token {
+                sigil: Num {
+                    val: 1.0,
+                },
+                range: 2..3,
+            },
+        ),
+    },
+)

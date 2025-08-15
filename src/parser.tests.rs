@@ -1,569 +1,278 @@
 use super::*;
 
 #[test]
-fn empty_prog() -> Result<()> {
-    let prog = Parser::new("").parse_prog()?;
-    assert_eq!(prog.stmts.len(), 0);
-    Ok(())
+fn prog_empty() {
+    let ast = Parser::new("").parse_prog();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn only_semis_prog() -> Result<()> {
-    let prog = Parser::new(";;;;;").parse_prog()?;
-    assert_eq!(prog.stmts.len(), 5);
-    assert!(prog.stmts.iter().all(|stmt| matches!(stmt, Stmt::Noop)));
-    Ok(())
+fn prog_only_semis() {
+    let ast = Parser::new(";;;;;").parse_prog();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn vars() -> Result<()> {
-    let prog = Parser::new("a123; foo_bar; _foo; fooBar;").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![
-                Stmt::Expr(Expr::Var("a123".to_string())),
-                Stmt::Expr(Expr::Var("foo_bar".to_string())),
-                Stmt::Expr(Expr::Var("_foo".to_string())),
-                Stmt::Expr(Expr::Var("fooBar".to_string())),
-            ],
-        },
-    );
-    Ok(())
+fn prog_just_vars() {
+    let ast = Parser::new("a123; foo_bar; _foo; fooBar;").parse_prog();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn unclosed_paren() {
-    let prog = Parser::new("(1 + 2;").parse_expr(0);
-    assert_eq!(prog, Err(ParseError::ExprUnclosedParen(Some(Token::Semi))));
+fn prog_just_1s() {
+    let ast = Parser::new("1 1 1").parse_prog();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn lone_else() {
-    let prog = Parser::new("if 1 then a;b; else c;").parse_prog();
-    assert_eq!(
-        prog,
-        Err(ParseError::ExprInvalidStart(Some(Token::Keyword(
-            Keyword::Else
-        ))))
-    );
+fn stmt_let() {
+    let ast = Parser::new("let x = 1;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn just_1s() {
-    let prog = Parser::new("1 1 1").parse_prog();
-    // TODO: make this error
-    assert_eq!(
-        prog,
-        Ok(Prog {
-            stmts: vec![
-                Stmt::Expr(Expr::Num(1.0)),
-                Stmt::Expr(Expr::Num(1.0)),
-                Stmt::Expr(Expr::Num(1.0)),
-            ]
-        })
-    );
+fn stmt_print() {
+    let ast = Parser::new("print 1").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn assignment_prog() -> Result<()> {
-    let prog = Parser::new("let x = 1;").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::Let {
-                pat: Pat::Ident("x".to_string()),
-                expr: Expr::Num(1.0),
-            }],
-        },
-    );
-    Ok(())
+fn stmt_let_pat_obj() {
+    let ast = Parser::new("let {x, y} = obj;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn print_stmt() -> Result<()> {
-    let stmt = Parser::new("print 1").parse_stmt()?;
-    assert_eq!(stmt, Stmt::Print(Expr::Num(1.0)));
-    Ok(())
+fn stmt_let_pat_obj_nested() {
+    let ast = Parser::new("let {x: {y}} = obj;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn obj_pat() -> Result<()> {
-    let prog = Parser::new("let {x, y} = obj;").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::Let {
-                pat: Pat::Obj {
-                    props: vec![
-                        ("x".to_string(), Pat::Ident("x".to_string())),
-                        ("y".to_string(), Pat::Ident("y".to_string())),
-                    ],
-                },
-                expr: Expr::Var("obj".to_string()),
-            }],
-        },
-    );
-    Ok(())
+fn stmt_let_pat_obj_rename() {
+    let ast = Parser::new("let {x: y} = obj;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn nested_obj_pat() -> Result<()> {
-    let prog = Parser::new("let {x: {y}} = obj;").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::Let {
-                pat: Pat::Obj {
-                    props: vec![(
-                        "x".to_string(),
-                        Pat::Obj {
-                            props: vec![("y".to_string(), Pat::Ident("y".to_string())),],
-                        }
-                    ),],
-                },
-                expr: Expr::Var("obj".to_string()),
-            }],
-        },
-    );
-    Ok(())
+fn stmt_let_pat_obj_default() {
+    let ast = Parser::new("let {x, y = 2} = obj;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn obj_pat_rename() -> Result<()> {
-    let prog = Parser::new("let {x: y} = obj;").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::Let {
-                pat: Pat::Obj {
-                    props: vec![("x".to_string(), Pat::Ident("y".to_string()))],
-                },
-                expr: Expr::Var("obj".to_string()),
-            }],
-        },
-    );
-    Ok(())
+fn stmt_let_pat_obj_rename_default() {
+    let ast = Parser::new("let {x: y = 2} = obj;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn ops() -> Result<()> {
-    let expr = Parser::new("1 + -2 * 3").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::BinOp {
-            left: Box::new(Expr::Num(1.0)),
-            op: BinOp::Add,
-            right: Box::new(Expr::BinOp {
-                left: Box::new(Expr::UnaryOp {
-                    op: UnaryOp::Neg,
-                    expr: Box::new(Expr::Num(2.0)),
-                }),
-                op: BinOp::Mul,
-                right: Box::new(Expr::Num(3.0)),
-            }),
-        }
-    );
-    Ok(())
+fn expr_ops() {
+    let ast = Parser::new("1 + -2 * 3").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn parens() -> Result<()> {
-    let expr = Parser::new("(1 + 2) * 3").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::BinOp {
-            left: Box::new(Expr::BinOp {
-                left: Box::new(Expr::Num(1.0)),
-                op: BinOp::Add,
-                right: Box::new(Expr::Num(2.0)),
-            }),
-            op: BinOp::Mul,
-            right: Box::new(Expr::Num(3.0)),
-        }
-    );
-    Ok(())
+fn expr_ops_parens() {
+    let ast = Parser::new("(1 + 2) * 3").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn if_stmt() -> Result<()> {
-    let stmt = Parser::new("if 1 then print 1").parse_stmt()?;
-    assert!(matches!(
-        stmt,
-        Stmt::If {
-            cond: Expr::Num(1.0),
-            cons: _,
-            alt: None,
-        }
-    ));
-    Ok(())
+fn expr_unclosed_paren() {
+    let ast = Parser::new("(1 + 2;").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn unclosed_curly() {
-    let stmt = Parser::new("if 1 then { print 1").parse_stmt();
-    assert_eq!(stmt, Err(ParseError::StmtInvalidStart(None)));
+fn stmt_if() {
+    let ast = Parser::new("if 1 then print 1").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn if_else_stmt() -> Result<()> {
-    let stmt = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt()?;
-    assert_eq!(
-        stmt,
-        Stmt::If {
-            cond: Expr::Var("x".to_string()),
-            cons: Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(1.0))])),
-            alt: Some(Box::new(Stmt::Block(vec![Stmt::Print(Expr::Num(0.0))]))),
-        }
-    );
-    Ok(())
+fn stmt_if_unclosed_curly() {
+    let ast = Parser::new("if 1 then { print 1").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn print_str() -> Result<()> {
-    let stmt = Parser::new(r#"print "hello\nworld""#).parse_stmt()?;
-    assert_eq!(stmt, Stmt::Print(Expr::Str("hello\nworld".to_string())));
-    Ok(())
+fn stmt_if_else() {
+    let ast = Parser::new("if x then { print 1 } else { print 0; }").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn str_concat() -> Result<()> {
-    let expr = Parser::new(r#""hello" ++ "world""#).parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::BinOp {
-            left: Box::new(Expr::Str("hello".to_string())),
-            op: BinOp::Concat,
-            right: Box::new(Expr::Str("world".to_string())),
-        }
-    );
-    Ok(())
+fn stmt_if_else_chain() {
+    let ast = Parser::new(
+        "
+        if x then print 1
+        else if y then print 2
+        else print 3
+        ",
+    )
+    .parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn obj_literal() -> Result<()> {
-    let expr = Parser::new("{ a: 1, b: 2 }").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::Obj {
-            props: vec![
-                ("a".to_string(), Expr::Num(1.0)),
-                ("b".to_string(), Expr::Num(2.0)),
-            ],
-        }
-    );
-    Ok(())
+fn stmt_if_lone_else() {
+    let ast = Parser::new("if 1 then a;b; else c;").parse_prog();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn prop_access() -> Result<()> {
-    let expr = Parser::new("obj.a.b.c").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::PropAccess {
-            obj: Box::new(Expr::PropAccess {
-                obj: Box::new(Expr::PropAccess {
-                    obj: Box::new(Expr::Var("obj".to_string())),
-                    prop: "a".to_string(),
-                }),
-                prop: "b".to_string(),
-            }),
-            prop: "c".to_string(),
-        }
-    );
-    Ok(())
+fn stmt_print_str() {
+    let ast = Parser::new(r#"print "hello\nworld""#).parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call() -> Result<()> {
-    let expr = Parser::new("func(a, b)").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::FuncCall {
-            func: Box::new(Expr::Var("func".to_string())),
-            args: vec![Expr::Var("a".to_string()), Expr::Var("b".to_string())]
-        }
-    );
-    Ok(())
+fn expr_str_concat() {
+    let ast = Parser::new(r#""hello" ++ "world""#).parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn method_call() -> Result<()> {
-    let expr = Parser::new("obj.method()").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::FuncCall {
-            func: Box::new(Expr::PropAccess {
-                obj: Box::new(Expr::Var("obj".to_string())),
-                prop: "method".to_string(),
-            }),
-            args: vec![],
-        }
-    );
-    Ok(())
+fn expr_obj() {
+    let ast = Parser::new("{ a: 1, b: 2 }").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call_missing_paren() {
-    let result = Parser::new("func(a, b").parse_expr(0);
-    assert_eq!(result, Err(ParseError::ArgsInvalidEnd(None)));
+fn expr_obj_expr() {
+    let ast = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call_trailing_comma() {
-    let result = Parser::new("func(a, )").parse_expr(0);
-    assert_eq!(
-        result,
-        Ok(Expr::FuncCall {
-            func: Box::new(Expr::Var("func".to_string())),
-            args: vec![Expr::Var("a".to_string())]
-        })
-    );
+fn expr_prop_access() {
+    let ast = Parser::new("obj.a.b.c").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call_missing_comma() {
-    let result = Parser::new("func(a b)").parse_expr(0);
-    assert_eq!(
-        result,
-        Err(ParseError::ArgsInvalidEnd(Some(Token::Ident(
-            "b".to_string()
-        ))))
-    );
+fn expr_func_call() {
+    let ast = Parser::new("func(a, b)").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call_just_comma() {
-    let result = Parser::new("func(,)").parse_expr(0);
-    assert_eq!(
-        result,
-        Err(ParseError::ExprInvalidStart(Some(Token::Comma)))
-    );
+fn expr_method_call() {
+    let ast = Parser::new("obj.method()").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_call_missing_arg() {
-    let result = Parser::new("func(,a)").parse_expr(0);
-    assert_eq!(
-        result,
-        Err(ParseError::ExprInvalidStart(Some(Token::Comma)))
-    );
+fn expr_func_call_missing_paren() {
+    let ast = Parser::new("func(a, b").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn prop_call_assign_bin_expr() -> Result<()> {
-    let expr = Parser::new("func().prop = 1 + 2").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::Assign {
-            place: Box::new(Expr::PropAccess {
-                obj: Box::new(Expr::FuncCall {
-                    func: Box::new(Expr::Var("func".to_string())),
-                    args: vec![],
-                }),
-                prop: "prop".to_string(),
-            }),
-            expr: Box::new(Expr::BinOp {
-                left: Box::new(Expr::Num(1.0)),
-                op: BinOp::Add,
-                right: Box::new(Expr::Num(2.0)),
-            }),
-        }
-    );
-    Ok(())
+fn expr_func_call_trailing_comma() {
+    let ast = Parser::new("func(a, )").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn call_result_prop_access() -> Result<()> {
-    let expr = Parser::new("func().prop").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::PropAccess {
-            obj: Box::new(Expr::FuncCall {
-                func: Box::new(Expr::Var("func".to_string())),
-                args: vec![],
-            }),
-            prop: "prop".to_string(),
-        }
-    );
-    Ok(())
+fn expr_func_call_missing_comma() {
+    let ast = Parser::new("func(a b)").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn empty_obj() -> Result<()> {
-    let expr = Parser::new("{}").parse_expr(0)?;
-    assert_eq!(expr, Expr::Obj { props: vec![] });
-    Ok(())
+fn expr_func_call_just_comma() {
+    let ast = Parser::new("func(,)").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn obj_with_str_keys() -> Result<()> {
-    let expr = Parser::new(r#"{ "name": "john", "age": 25 }"#).parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::Obj {
-            props: vec![
-                ("name".to_string(), Expr::Str("john".to_string())),
-                ("age".to_string(), Expr::Num(25.0)),
-            ],
-        }
-    );
-    Ok(())
+fn expr_func_call_missing_arg() {
+    let ast = Parser::new("func(,a)").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn nested_obj() -> Result<()> {
-    let expr = Parser::new("{ user: { name: \"john\", age: 25 } }").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::Obj {
-            props: vec![(
-                "user".to_string(),
-                Expr::Obj {
-                    props: vec![
-                        ("name".to_string(), Expr::Str("john".to_string())),
-                        ("age".to_string(), Expr::Num(25.0)),
-                    ],
-                }
-            ),],
-        }
-    );
-    Ok(())
+fn expr_func_call_prop_assign_bin_expr() {
+    let ast = Parser::new("func().prop = 1 + 2").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn prop_access_with_expr() -> Result<()> {
-    let expr = Parser::new("(1 + 2).toString").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::PropAccess {
-            obj: Box::new(Expr::BinOp {
-                left: Box::new(Expr::Num(1.0)),
-                op: BinOp::Add,
-                right: Box::new(Expr::Num(2.0)),
-            }),
-            prop: "toString".to_string(),
-        }
-    );
-    Ok(())
+fn expr_func_call_prop_access() {
+    let ast = Parser::new("func().prop").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_decl() -> Result<()> {
-    let prog = Parser::new("fn add(a, b) { a + b; }").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::FuncDecl(FuncDecl {
-                name: "add".to_string(),
-                params: vec!["a".to_string(), "b".to_string()],
-                body: Box::new(Stmt::Block(vec![Stmt::Expr(Expr::BinOp {
-                    left: Box::new(Expr::Var("a".to_string())),
-                    op: BinOp::Add,
-                    right: Box::new(Expr::Var("b".to_string())),
-                })])),
-            })]
-        }
-    );
-    Ok(())
+fn expr_obj_empty() {
+    let ast = Parser::new("{}").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn return_stmt() -> Result<()> {
-    // Test return with value
-    let stmt = Parser::new("return 42").parse_stmt()?;
-    assert_eq!(stmt, Stmt::Return(Some(Expr::Num(42.0))));
-
-    // Test return without value
-    let stmt = Parser::new("return").parse_stmt()?;
-    assert_eq!(stmt, Stmt::Return(None));
-
-    Ok(())
+fn expr_obj_key_str() {
+    let ast = Parser::new(r#"{ "name": "john", "age": 25 }"#).parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn return_in_func() -> Result<()> {
-    let prog = Parser::new("fn foo(x) { return x; }").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::FuncDecl(FuncDecl {
-                name: "foo".to_string(),
-                params: vec!["x".to_string()],
-                body: Box::new(Stmt::Block(vec![Stmt::Return(Some(Expr::Var(
-                    "x".to_string()
-                )))])),
-            })]
-        }
-    );
-    Ok(())
+fn expr_obj_nested() {
+    let ast = Parser::new(r#"{ user: { name: "john", age: 25 } }"#).parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_with_no_params() -> Result<()> {
-    let prog = Parser::new("fn sayHello() { }").parse_prog()?;
-    assert_eq!(
-        prog,
-        Prog {
-            stmts: vec![Stmt::FuncDecl(FuncDecl {
-                name: "sayHello".to_string(),
-                params: vec![],
-                body: Box::new(Stmt::Block(vec![])),
-            })]
-        }
-    );
-    Ok(())
+fn expr_op_method_call() {
+    let ast = Parser::new("(1 + 2).toString").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_decl_missing_name() {
-    let prog = Parser::new("fn (a, b) { a + b; }").parse_prog();
-    assert!(matches!(prog, Err(ParseError::FnExpectedName(_))));
+fn stmt_func_decl() {
+    let ast = Parser::new("fn add(a, b) { return }").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_decl_missing_params() {
-    let prog = Parser::new("fn add { 1 + 2; }").parse_prog();
-    assert!(matches!(prog, Err(ParseError::FnExpectedParen(_))));
+fn stmt_return() {
+    let ast = Parser::new("return 42").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_decl_missing_body() {
-    let prog = Parser::new("fn add(a, b)").parse_prog();
-    assert!(matches!(prog, Err(ParseError::FnExpectedBody(_))));
+fn stmt_return_no_value() {
+    let ast = Parser::new("return").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn func_decl_missing_brace() {
-    let prog = Parser::new("fn add(a, b) { a + b").parse_prog();
-    assert!(matches!(prog, Err(ParseError::StmtInvalidStart(_))));
+fn stmt_func_decl_empty() {
+    let ast = Parser::new("fn sayHello() { }").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }
 
 #[test]
-fn obj_with_expr() -> Result<()> {
-    let expr = Parser::new("{ x: 1 + 2, y: 3 * 4 }").parse_expr(0)?;
-    assert_eq!(
-        expr,
-        Expr::Obj {
-            props: vec![
-                (
-                    "x".to_string(),
-                    Expr::BinOp {
-                        left: Box::new(Expr::Num(1.0)),
-                        op: BinOp::Add,
-                        right: Box::new(Expr::Num(2.0)),
-                    }
-                ),
-                (
-                    "y".to_string(),
-                    Expr::BinOp {
-                        left: Box::new(Expr::Num(3.0)),
-                        op: BinOp::Mul,
-                        right: Box::new(Expr::Num(4.0)),
-                    }
-                ),
-            ],
-        }
-    );
-    Ok(())
+fn stmt_func_decl_missing_name() {
+    let ast = Parser::new("fn (a, b) { a + b; }").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_func_decl_missing_params() {
+    let ast = Parser::new("fn add { 1 + 2; }").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_func_decl_missing_body() {
+    let ast = Parser::new("fn add(a, b)").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_func_decl_missing_brace() {
+    let ast = Parser::new("fn add(a, b) { a + b").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
 }

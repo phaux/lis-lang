@@ -1,0 +1,60 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..16,
+        node: Let {
+            keyword: Token {
+                sigil: Keyword(
+                    Let,
+                ),
+                range: 0..3,
+            },
+            pat: Node {
+                range: 4..10,
+                node: Obj {
+                    brace_l: Token {
+                        sigil: CurlyL,
+                        range: 4..5,
+                    },
+                    props: [
+                        (
+                            "x",
+                            Node {
+                                range: 5..6,
+                                node: Ident {
+                                    name: "x",
+                                },
+                            },
+                        ),
+                        (
+                            "y",
+                            Node {
+                                range: 8..9,
+                                node: Ident {
+                                    name: "y",
+                                },
+                            },
+                        ),
+                    ],
+                    brace_r: Token {
+                        sigil: CurlyR,
+                        range: 9..10,
+                    },
+                },
+            },
+            eq_tok: Token {
+                sigil: Eq,
+                range: 11..12,
+            },
+            init: Node {
+                range: 13..16,
+                node: Var {
+                    name: "obj",
+                },
+            },
+        },
+    },
+)

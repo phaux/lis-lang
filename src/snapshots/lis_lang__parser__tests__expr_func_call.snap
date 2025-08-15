@@ -1,0 +1,39 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..10,
+        node: FuncCall {
+            callee: Node {
+                range: 0..4,
+                node: Var {
+                    name: "func",
+                },
+            },
+            paren_l: Token {
+                sigil: ParenL,
+                range: 4..5,
+            },
+            args: [
+                Node {
+                    range: 5..6,
+                    node: Var {
+                        name: "a",
+                    },
+                },
+                Node {
+                    range: 8..9,
+                    node: Var {
+                        name: "b",
+                    },
+                },
+            ],
+            paren_r: Token {
+                sigil: ParenR,
+                range: 9..10,
+            },
+        },
+    },
+)

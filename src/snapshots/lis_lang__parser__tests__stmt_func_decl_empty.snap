@@ -1,0 +1,41 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..17,
+        node: FuncDecl {
+            keyword: Token {
+                sigil: Keyword(
+                    Fn,
+                ),
+                range: 0..2,
+            },
+            name: "sayHello",
+            param_paren_l: Token {
+                sigil: ParenL,
+                range: 11..12,
+            },
+            params: [],
+            param_paren_r: Token {
+                sigil: ParenR,
+                range: 12..13,
+            },
+            body: Node {
+                range: 14..17,
+                node: Block {
+                    brace_l: Token {
+                        sigil: CurlyL,
+                        range: 14..15,
+                    },
+                    stmts: [],
+                    brace_r: Token {
+                        sigil: CurlyR,
+                        range: 16..17,
+                    },
+                },
+            },
+        },
+    },
+)

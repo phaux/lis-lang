@@ -1,0 +1,10 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "opening brace of function body",
+        found: None,
+    },
+)

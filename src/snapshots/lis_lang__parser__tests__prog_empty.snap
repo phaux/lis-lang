@@ -1,0 +1,9 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Prog {
+        stmts: [],
+    },
+)

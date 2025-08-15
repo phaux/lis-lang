@@ -1,0 +1,25 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..9,
+        node: Return {
+            keyword: Token {
+                sigil: Keyword(
+                    Return,
+                ),
+                range: 0..6,
+            },
+            expr: Some(
+                Node {
+                    range: 7..9,
+                    node: Num {
+                        val: 42.0,
+                    },
+                },
+            ),
+        },
+    },
+)

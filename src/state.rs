@@ -7,12 +7,12 @@ use std::{
 
 use uuid::Uuid;
 
-use crate::ast::Stmt;
+use crate::ast::{Node, Stmt};
 
 #[derive(Default)]
 pub struct Scope {
-    pub parent: Option<Rc<Scope>>,
     pub vars: RefCell<HashMap<String, Val>>,
+    pub parent: Option<Rc<Scope>>,
 }
 
 impl Debug for Scope {
@@ -110,24 +110,26 @@ pub struct Obj {
 pub struct Func {
     pub id: Uuid,
     pub params: Vec<String>,
-    pub body: Rc<Stmt>,
+    pub body: Rc<Node<Stmt>>,
     pub closure_scope: Rc<Scope>,
 }
 
+impl Debug for Func {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Func")
+            .field("id", &self.id)
+            .finish_non_exhaustive()
+    }
+}
+
 impl Func {
-    pub fn new(scope: Rc<Scope>, params: Vec<String>, body: Rc<Stmt>) -> Self {
+    pub fn new(scope: Rc<Scope>, params: Vec<String>, body: Rc<Node<Stmt>>) -> Self {
         Self {
             id: Uuid::new_v4(),
             params,
             body,
             closure_scope: scope,
         }
-    }
-}
-
-impl Debug for Func {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[fn {}]", self.id)
     }
 }
 

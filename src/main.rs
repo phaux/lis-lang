@@ -1,15 +1,10 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::missing_errors_doc)]
-#![cfg_attr(
-    not(test),
-    warn(clippy::panic, clippy::unwrap_used, clippy::expect_used)
-)]
 
-pub mod ast;
-pub mod parser;
-pub mod state;
-pub mod tokenizer;
-pub mod vm;
+pub(crate) mod ast;
+pub(crate) mod lexer;
+pub(crate) mod parser;
+pub(crate) mod state;
+pub(crate) mod vm;
 
 use std::{io::Read, rc::Rc};
 
@@ -25,6 +20,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let scope = Rc::new(Scope::default());
     let ast = Parser::new(&input).parse_prog()?;
-    exec_prog(scope, &ast)?;
+    dbg!(&ast);
+    let result = exec_prog(Rc::clone(&scope), &ast)?;
+    println!("{result:?}");
     Ok(())
 }

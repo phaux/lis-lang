@@ -1,0 +1,71 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 0..22,
+        node: Obj {
+            brace_l: Token {
+                sigil: CurlyL,
+                range: 0..1,
+            },
+            props: [
+                (
+                    "x",
+                    Node {
+                        range: 5..10,
+                        node: BinOp {
+                            left: Node {
+                                range: 5..6,
+                                node: Num {
+                                    val: 1.0,
+                                },
+                            },
+                            op: Add,
+                            op_tok: Token {
+                                sigil: Plus,
+                                range: 7..8,
+                            },
+                            right: Node {
+                                range: 9..10,
+                                node: Num {
+                                    val: 2.0,
+                                },
+                            },
+                        },
+                    },
+                ),
+                (
+                    "y",
+                    Node {
+                        range: 15..20,
+                        node: BinOp {
+                            left: Node {
+                                range: 15..16,
+                                node: Num {
+                                    val: 3.0,
+                                },
+                            },
+                            op: Mul,
+                            op_tok: Token {
+                                sigil: Star,
+                                range: 17..18,
+                            },
+                            right: Node {
+                                range: 19..20,
+                                node: Num {
+                                    val: 4.0,
+                                },
+                            },
+                        },
+                    },
+                ),
+            ],
+            brace_r: Token {
+                sigil: CurlyR,
+                range: 21..22,
+            },
+        },
+    },
+)
