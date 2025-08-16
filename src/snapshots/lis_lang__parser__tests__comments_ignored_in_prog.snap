@@ -1,0 +1,81 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Prog {
+        stmts: [
+            Node {
+                range: 27..36,
+                node: Let {
+                    keyword: Token {
+                        sigil: Keyword(
+                            Let,
+                        ),
+                        range: 27..30,
+                    },
+                    pat: Node {
+                        range: 31..32,
+                        node: Ident {
+                            name: "x",
+                        },
+                    },
+                    eq_tok: Token {
+                        sigil: Eq,
+                        range: 33..34,
+                    },
+                    init: Node {
+                        range: 35..36,
+                        node: Num {
+                            val: 1.0,
+                        },
+                    },
+                },
+            },
+            Node {
+                range: 48..57,
+                node: Let {
+                    keyword: Token {
+                        sigil: Keyword(
+                            Let,
+                        ),
+                        range: 48..51,
+                    },
+                    pat: Node {
+                        range: 52..53,
+                        node: Ident {
+                            name: "y",
+                        },
+                    },
+                    eq_tok: Token {
+                        sigil: Eq,
+                        range: 54..55,
+                    },
+                    init: Node {
+                        range: 56..57,
+                        node: Num {
+                            val: 2.0,
+                        },
+                    },
+                },
+            },
+            Node {
+                range: 67..74,
+                node: Print {
+                    keyword: Token {
+                        sigil: Keyword(
+                            Print,
+                        ),
+                        range: 67..72,
+                    },
+                    expr: Node {
+                        range: 73..74,
+                        node: Var {
+                            name: "x",
+                        },
+                    },
+                },
+            },
+        ],
+    },
+)

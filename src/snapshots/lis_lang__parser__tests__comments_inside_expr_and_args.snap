@@ -1,0 +1,73 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Node {
+        range: 9..125,
+        node: FuncCall {
+            callee: Node {
+                range: 9..110,
+                node: PropAccess {
+                    obj: Node {
+                        range: 9..85,
+                        node: PropAccess {
+                            obj: Node {
+                                range: 9..80,
+                                node: FuncCall {
+                                    callee: Node {
+                                        range: 9..13,
+                                        node: Var {
+                                            name: "func",
+                                        },
+                                    },
+                                    paren_l: Token {
+                                        sigil: ParenL,
+                                        range: 13..14,
+                                    },
+                                    args: [
+                                        Node {
+                                            range: 27..28,
+                                            node: Num {
+                                                val: 1.0,
+                                            },
+                                        },
+                                        Node {
+                                            range: 69..70,
+                                            node: Num {
+                                                val: 2.0,
+                                            },
+                                        },
+                                    ],
+                                    paren_r: Token {
+                                        sigil: ParenR,
+                                        range: 79..80,
+                                    },
+                                },
+                            },
+                            dot_tok: Token {
+                                sigil: Dot,
+                                range: 80..81,
+                            },
+                            prop: "prop",
+                        },
+                    },
+                    dot_tok: Token {
+                        sigil: Dot,
+                        range: 100..101,
+                    },
+                    prop: "toString",
+                },
+            },
+            paren_l: Token {
+                sigil: ParenL,
+                range: 111..112,
+            },
+            args: [],
+            paren_r: Token {
+                sigil: ParenR,
+                range: 124..125,
+            },
+        },
+    },
+)

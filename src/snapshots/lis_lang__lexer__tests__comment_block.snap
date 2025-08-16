@@ -20,13 +20,19 @@ expression: tokens
         range: 6..7,
     },
     Token {
-        sigil: Num {
-            val: 5.0,
+        sigil: Comment {
+            body: " block comment ",
         },
-        range: 8..9,
+        range: 8..27,
+    },
+    Token {
+        sigil: Num {
+            val: 1.0,
+        },
+        range: 28..29,
     },
     Token {
         sigil: Semi,
-        range: 9..10,
+        range: 29..30,
     },
 ]

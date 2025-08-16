@@ -1,4 +1,7 @@
-use std::{fmt, iter::Peekable};
+use std::{
+    fmt,
+    iter::{Filter, Peekable},
+};
 
 use crate::{
     ast::{BinOp, Expr, Node, Pat, Prog, Stmt, UnaryOp},
@@ -24,15 +27,23 @@ impl fmt::Display for ParseError {
 }
 
 pub struct Parser<'a> {
-    tokens: Peekable<Tokens<'a>>,
+    tokens: Peekable<FilterTokens<'a>>,
 }
+
+type FilterTokens<'a> = Filter<Tokens<'a>, fn(&Token) -> bool>;
 
 impl<'a> Parser<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
         Parser {
-            tokens: Tokens::new(input).peekable(),
+            tokens: Tokens::new(input)
+                .filter(Parser::is_not_comment as fn(&Token) -> bool)
+                .peekable(),
         }
+    }
+
+    fn is_not_comment(tok: &Token) -> bool {
+        !matches!(tok.sigil, Sigil::Comment { .. })
     }
 
     pub fn parse_prog(&mut self) -> Result<Prog, ParseError> {

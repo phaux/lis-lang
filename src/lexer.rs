@@ -12,6 +12,7 @@ pub enum Sigil {
     Ident { name: String },
     Num { val: f64 },
     Str { val: String },
+    Comment { body: String },
     Eq,
     EqEq,
     Bang,
@@ -111,6 +112,12 @@ impl Iterator for Tokens<'_> {
             let ch = self.next_char()?;
             let sigil = match ch {
                 ch if ch.is_whitespace() => continue,
+                // Comments: // line and /* block */
+                '/' => match self.peek_char() {
+                    Some('/') => self.parse_line_comment(),
+                    Some('*') => self.parse_block_comment(),
+                    _ => Sigil::Slash,
+                },
                 '=' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();
@@ -135,7 +142,6 @@ impl Iterator for Tokens<'_> {
                 ';' => Sigil::Semi,
                 '-' => Sigil::Minus,
                 '*' => Sigil::Star,
-                '/' => Sigil::Slash,
                 '.' => Sigil::Dot,
                 ':' => Sigil::Colon,
                 ',' => Sigil::Comma,
@@ -207,44 +213,39 @@ impl Tokens<'_> {
         }
         Sigil::Str { val }
     }
+
+    fn parse_line_comment(&mut self) -> Sigil {
+        // Consume the second '/'
+        self.next_char();
+        let mut body = String::new();
+        while let Some(ch) = self.peek_char() {
+            if ch == '\n' {
+                break;
+            }
+            self.next_char();
+            body.push(ch);
+        }
+        Sigil::Comment { body }
+    }
+
+    fn parse_block_comment(&mut self) -> Sigil {
+        // Consume the '*'
+        self.next_char();
+        let mut body = String::new();
+        // Read until closing */ or EOF
+        while let Some(ch) = self.next_char() {
+            if ch == '*'
+                && let Some('/') = self.peek_char()
+            {
+                self.next_char();
+                break;
+            }
+            body.push(ch);
+        }
+        Sigil::Comment { body }
+    }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn prog_simple() {
-        let input = "let x = 5;";
-        let tokens: Vec<_> = Tokens::new(input).collect();
-        insta::assert_debug_snapshot!(tokens);
-    }
-
-    #[test]
-    fn assign_str_escaped() {
-        let input = r#" s = "hello\nworld\twith\\quotes\"" "#;
-        let tokens: Vec<_> = Tokens::new(input).collect();
-        insta::assert_debug_snapshot!(tokens);
-    }
-
-    #[test]
-    fn assign_str_unclosed() {
-        let input = r#" s = "hello "#;
-        let tokens: Vec<_> = Tokens::new(input).collect();
-        insta::assert_debug_snapshot!(tokens);
-    }
-
-    #[test]
-    fn assign_num() {
-        let input = " x = 5.5 ";
-        let tokens: Vec<_> = Tokens::new(input).collect();
-        insta::assert_debug_snapshot!(tokens);
-    }
-
-    #[test]
-    fn assign_num_invalid() {
-        let input = " x = 5.5.5 ";
-        let tokens: Vec<_> = Tokens::new(input).collect();
-        insta::assert_debug_snapshot!(tokens);
-    }
-}
+#[path = "lexer.tests.rs"]
+mod tests;

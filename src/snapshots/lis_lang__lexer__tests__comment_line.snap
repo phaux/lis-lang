@@ -21,12 +21,30 @@ expression: tokens
     },
     Token {
         sigil: Num {
-            val: 5.0,
+            val: 1.0,
         },
         range: 8..9,
     },
     Token {
         sigil: Semi,
         range: 9..10,
+    },
+    Token {
+        sigil: Comment {
+            body: " this is a comment",
+        },
+        range: 11..31,
+    },
+    Token {
+        sigil: Keyword(
+            Print,
+        ),
+        range: 32..37,
+    },
+    Token {
+        sigil: Ident {
+            name: "x",
+        },
+        range: 38..39,
     },
 ]

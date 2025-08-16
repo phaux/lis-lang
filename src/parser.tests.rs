@@ -276,3 +276,34 @@ fn stmt_func_decl_missing_brace() {
     let ast = Parser::new("fn add(a, b) { a + b").parse_stmt();
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn comments_ignored_in_prog() {
+    let src = r"
+        // header
+        let x = 1; /* mid */ let y = 2;
+        print x // tail
+        ;
+    ";
+    let ast = Parser::new(src).parse_prog();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn comments_inside_expr_and_args() {
+    let src = r"
+        func(
+            1, // after first
+            /* block */ 2
+        ).prop /* between */ . toString ( /* none */ )
+    ";
+    let ast = Parser::new(src).parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn comments_only_prog() {
+    let src = "// just a comment\n/* and a block */";
+    let ast = Parser::new(src).parse_prog();
+    insta::assert_debug_snapshot!(ast);
+}
