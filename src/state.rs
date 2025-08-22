@@ -1,3 +1,6 @@
+//! This module defines types which represent the state of a running program.
+//! The root of the state is the current [Scope].
+
 use std::{
     cell::RefCell,
     collections::HashMap,
@@ -9,6 +12,8 @@ use uuid::Uuid;
 
 use crate::ast::{Span, Stmt};
 
+/// A scope stores declared variables.
+/// It also has a pointer to the parent scope, which is used for variable lookup.
 #[derive(Default)]
 pub struct Scope {
     pub vars: RefCell<HashMap<String, Val>>,
@@ -24,6 +29,7 @@ impl Debug for Scope {
 }
 
 impl Scope {
+    /// Creates a new scope with the given parent.
     pub fn new(parent: Rc<Scope>) -> Self {
         Scope {
             vars: RefCell::new(HashMap::new()),
@@ -90,7 +96,7 @@ impl Val {
     }
 }
 
-/// The type of a value.
+/// The type of a [Val].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type {
     Nil,
@@ -101,16 +107,20 @@ pub enum Type {
     Func,
 }
 
+/// An object value.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Obj {
     pub props: HashMap<String, Val>,
 }
 
+/// A function value.
 #[derive(Clone)]
 pub struct Func {
     pub id: Uuid,
     pub params: Vec<String>,
+    /// AST of the function body.
     pub body: Rc<Span<Stmt>>,
+    /// Pointer to the scope in which the function was declared.
     pub closure_scope: Rc<Scope>,
 }
 

@@ -1,8 +1,11 @@
+//! This module defines the [Lexer].
+//! It transforms a string of characters into a stream of [Token]s.
+
 use std::str::FromStr as _;
 
 use crate::token::{Keyword, Pos, Sigil, Token};
 
-pub struct Tokenizer<'a> {
+pub struct Lexer<'a> {
     input: &'a str,
     /// Current byte offset in the input string.
     offset: usize,
@@ -10,7 +13,7 @@ pub struct Tokenizer<'a> {
     pos: Pos,
 }
 
-impl<'a> Tokenizer<'a> {
+impl<'a> Lexer<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
         Self {
@@ -37,7 +40,7 @@ impl<'a> Tokenizer<'a> {
     }
 }
 
-impl Iterator for Tokenizer<'_> {
+impl Iterator for Lexer<'_> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -98,7 +101,7 @@ impl Iterator for Tokenizer<'_> {
     }
 }
 
-impl Tokenizer<'_> {
+impl Lexer<'_> {
     fn parse_num(&mut self, first: char) -> Sigil {
         let mut val_str = String::new();
         val_str.push(first);

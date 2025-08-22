@@ -1,3 +1,6 @@
+//! Main module.
+//! Handles the execution of programs from the command line.
+
 #![warn(clippy::pedantic)]
 
 pub(crate) mod ast;
@@ -20,8 +23,10 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let input = if let Some(filename) = std::env::args().nth(1) {
+        // Read from file
         std::fs::read_to_string(filename)?
     } else {
+        // Read from stdin
         let mut buffer = String::new();
         std::io::stdin().read_to_string(&mut buffer)?;
         buffer

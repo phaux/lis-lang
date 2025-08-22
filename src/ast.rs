@@ -1,13 +1,17 @@
+//! This module defines types which represent abstract syntax tree nodes.
+//! The root of the AST is a [Prog].
+
 use std::ops::Range;
 
 use crate::token::{Keyword, Pos, Sigil, Token};
 
+/// AST Node representing a whole program.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Prog {
     pub stmts: Vec<Span<Stmt>>,
 }
 
-/// A wrapper type which adds information about position in source code.
+/// A wrapper type which adds information about node's position in source code.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Span<T> {
     pub offset: Range<usize>,

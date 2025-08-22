@@ -1,3 +1,5 @@
+//! This module defines types which represent [Token]s.
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub sigil: Sigil,

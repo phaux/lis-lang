@@ -1,3 +1,6 @@
+//! This module defines the [Parser].
+//! It transforms a stream of [Token]s into a tree of [AST](crate::ast) nodes.
+
 use std::{
     fmt,
     iter::{Filter, Peekable},
@@ -5,7 +8,7 @@ use std::{
 
 use crate::{
     ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
-    lexer::Tokenizer,
+    lexer::Lexer,
     token::{Keyword, Sigil, Token},
 };
 
@@ -38,13 +41,13 @@ pub struct Parser<'a> {
     tokens: Peekable<FilterTokens<'a>>,
 }
 
-type FilterTokens<'a> = Filter<Tokenizer<'a>, fn(&Token) -> bool>;
+type FilterTokens<'a> = Filter<Lexer<'a>, fn(&Token) -> bool>;
 
 impl<'a> Parser<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
         Parser {
-            tokens: Tokenizer::new(input)
+            tokens: Lexer::new(input)
                 .filter(Parser::is_not_comment as fn(&Token) -> bool)
                 .peekable(),
         }

@@ -1,11 +1,19 @@
+//! This module defines the virtual machine.
+//! It interprets [AST](crate::ast) nodes as instructions which operate on [state](crate::state).
+//!
+//! This module is a collection of functions, each for handling a specific type of AST node.
+//! The main entry point of this module is [`exec_prog`].
+
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    ast::{BinOp, Expr, Span, Pat, Prog, Stmt, UnaryOp},
+    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
     token::{Pos, Token},
 };
 
+/// Result of executing a statement.
+/// Used to handle jumping statements like `return`.
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum ExecResult {
@@ -13,12 +21,16 @@ pub enum ExecResult {
     Return(Val),
 }
 
+/// Executes a whole program.
 pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<Val, ExecError> {
     let prog_scope = Rc::new(Scope::new(global_scope));
     for stmt in &prog.stmts {
         match exec_stmt(Rc::clone(&prog_scope), stmt)? {
             ExecResult::Void => {}
-            ExecResult::Return(val) => return Ok(val),
+            ExecResult::Return(val) => {
+                // Top-level return was encountered.
+                return Ok(val);
+            }
         }
     }
     Ok(Val::Nil)
@@ -98,6 +110,7 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErro
     }
 }
 
+/// Evaluates a single expression.
 pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError> {
     match &expr.node {
         Expr::Nil => Ok(Val::Nil),
@@ -283,6 +296,7 @@ fn eval_unary_op(
 
 fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Result<Val, ExecError> {
     let Expr::Var { name } = &place.node else {
+        // Only support variable assignment for now
         return Err(ExecError {
             pos: place.pos.start,
             scope: Rc::clone(scope),
@@ -291,6 +305,8 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
     };
     let val = eval_expr(scope, expr)?;
     if !scope.assign(name, val.clone()) {
+        // Variable must be defined anywhere in the scope chain.
+        // This is unlike JS where it would create a variable in the global scope.
         return Err(ExecError {
             pos: place.pos.start,
             scope: Rc::clone(scope),
@@ -302,6 +318,9 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
     Ok(val)
 }
 
+/// Matches a pattern against a value.
+/// The goal of pattern matching is to ultimately bind values to variables in the given scope.
+/// Additionally, pattern matching can destructure objects and recursively match on their properties.
 pub fn match_pattern(
     scope: &Rc<Scope>,
     pat: &Span<Pat>,
@@ -313,7 +332,7 @@ pub fn match_pattern(
             scope.declare(name.as_str(), matched_val);
         }
         Pat::Obj { props, .. } => {
-            // Object pattern matches each property of the matched value
+            // Object pattern recursively matches each property of the matched value
             let Val::Obj(matched_obj) = matched_val else {
                 return Err(ExecError {
                     pos: pat.pos.start,
@@ -350,7 +369,7 @@ pub struct ExecError {
     /// Byte offset in the source code where the error occurred.
     pub pos: Pos,
     /// The scope where the error occurred, which can be used to show backtrace.
-    #[allow(dead_code, reason = "only used for displaying via debug")]
+    #[allow(dead_code, reason = "only used for displaying via debug for now")]
     pub scope: Rc<Scope>,
     /// The kind of error.
     pub kind: ExecErrorKind,
