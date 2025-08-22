@@ -3,18 +3,39 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..14,
+    Span {
+        offset: 0..14,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 14,
+        },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                range: 0..1,
+                offset: 0..1,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 1,
+                },
             },
             props: [
                 (
                     "a",
-                    Node {
-                        range: 5..6,
+                    Span {
+                        offset: 5..6,
+                        pos: Pos {
+                            line: 0,
+                            col: 5,
+                        }..Pos {
+                            line: 0,
+                            col: 6,
+                        },
                         node: Num {
                             val: 1.0,
                         },
@@ -22,8 +43,15 @@ Ok(
                 ),
                 (
                     "b",
-                    Node {
-                        range: 11..12,
+                    Span {
+                        offset: 11..12,
+                        pos: Pos {
+                            line: 0,
+                            col: 11,
+                        }..Pos {
+                            line: 0,
+                            col: 12,
+                        },
                         node: Num {
                             val: 2.0,
                         },
@@ -32,7 +60,14 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                range: 13..14,
+                offset: 13..14,
+                pos: Pos {
+                    line: 0,
+                    col: 13,
+                }..Pos {
+                    line: 0,
+                    col: 14,
+                },
             },
         },
     },

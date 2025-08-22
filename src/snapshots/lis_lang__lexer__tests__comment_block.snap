@@ -7,32 +7,74 @@ expression: tokens
         sigil: Keyword(
             Let,
         ),
-        range: 0..3,
+        offset: 0..3,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 3,
+        },
     },
     Token {
         sigil: Ident {
             name: "x",
         },
-        range: 4..5,
+        offset: 4..5,
+        pos: Pos {
+            line: 0,
+            col: 4,
+        }..Pos {
+            line: 0,
+            col: 5,
+        },
     },
     Token {
         sigil: Eq,
-        range: 6..7,
+        offset: 6..7,
+        pos: Pos {
+            line: 0,
+            col: 6,
+        }..Pos {
+            line: 0,
+            col: 7,
+        },
     },
     Token {
         sigil: Comment {
             body: " block comment ",
         },
-        range: 8..27,
+        offset: 8..27,
+        pos: Pos {
+            line: 0,
+            col: 8,
+        }..Pos {
+            line: 0,
+            col: 27,
+        },
     },
     Token {
         sigil: Num {
             val: 1.0,
         },
-        range: 28..29,
+        offset: 28..29,
+        pos: Pos {
+            line: 0,
+            col: 28,
+        }..Pos {
+            line: 0,
+            col: 29,
+        },
     },
     Token {
         sigil: Semi,
-        range: 29..30,
+        offset: 29..30,
+        pos: Pos {
+            line: 0,
+            col: 29,
+        }..Pos {
+            line: 0,
+            col: 30,
+        },
     },
 ]

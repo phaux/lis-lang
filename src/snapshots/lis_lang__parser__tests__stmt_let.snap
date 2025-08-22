@@ -3,27 +3,62 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..9,
+    Span {
+        offset: 0..9,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 9,
+        },
         node: Let {
             keyword: Token {
                 sigil: Keyword(
                     Let,
                 ),
-                range: 0..3,
+                offset: 0..3,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 3,
+                },
             },
-            pat: Node {
-                range: 4..5,
+            pat: Span {
+                offset: 4..5,
+                pos: Pos {
+                    line: 0,
+                    col: 4,
+                }..Pos {
+                    line: 0,
+                    col: 5,
+                },
                 node: Ident {
                     name: "x",
                 },
             },
             eq_tok: Token {
                 sigil: Eq,
-                range: 6..7,
+                offset: 6..7,
+                pos: Pos {
+                    line: 0,
+                    col: 6,
+                }..Pos {
+                    line: 0,
+                    col: 7,
+                },
             },
-            init: Node {
-                range: 8..9,
+            init: Span {
+                offset: 8..9,
+                pos: Pos {
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    line: 0,
+                    col: 9,
+                },
                 node: Num {
                     val: 1.0,
                 },

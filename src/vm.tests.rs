@@ -58,6 +58,19 @@ fn if_stmt() {
 }
 
 #[test]
+fn if_non_bool_cond() {
+    let result = exec_str(Rc::new(Scope::default()), r"if 1 then return");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 3 },
+            scope: _,
+            kind: ExecErrorKind::InvalidCondition { cond_ty: Type::Num },
+        })
+    ));
+}
+
+#[test]
 fn block_scopes() {
     let scope = Rc::new(Scope::default());
     scope.declare("outer", Val::default());
@@ -81,7 +94,27 @@ fn block_scopes() {
 #[test]
 fn assign_non_literal() {
     let result = exec_str(Rc::new(Scope::default()), r"+1 = +2");
-    assert!(matches!(result, Err(ExecError::InvalidAssign)));
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidAssign,
+        })
+    ));
+}
+
+#[test]
+fn assign_undef() {
+    let result = exec_str(Rc::new(Scope::default()), r"foo = 1");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::UndefVar { name },
+        }) if name == "foo"
+    ));
 }
 
 #[test]
@@ -178,7 +211,16 @@ fn obj_pat_default_with_nil() {
 #[test]
 fn obj_pat_non_obj() {
     let result = exec_str(Rc::new(Scope::default()), r"let {x, y} = 1;");
-    assert!(matches!(result, Err(ExecError::InvalidMatchObj(_))));
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 4 },
+            scope: _,
+            kind: ExecErrorKind::InvalidMatchObj {
+                matched_ty: Type::Num
+            },
+        })
+    ));
 }
 
 #[test]
@@ -192,6 +234,22 @@ fn op_numeric() {
     let scope = Rc::new(Scope::default());
     let val = eval_str(&scope, r"- 1 + 2 * + + 3").unwrap();
     assert_eq!(val, Val::Num(5.0));
+}
+
+#[test]
+fn op_unary_non_num() {
+    let scope = Rc::new(Scope::default());
+    assert!(matches!(
+        eval_str(&scope, "-true"),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidUnaryOp {
+                op: UnaryOp::Neg,
+                val_ty: Type::Bool,
+            },
+        })
+    ));
 }
 
 #[test]
@@ -259,11 +317,27 @@ fn op_logical_non_bool() {
     let scope = Rc::new(Scope::default());
     assert!(matches!(
         eval_str(&scope, "1 and true"),
-        Err(ExecError::InvalidBinOp { .. })
+        Err(ExecError {
+            pos: Pos { line: 0, col: 2 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::And,
+                l_ty: Type::Num,
+                r_ty: Type::Bool,
+            },
+        })
     ));
     assert!(matches!(
         eval_str(&scope, r#""string" or false"#),
-        Err(ExecError::InvalidBinOp { .. })
+        Err(ExecError {
+            pos: Pos { line: 0, col: 9 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Or,
+                l_ty: Type::Str,
+                r_ty: Type::Bool,
+            },
+        })
     ));
 }
 
@@ -285,7 +359,15 @@ fn op_concat_non_string() {
     let scope = Rc::new(Scope::default());
     assert!(matches!(
         eval_str(&scope, "1 ++ 2"),
-        Err(ExecError::InvalidBinOp { .. })
+        Err(ExecError {
+            pos: Pos { line: 0, col: 2 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Concat,
+                l_ty: Type::Num,
+                r_ty: Type::Num,
+            },
+        })
     ));
 }
 
@@ -317,7 +399,14 @@ fn prop_access_nested() {
     assert_eq!(val, Val::Nil);
     // Test non-existent property
     let result = eval_str(&scope, "obj.non_existent.name");
-    assert_eq!(result, Err(ExecError::InvalidPropAccess(Type::Nil)));
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 16 },
+            scope: _,
+            kind: ExecErrorKind::InvalidPropAccess { obj_ty: Type::Nil },
+        })
+    ));
 }
 
 #[test]
@@ -357,10 +446,16 @@ fn func_closure_capture() {
 fn func_call_non_func() {
     let scope = Rc::new(Scope::default());
     scope.declare("x", Val::Num(10.0));
-    assert_eq!(
+    assert!(matches!(
         exec_str(Rc::clone(&scope), "x()"),
-        Err(ExecError::InvalidCall(Type::Num))
-    );
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidCall {
+                called_ty: Type::Num,
+            },
+        })
+    ));
 }
 
 #[test]

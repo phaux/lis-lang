@@ -3,17 +3,38 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 9..78,
+    Span {
+        offset: 9..78,
+        pos: Pos {
+            line: 1,
+            col: 8,
+        }..Pos {
+            line: 3,
+            col: 20,
+        },
         node: If {
             keyword: Token {
                 sigil: Keyword(
                     If,
                 ),
-                range: 9..11,
+                offset: 9..11,
+                pos: Pos {
+                    line: 1,
+                    col: 8,
+                }..Pos {
+                    line: 1,
+                    col: 10,
+                },
             },
-            condition: Node {
-                range: 12..13,
+            condition: Span {
+                offset: 12..13,
+                pos: Pos {
+                    line: 1,
+                    col: 11,
+                }..Pos {
+                    line: 1,
+                    col: 12,
+                },
                 node: Var {
                     name: "x",
                 },
@@ -22,19 +43,47 @@ Ok(
                 sigil: Keyword(
                     Then,
                 ),
-                range: 14..18,
+                offset: 14..18,
+                pos: Pos {
+                    line: 1,
+                    col: 13,
+                }..Pos {
+                    line: 1,
+                    col: 17,
+                },
             },
-            cons_branch: Node {
-                range: 19..26,
+            cons_branch: Span {
+                offset: 19..26,
+                pos: Pos {
+                    line: 1,
+                    col: 18,
+                }..Pos {
+                    line: 1,
+                    col: 25,
+                },
                 node: Print {
                     keyword: Token {
                         sigil: Keyword(
                             Print,
                         ),
-                        range: 19..24,
+                        offset: 19..24,
+                        pos: Pos {
+                            line: 1,
+                            col: 18,
+                        }..Pos {
+                            line: 1,
+                            col: 23,
+                        },
                     },
-                    expr: Node {
-                        range: 25..26,
+                    expr: Span {
+                        offset: 25..26,
+                        pos: Pos {
+                            line: 1,
+                            col: 24,
+                        }..Pos {
+                            line: 1,
+                            col: 25,
+                        },
                         node: Num {
                             val: 1.0,
                         },
@@ -46,21 +95,49 @@ Ok(
                     sigil: Keyword(
                         Else,
                     ),
-                    range: 35..39,
+                    offset: 35..39,
+                    pos: Pos {
+                        line: 2,
+                        col: 8,
+                    }..Pos {
+                        line: 2,
+                        col: 12,
+                    },
                 },
             ),
             alt_branch: Some(
-                Node {
-                    range: 40..78,
+                Span {
+                    offset: 40..78,
+                    pos: Pos {
+                        line: 2,
+                        col: 13,
+                    }..Pos {
+                        line: 3,
+                        col: 20,
+                    },
                     node: If {
                         keyword: Token {
                             sigil: Keyword(
                                 If,
                             ),
-                            range: 40..42,
+                            offset: 40..42,
+                            pos: Pos {
+                                line: 2,
+                                col: 13,
+                            }..Pos {
+                                line: 2,
+                                col: 15,
+                            },
                         },
-                        condition: Node {
-                            range: 43..44,
+                        condition: Span {
+                            offset: 43..44,
+                            pos: Pos {
+                                line: 2,
+                                col: 16,
+                            }..Pos {
+                                line: 2,
+                                col: 17,
+                            },
                             node: Var {
                                 name: "y",
                             },
@@ -69,19 +146,47 @@ Ok(
                             sigil: Keyword(
                                 Then,
                             ),
-                            range: 45..49,
+                            offset: 45..49,
+                            pos: Pos {
+                                line: 2,
+                                col: 18,
+                            }..Pos {
+                                line: 2,
+                                col: 22,
+                            },
                         },
-                        cons_branch: Node {
-                            range: 50..57,
+                        cons_branch: Span {
+                            offset: 50..57,
+                            pos: Pos {
+                                line: 2,
+                                col: 23,
+                            }..Pos {
+                                line: 2,
+                                col: 30,
+                            },
                             node: Print {
                                 keyword: Token {
                                     sigil: Keyword(
                                         Print,
                                     ),
-                                    range: 50..55,
+                                    offset: 50..55,
+                                    pos: Pos {
+                                        line: 2,
+                                        col: 23,
+                                    }..Pos {
+                                        line: 2,
+                                        col: 28,
+                                    },
                                 },
-                                expr: Node {
-                                    range: 56..57,
+                                expr: Span {
+                                    offset: 56..57,
+                                    pos: Pos {
+                                        line: 2,
+                                        col: 29,
+                                    }..Pos {
+                                        line: 2,
+                                        col: 30,
+                                    },
                                     node: Num {
                                         val: 2.0,
                                     },
@@ -93,21 +198,49 @@ Ok(
                                 sigil: Keyword(
                                     Else,
                                 ),
-                                range: 66..70,
+                                offset: 66..70,
+                                pos: Pos {
+                                    line: 3,
+                                    col: 8,
+                                }..Pos {
+                                    line: 3,
+                                    col: 12,
+                                },
                             },
                         ),
                         alt_branch: Some(
-                            Node {
-                                range: 71..78,
+                            Span {
+                                offset: 71..78,
+                                pos: Pos {
+                                    line: 3,
+                                    col: 13,
+                                }..Pos {
+                                    line: 3,
+                                    col: 20,
+                                },
                                 node: Print {
                                     keyword: Token {
                                         sigil: Keyword(
                                             Print,
                                         ),
-                                        range: 71..76,
+                                        offset: 71..76,
+                                        pos: Pos {
+                                            line: 3,
+                                            col: 13,
+                                        }..Pos {
+                                            line: 3,
+                                            col: 18,
+                                        },
                                     },
-                                    expr: Node {
-                                        range: 77..78,
+                                    expr: Span {
+                                        offset: 77..78,
+                                        pos: Pos {
+                                            line: 3,
+                                            col: 19,
+                                        }..Pos {
+                                            line: 3,
+                                            col: 20,
+                                        },
                                         node: Num {
                                             val: 3.0,
                                         },

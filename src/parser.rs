@@ -4,13 +4,17 @@ use std::{
 };
 
 use crate::{
-    ast::{BinOp, Expr, Node, Pat, Prog, Stmt, UnaryOp},
-    lexer::{Keyword, Sigil, Token, Tokens},
+    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    lexer::Tokenizer,
+    token::{Keyword, Sigil, Token},
 };
 
+/// Error that can occur during parsing.
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
+    /// Description of what was expected.
     pub expected: &'static str,
+    /// Token that caused the error or `None` if the error was caused by end of input.
     pub found: Option<Token>,
 }
 
@@ -18,11 +22,15 @@ impl std::error::Error for ParseError {}
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "unexpected {:?} where {} was expected",
-            self.found, self.expected
-        )
+        if let Some(tok) = &self.found {
+            write!(f, "unexpected {} where {} was expected", tok, self.expected)
+        } else {
+            write!(
+                f,
+                "unexpected end of input where {} was expected",
+                self.expected
+            )
+        }
     }
 }
 
@@ -30,13 +38,13 @@ pub struct Parser<'a> {
     tokens: Peekable<FilterTokens<'a>>,
 }
 
-type FilterTokens<'a> = Filter<Tokens<'a>, fn(&Token) -> bool>;
+type FilterTokens<'a> = Filter<Tokenizer<'a>, fn(&Token) -> bool>;
 
 impl<'a> Parser<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
         Parser {
-            tokens: Tokens::new(input)
+            tokens: Tokenizer::new(input)
                 .filter(Parser::is_not_comment as fn(&Token) -> bool)
                 .peekable(),
         }
@@ -75,7 +83,7 @@ impl<'a> Parser<'a> {
         Ok(Prog { stmts })
     }
 
-    fn parse_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Parse statement based on first token
         if let Some(tok) = self.tokens.peek() {
             match tok.sigil {
@@ -90,14 +98,15 @@ impl<'a> Parser<'a> {
         }
 
         // Parse expression statement
-        let expr = self.parse_expr(0)?;
-        Ok(Node {
-            range: expr.range.clone(),
+        let expr = Box::new(self.parse_expr(0)?);
+        Ok(Span {
+            offset: expr.offset.clone(),
+            pos: expr.pos.clone(),
             node: Stmt::Expr { expr },
         })
     }
 
-    fn parse_block_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_block_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume opening brace
         let brace_l = self.tokens.next().unwrap();
 
@@ -131,8 +140,9 @@ impl<'a> Parser<'a> {
             stmts.push(stmt);
         };
 
-        Ok(Node {
-            range: brace_l.range.start..brace_r.range.end,
+        Ok(Span {
+            offset: brace_l.offset.start..brace_r.offset.end,
+            pos: brace_l.pos.start..brace_r.pos.end,
             node: Stmt::Block {
                 brace_l,
                 stmts,
@@ -141,12 +151,12 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_let_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_let_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'let' keyword
         let keyword = self.tokens.next().unwrap();
 
         // Parse the pattern
-        let pat = self.parse_pattern()?;
+        let pat = Box::new(self.parse_pattern()?);
 
         // Expect '=' after pattern in let statement
         let eq_tok = match self.tokens.next() {
@@ -164,10 +174,11 @@ impl<'a> Parser<'a> {
         };
 
         // Parse expression
-        let init = self.parse_expr(0)?;
+        let init = Box::new(self.parse_expr(0)?);
 
-        Ok(Node {
-            range: keyword.range.start..init.range.end,
+        Ok(Span {
+            offset: keyword.offset.start..init.offset.end,
+            pos: keyword.pos.start..init.pos.end,
             node: Stmt::Let {
                 keyword,
                 pat,
@@ -177,13 +188,15 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_pattern(&mut self) -> Result<Node<Pat>, ParseError> {
+    fn parse_pattern(&mut self) -> Result<Span<Pat>, ParseError> {
         match self.tokens.next() {
             Some(Token {
                 sigil: Sigil::Ident { name },
-                range,
-            }) => Ok(Node {
-                range,
+                offset,
+                pos,
+            }) => Ok(Span {
+                offset,
+                pos,
                 node: Pat::Ident { name },
             }),
             Some(
@@ -199,7 +212,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_obj_pat(&mut self, brace_l: Token) -> Result<Node<Pat>, ParseError> {
+    fn parse_obj_pat(&mut self, brace_l: Token) -> Result<Span<Pat>, ParseError> {
         let mut props = Vec::new();
         let mut needs_separator = false;
         let brace_r = loop {
@@ -227,8 +240,13 @@ impl<'a> Parser<'a> {
             let key = match self.tokens.next() {
                 Some(Token {
                     sigil: Sigil::Ident { name },
-                    range,
-                }) => Node { range, node: name },
+                    offset,
+                    pos,
+                }) => Span {
+                    offset,
+                    pos,
+                    node: name,
+                },
                 tok => {
                     return Err(ParseError {
                         expected: "key identifier of object pattern",
@@ -242,8 +260,9 @@ impl<'a> Parser<'a> {
                 self.parse_pattern()?
             } else {
                 // No colon - Parse as object property shorthand.
-                Node {
-                    range: key.range.clone(),
+                Span {
+                    offset: key.offset.clone(),
+                    pos: key.pos.clone(),
                     node: Pat::Ident {
                         name: key.node.clone(),
                     },
@@ -252,9 +271,10 @@ impl<'a> Parser<'a> {
 
             // Check for default value after pattern
             if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
-                let default = self.parse_expr(0)?;
-                pat = Node {
-                    range: pat.range.start..default.range.end,
+                let default = Box::new(self.parse_expr(0)?);
+                pat = Span {
+                    offset: pat.offset.start..default.offset.end,
+                    pos: pat.pos.start..default.pos.end,
                     node: Pat::Default {
                         pat: Box::new(pat),
                         eq_tok: eq_token,
@@ -267,8 +287,9 @@ impl<'a> Parser<'a> {
             needs_separator = true;
         };
 
-        Ok(Node {
-            range: brace_l.range.start..brace_r.range.end,
+        Ok(Span {
+            offset: brace_l.offset.start..brace_r.offset.end,
+            pos: brace_l.pos.start..brace_r.pos.end,
             node: Pat::Obj {
                 brace_l,
                 props,
@@ -277,7 +298,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_func_decl(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_func_decl(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'fn' keyword
         let keyword = self.tokens.next().unwrap();
 
@@ -365,8 +386,9 @@ impl<'a> Parser<'a> {
             }
         };
 
-        Ok(Node {
-            range: keyword.range.start..body.range.end,
+        Ok(Span {
+            offset: keyword.offset.start..body.offset.end,
+            pos: keyword.pos.start..body.pos.end,
             node: Stmt::FuncDecl {
                 keyword,
                 name,
@@ -378,20 +400,21 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_print_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_print_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'print' keyword
         let keyword = self.tokens.next().unwrap();
 
         // Parse expression
-        let expr = self.parse_expr(0)?;
+        let expr = Box::new(self.parse_expr(0)?);
 
-        Ok(Node {
-            range: keyword.range.start..expr.range.end,
+        Ok(Span {
+            offset: keyword.offset.start..expr.offset.end,
+            pos: keyword.pos.start..expr.pos.end,
             node: Stmt::Print { keyword, expr },
         })
     }
 
-    fn parse_return_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_return_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'return' keyword
         let keyword = self.tokens.next().unwrap();
 
@@ -401,17 +424,19 @@ impl<'a> Parser<'a> {
                 sigil: Sigil::Semi | Sigil::CurlyR,
                 ..
             })
-            | None => Ok(Node {
-                range: keyword.range.clone(),
+            | None => Ok(Span {
+                offset: keyword.offset.clone(),
+                pos: keyword.pos.clone(),
                 node: Stmt::Return {
                     keyword,
                     expr: None,
                 },
             }),
             _ => {
-                let expr = self.parse_expr(0)?;
-                Ok(Node {
-                    range: keyword.range.start..expr.range.end,
+                let expr = Box::new(self.parse_expr(0)?);
+                Ok(Span {
+                    offset: keyword.offset.start..expr.offset.end,
+                    pos: keyword.pos.start..expr.pos.end,
                     node: Stmt::Return {
                         keyword,
                         expr: Some(expr),
@@ -421,12 +446,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_if_stmt(&mut self) -> Result<Node<Stmt>, ParseError> {
+    fn parse_if_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'if' keyword
         let keyword = self.tokens.next().unwrap();
 
         // Parse condition
-        let condition = self.parse_expr(0)?;
+        let condition = Box::new(self.parse_expr(0)?);
 
         // Expect 'then'
         let then_keyword = match self.tokens.next() {
@@ -458,8 +483,9 @@ impl<'a> Parser<'a> {
 
         let end_node = alt_branch.as_ref().unwrap_or(&cons_branch);
 
-        Ok(Node {
-            range: keyword.range.start..end_node.range.end,
+        Ok(Span {
+            offset: keyword.offset.start..end_node.offset.end,
+            pos: keyword.pos.start..end_node.pos.end,
             node: Stmt::If {
                 keyword,
                 condition,
@@ -471,7 +497,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    pub fn parse_expr(&mut self, precedence: u8) -> Result<Node<Expr>, ParseError> {
+    pub fn parse_expr(&mut self, precedence: u8) -> Result<Span<Expr>, ParseError> {
         // Parse left operand
         let mut left = self.parse_operand()?;
 
@@ -492,8 +518,9 @@ impl<'a> Parser<'a> {
         // Handle assignment expression (right associative)
         if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
             let expr = self.parse_expr(0)?;
-            left = Node {
-                range: left.range.start..expr.range.end,
+            left = Span {
+                offset: left.offset.start..expr.offset.end,
+                pos: left.pos.start..expr.pos.end,
                 node: Expr::Assign {
                     place: Box::new(left),
                     eq_tok: eq_token,
@@ -516,8 +543,9 @@ impl<'a> Parser<'a> {
             }
             let op_tok = self.tokens.next().unwrap(); // Consume operator
             let right = self.parse_expr(next_prec)?;
-            left = Node {
-                range: left.range.start..right.range.end,
+            left = Span {
+                offset: left.offset.start..right.offset.end,
+                pos: left.pos.start..right.pos.end,
                 node: Expr::BinOp {
                     left: Box::new(left),
                     op,
@@ -530,7 +558,7 @@ impl<'a> Parser<'a> {
         Ok(left)
     }
 
-    fn parse_operand(&mut self) -> Result<Node<Expr>, ParseError> {
+    fn parse_operand(&mut self) -> Result<Span<Expr>, ParseError> {
         let tok = self.tokens.next();
 
         if let Some(tok) = &tok {
@@ -548,8 +576,9 @@ impl<'a> Parser<'a> {
                 _ => None,
             };
             if let Some(expr) = expr {
-                return Ok(Node {
-                    range: tok.range.clone(),
+                return Ok(Span {
+                    offset: tok.offset.clone(),
+                    pos: tok.pos.clone(),
                     node: expr,
                 });
             }
@@ -567,8 +596,9 @@ impl<'a> Parser<'a> {
             // Handle unary operator
             if let Some(op) = UnaryOp::try_from_token(tok) {
                 let expr = Box::new(self.parse_operand()?);
-                return Ok(Node {
-                    range: tok.range.start..expr.range.end,
+                return Ok(Span {
+                    offset: tok.offset.start..expr.offset.end,
+                    pos: tok.pos.start..expr.pos.end,
                     node: Expr::UnaryOp {
                         op,
                         op_tok: tok.clone(),
@@ -584,15 +614,16 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_paren_expr(&mut self, paren_l: &Token) -> Result<Node<Expr>, ParseError> {
+    fn parse_paren_expr(&mut self, paren_l: &Token) -> Result<Span<Expr>, ParseError> {
         let expr = self.parse_expr(0)?;
 
         let tok = self.tokens.next();
         if let Some(paren_r) = &tok
             && paren_r.sigil == Sigil::ParenR
         {
-            return Ok(Node {
-                range: paren_l.range.start..paren_r.range.end,
+            return Ok(Span {
+                offset: paren_l.offset.start..paren_r.offset.end,
+                pos: paren_l.pos.start..paren_r.pos.end,
                 node: expr.node,
             });
         }
@@ -603,7 +634,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_prop_access(&mut self, obj: Node<Expr>) -> Result<Node<Expr>, ParseError> {
+    fn parse_prop_access(&mut self, obj: Span<Expr>) -> Result<Span<Expr>, ParseError> {
         // Consume dot token
         let dot_tok = self.tokens.next().unwrap();
 
@@ -611,8 +642,13 @@ impl<'a> Parser<'a> {
         let prop = match self.tokens.next() {
             Some(Token {
                 sigil: Sigil::Ident { name },
-                range,
-            }) => Node { range, node: name },
+                offset,
+                pos,
+            }) => Span {
+                offset,
+                pos,
+                node: name,
+            },
             tok => {
                 return Err(ParseError {
                     expected: "property name identifier of property access",
@@ -621,8 +657,9 @@ impl<'a> Parser<'a> {
             }
         };
 
-        Ok(Node {
-            range: obj.range.start..prop.range.end,
+        Ok(Span {
+            offset: obj.offset.start..prop.offset.end,
+            pos: obj.pos.start..prop.pos.end,
             node: Expr::PropAccess {
                 obj: Box::new(obj),
                 dot_tok,
@@ -631,7 +668,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_func_call(&mut self, callee: Node<Expr>) -> Result<Node<Expr>, ParseError> {
+    fn parse_func_call(&mut self, callee: Span<Expr>) -> Result<Span<Expr>, ParseError> {
         // Consume opening parenthesis
         let paren_l = self.tokens.next().unwrap();
 
@@ -668,8 +705,9 @@ impl<'a> Parser<'a> {
             needs_separator = true;
         };
 
-        Ok(Node {
-            range: callee.range.start..paren_r.range.end,
+        Ok(Span {
+            offset: callee.offset.start..paren_r.offset.end,
+            pos: callee.pos.start..paren_r.pos.end,
             node: Expr::FuncCall {
                 callee: Box::new(callee),
                 paren_l,
@@ -679,7 +717,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_obj(&mut self, brace_l: &Token) -> Result<Node<Expr>, ParseError> {
+    fn parse_obj(&mut self, brace_l: &Token) -> Result<Span<Expr>, ParseError> {
         let mut props = Vec::new();
 
         let mut needs_separator = false;
@@ -746,8 +784,9 @@ impl<'a> Parser<'a> {
             needs_separator = true;
         };
 
-        Ok(Node {
-            range: brace_l.range.start..brace_r.range.end,
+        Ok(Span {
+            offset: brace_l.offset.start..brace_r.offset.end,
+            pos: brace_l.pos.start..brace_r.pos.end,
             node: Expr::Obj {
                 brace_l: brace_l.clone(),
                 props,

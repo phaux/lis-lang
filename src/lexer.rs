@@ -1,114 +1,49 @@
-use std::{ops::Range, str::FromStr};
+use std::str::FromStr as _;
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub sigil: Sigil,
-    pub range: Range<usize>,
-}
+use crate::token::{Keyword, Pos, Sigil, Token};
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Sigil {
-    Keyword(Keyword),
-    Ident { name: String },
-    Num { val: f64 },
-    Str { val: String },
-    Comment { body: String },
-    Eq,
-    EqEq,
-    Bang,
-    BangEq,
-    Semi,
-    Plus,
-    PlusPlus,
-    Minus,
-    Star,
-    Slash,
-    Dot,
-    Colon,
-    Comma,
-    ParenL,
-    ParenR,
-    CurlyL,
-    CurlyR,
-    Invalid,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Keyword {
-    True,
-    False,
-    Nil,
-    Let,
-    Fn,
-    Print,
-    If,
-    Then,
-    Else,
-    For,
-    While,
-    Do,
-    Break,
-    Continue,
-    Return,
-    And,
-    Or,
-}
-
-impl FromStr for Keyword {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "true" => Ok(Keyword::True),
-            "false" => Ok(Keyword::False),
-            "nil" => Ok(Keyword::Nil),
-            "let" => Ok(Keyword::Let),
-            "fn" => Ok(Keyword::Fn),
-            "print" => Ok(Keyword::Print),
-            "if" => Ok(Keyword::If),
-            "then" => Ok(Keyword::Then),
-            "else" => Ok(Keyword::Else),
-            "for" => Ok(Keyword::For),
-            "while" => Ok(Keyword::While),
-            "do" => Ok(Keyword::Do),
-            "break" => Ok(Keyword::Break),
-            "continue" => Ok(Keyword::Continue),
-            "return" => Ok(Keyword::Return),
-            "and" => Ok(Keyword::And),
-            "or" => Ok(Keyword::Or),
-            _ => Err(()),
-        }
-    }
-}
-
-pub struct Tokens<'a> {
+pub struct Tokenizer<'a> {
     input: &'a str,
-    pos: usize,
+    /// Current byte offset in the input string.
+    offset: usize,
+    /// Current line and column.
+    pos: Pos,
 }
 
-impl<'a> Tokens<'a> {
+impl<'a> Tokenizer<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
-        Self { input, pos: 0 }
+        Self {
+            input,
+            offset: 0,
+            pos: Pos::default(),
+        }
     }
 
     fn peek_char(&self) -> Option<char> {
-        self.input[self.pos..].chars().next()
+        self.input[self.offset..].chars().next()
     }
 
     fn next_char(&mut self) -> Option<char> {
-        let ch = self.input[self.pos..].chars().next()?;
-        self.pos += ch.len_utf8();
+        let ch = self.input[self.offset..].chars().next()?;
+        if ch == '\n' {
+            self.pos.line += 1;
+            self.pos.col = 0;
+        } else {
+            self.pos.col += 1;
+        }
+        self.offset += ch.len_utf8();
         Some(ch)
     }
 }
 
-impl Iterator for Tokens<'_> {
+impl Iterator for Tokenizer<'_> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let start = self.pos;
+            let offset_start = self.offset;
+            let pos_start = self.pos;
             let ch = self.next_char()?;
             let sigil = match ch {
                 ch if ch.is_whitespace() => continue,
@@ -154,16 +89,16 @@ impl Iterator for Tokens<'_> {
                 ch if ch.is_ascii_digit() => self.parse_num(ch),
                 _ => Sigil::Invalid,
             };
-            let end = self.pos;
             return Some(Token {
                 sigil,
-                range: start..end,
+                offset: offset_start..self.offset,
+                pos: pos_start..self.pos,
             });
         }
     }
 }
 
-impl Tokens<'_> {
+impl Tokenizer<'_> {
     fn parse_num(&mut self, first: char) -> Sigil {
         let mut val_str = String::new();
         val_str.push(first);

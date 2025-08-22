@@ -3,19 +3,40 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..23,
+    Span {
+        offset: 0..23,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 23,
+        },
         node: FuncDecl {
             keyword: Token {
                 sigil: Keyword(
                     Fn,
                 ),
-                range: 0..2,
+                offset: 0..2,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 2,
+                },
             },
             name: "add",
             param_paren_l: Token {
                 sigil: ParenL,
-                range: 6..7,
+                offset: 6..7,
+                pos: Pos {
+                    line: 0,
+                    col: 6,
+                }..Pos {
+                    line: 0,
+                    col: 7,
+                },
             },
             params: [
                 "a",
@@ -23,24 +44,59 @@ Ok(
             ],
             param_paren_r: Token {
                 sigil: ParenR,
-                range: 11..12,
+                offset: 11..12,
+                pos: Pos {
+                    line: 0,
+                    col: 11,
+                }..Pos {
+                    line: 0,
+                    col: 12,
+                },
             },
-            body: Node {
-                range: 13..23,
+            body: Span {
+                offset: 13..23,
+                pos: Pos {
+                    line: 0,
+                    col: 13,
+                }..Pos {
+                    line: 0,
+                    col: 23,
+                },
                 node: Block {
                     brace_l: Token {
                         sigil: CurlyL,
-                        range: 13..14,
+                        offset: 13..14,
+                        pos: Pos {
+                            line: 0,
+                            col: 13,
+                        }..Pos {
+                            line: 0,
+                            col: 14,
+                        },
                     },
                     stmts: [
-                        Node {
-                            range: 15..21,
+                        Span {
+                            offset: 15..21,
+                            pos: Pos {
+                                line: 0,
+                                col: 15,
+                            }..Pos {
+                                line: 0,
+                                col: 21,
+                            },
                             node: Return {
                                 keyword: Token {
                                     sigil: Keyword(
                                         Return,
                                     ),
-                                    range: 15..21,
+                                    offset: 15..21,
+                                    pos: Pos {
+                                        line: 0,
+                                        col: 15,
+                                    }..Pos {
+                                        line: 0,
+                                        col: 21,
+                                    },
                                 },
                                 expr: None,
                             },
@@ -48,7 +104,14 @@ Ok(
                     ],
                     brace_r: Token {
                         sigil: CurlyR,
-                        range: 22..23,
+                        offset: 22..23,
+                        pos: Pos {
+                            line: 0,
+                            col: 22,
+                        }..Pos {
+                            line: 0,
+                            col: 23,
+                        },
                     },
                 },
             },

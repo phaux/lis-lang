@@ -8,7 +8,14 @@ Err(
         found: Some(
             Token {
                 sigil: ParenL,
-                range: 3..4,
+                offset: 3..4,
+                pos: Pos {
+                    line: 0,
+                    col: 3,
+                }..Pos {
+                    line: 0,
+                    col: 4,
+                },
             },
         ),
     },

@@ -3,14 +3,35 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..11,
+    Span {
+        offset: 0..11,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 11,
+        },
         node: BinOp {
-            left: Node {
-                range: 0..7,
+            left: Span {
+                offset: 0..7,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 7,
+                },
                 node: BinOp {
-                    left: Node {
-                        range: 1..2,
+                    left: Span {
+                        offset: 1..2,
+                        pos: Pos {
+                            line: 0,
+                            col: 1,
+                        }..Pos {
+                            line: 0,
+                            col: 2,
+                        },
                         node: Num {
                             val: 1.0,
                         },
@@ -18,10 +39,24 @@ Ok(
                     op: Add,
                     op_tok: Token {
                         sigil: Plus,
-                        range: 3..4,
+                        offset: 3..4,
+                        pos: Pos {
+                            line: 0,
+                            col: 3,
+                        }..Pos {
+                            line: 0,
+                            col: 4,
+                        },
                     },
-                    right: Node {
-                        range: 5..6,
+                    right: Span {
+                        offset: 5..6,
+                        pos: Pos {
+                            line: 0,
+                            col: 5,
+                        }..Pos {
+                            line: 0,
+                            col: 6,
+                        },
                         node: Num {
                             val: 2.0,
                         },
@@ -31,10 +66,24 @@ Ok(
             op: Mul,
             op_tok: Token {
                 sigil: Star,
-                range: 8..9,
+                offset: 8..9,
+                pos: Pos {
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    line: 0,
+                    col: 9,
+                },
             },
-            right: Node {
-                range: 10..11,
+            right: Span {
+                offset: 10..11,
+                pos: Pos {
+                    line: 0,
+                    col: 10,
+                }..Pos {
+                    line: 0,
+                    col: 11,
+                },
                 node: Num {
                     val: 3.0,
                 },

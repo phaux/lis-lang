@@ -3,17 +3,38 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..17,
+    Span {
+        offset: 0..17,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 17,
+        },
         node: If {
             keyword: Token {
                 sigil: Keyword(
                     If,
                 ),
-                range: 0..2,
+                offset: 0..2,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 2,
+                },
             },
-            condition: Node {
-                range: 3..4,
+            condition: Span {
+                offset: 3..4,
+                pos: Pos {
+                    line: 0,
+                    col: 3,
+                }..Pos {
+                    line: 0,
+                    col: 4,
+                },
                 node: Num {
                     val: 1.0,
                 },
@@ -22,19 +43,47 @@ Ok(
                 sigil: Keyword(
                     Then,
                 ),
-                range: 5..9,
+                offset: 5..9,
+                pos: Pos {
+                    line: 0,
+                    col: 5,
+                }..Pos {
+                    line: 0,
+                    col: 9,
+                },
             },
-            cons_branch: Node {
-                range: 10..17,
+            cons_branch: Span {
+                offset: 10..17,
+                pos: Pos {
+                    line: 0,
+                    col: 10,
+                }..Pos {
+                    line: 0,
+                    col: 17,
+                },
                 node: Print {
                     keyword: Token {
                         sigil: Keyword(
                             Print,
                         ),
-                        range: 10..15,
+                        offset: 10..15,
+                        pos: Pos {
+                            line: 0,
+                            col: 10,
+                        }..Pos {
+                            line: 0,
+                            col: 15,
+                        },
                     },
-                    expr: Node {
-                        range: 16..17,
+                    expr: Span {
+                        offset: 16..17,
+                        pos: Pos {
+                            line: 0,
+                            col: 16,
+                        }..Pos {
+                            line: 0,
+                            col: 17,
+                        },
                         node: Num {
                             val: 1.0,
                         },

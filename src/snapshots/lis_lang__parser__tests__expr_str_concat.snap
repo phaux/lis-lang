@@ -3,11 +3,25 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..18,
+    Span {
+        offset: 0..18,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 18,
+        },
         node: BinOp {
-            left: Node {
-                range: 0..7,
+            left: Span {
+                offset: 0..7,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 7,
+                },
                 node: Str {
                     val: "hello",
                 },
@@ -15,10 +29,24 @@ Ok(
             op: Concat,
             op_tok: Token {
                 sigil: PlusPlus,
-                range: 8..10,
+                offset: 8..10,
+                pos: Pos {
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    line: 0,
+                    col: 10,
+                },
             },
-            right: Node {
-                range: 11..18,
+            right: Span {
+                offset: 11..18,
+                pos: Pos {
+                    line: 0,
+                    col: 11,
+                }..Pos {
+                    line: 0,
+                    col: 18,
+                },
                 node: Str {
                     val: "world",
                 },

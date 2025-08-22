@@ -5,71 +5,162 @@ expression: ast
 Ok(
     Prog {
         stmts: [
-            Node {
-                range: 27..36,
+            Span {
+                offset: 27..36,
+                pos: Pos {
+                    line: 2,
+                    col: 8,
+                }..Pos {
+                    line: 2,
+                    col: 17,
+                },
                 node: Let {
                     keyword: Token {
                         sigil: Keyword(
                             Let,
                         ),
-                        range: 27..30,
+                        offset: 27..30,
+                        pos: Pos {
+                            line: 2,
+                            col: 8,
+                        }..Pos {
+                            line: 2,
+                            col: 11,
+                        },
                     },
-                    pat: Node {
-                        range: 31..32,
+                    pat: Span {
+                        offset: 31..32,
+                        pos: Pos {
+                            line: 2,
+                            col: 12,
+                        }..Pos {
+                            line: 2,
+                            col: 13,
+                        },
                         node: Ident {
                             name: "x",
                         },
                     },
                     eq_tok: Token {
                         sigil: Eq,
-                        range: 33..34,
+                        offset: 33..34,
+                        pos: Pos {
+                            line: 2,
+                            col: 14,
+                        }..Pos {
+                            line: 2,
+                            col: 15,
+                        },
                     },
-                    init: Node {
-                        range: 35..36,
+                    init: Span {
+                        offset: 35..36,
+                        pos: Pos {
+                            line: 2,
+                            col: 16,
+                        }..Pos {
+                            line: 2,
+                            col: 17,
+                        },
                         node: Num {
                             val: 1.0,
                         },
                     },
                 },
             },
-            Node {
-                range: 48..57,
+            Span {
+                offset: 48..57,
+                pos: Pos {
+                    line: 2,
+                    col: 29,
+                }..Pos {
+                    line: 2,
+                    col: 38,
+                },
                 node: Let {
                     keyword: Token {
                         sigil: Keyword(
                             Let,
                         ),
-                        range: 48..51,
+                        offset: 48..51,
+                        pos: Pos {
+                            line: 2,
+                            col: 29,
+                        }..Pos {
+                            line: 2,
+                            col: 32,
+                        },
                     },
-                    pat: Node {
-                        range: 52..53,
+                    pat: Span {
+                        offset: 52..53,
+                        pos: Pos {
+                            line: 2,
+                            col: 33,
+                        }..Pos {
+                            line: 2,
+                            col: 34,
+                        },
                         node: Ident {
                             name: "y",
                         },
                     },
                     eq_tok: Token {
                         sigil: Eq,
-                        range: 54..55,
+                        offset: 54..55,
+                        pos: Pos {
+                            line: 2,
+                            col: 35,
+                        }..Pos {
+                            line: 2,
+                            col: 36,
+                        },
                     },
-                    init: Node {
-                        range: 56..57,
+                    init: Span {
+                        offset: 56..57,
+                        pos: Pos {
+                            line: 2,
+                            col: 37,
+                        }..Pos {
+                            line: 2,
+                            col: 38,
+                        },
                         node: Num {
                             val: 2.0,
                         },
                     },
                 },
             },
-            Node {
-                range: 67..74,
+            Span {
+                offset: 67..74,
+                pos: Pos {
+                    line: 3,
+                    col: 8,
+                }..Pos {
+                    line: 3,
+                    col: 15,
+                },
                 node: Print {
                     keyword: Token {
                         sigil: Keyword(
                             Print,
                         ),
-                        range: 67..72,
+                        offset: 67..72,
+                        pos: Pos {
+                            line: 3,
+                            col: 8,
+                        }..Pos {
+                            line: 3,
+                            col: 13,
+                        },
                     },
-                    expr: Node {
-                        range: 73..74,
+                    expr: Span {
+                        offset: 73..74,
+                        pos: Pos {
+                            line: 3,
+                            col: 14,
+                        }..Pos {
+                            line: 3,
+                            col: 15,
+                        },
                         node: Var {
                             name: "x",
                         },

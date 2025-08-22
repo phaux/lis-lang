@@ -5,44 +5,100 @@ expression: ast
 Ok(
     Prog {
         stmts: [
-            Node {
-                range: 0..4,
+            Span {
+                offset: 0..4,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 4,
+                },
                 node: Expr {
-                    expr: Node {
-                        range: 0..4,
+                    expr: Span {
+                        offset: 0..4,
+                        pos: Pos {
+                            line: 0,
+                            col: 0,
+                        }..Pos {
+                            line: 0,
+                            col: 4,
+                        },
                         node: Var {
                             name: "a123",
                         },
                     },
                 },
             },
-            Node {
-                range: 6..13,
+            Span {
+                offset: 6..13,
+                pos: Pos {
+                    line: 0,
+                    col: 6,
+                }..Pos {
+                    line: 0,
+                    col: 13,
+                },
                 node: Expr {
-                    expr: Node {
-                        range: 6..13,
+                    expr: Span {
+                        offset: 6..13,
+                        pos: Pos {
+                            line: 0,
+                            col: 6,
+                        }..Pos {
+                            line: 0,
+                            col: 13,
+                        },
                         node: Var {
                             name: "foo_bar",
                         },
                     },
                 },
             },
-            Node {
-                range: 15..19,
+            Span {
+                offset: 15..19,
+                pos: Pos {
+                    line: 0,
+                    col: 15,
+                }..Pos {
+                    line: 0,
+                    col: 19,
+                },
                 node: Expr {
-                    expr: Node {
-                        range: 15..19,
+                    expr: Span {
+                        offset: 15..19,
+                        pos: Pos {
+                            line: 0,
+                            col: 15,
+                        }..Pos {
+                            line: 0,
+                            col: 19,
+                        },
                         node: Var {
                             name: "_foo",
                         },
                     },
                 },
             },
-            Node {
-                range: 21..27,
+            Span {
+                offset: 21..27,
+                pos: Pos {
+                    line: 0,
+                    col: 21,
+                }..Pos {
+                    line: 0,
+                    col: 27,
+                },
                 node: Expr {
-                    expr: Node {
-                        range: 21..27,
+                    expr: Span {
+                        offset: 21..27,
+                        pos: Pos {
+                            line: 0,
+                            col: 21,
+                        }..Pos {
+                            line: 0,
+                            col: 27,
+                        },
                         node: Var {
                             name: "fooBar",
                         },

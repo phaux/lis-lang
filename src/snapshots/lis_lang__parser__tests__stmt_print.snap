@@ -3,17 +3,38 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..7,
+    Span {
+        offset: 0..7,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 7,
+        },
         node: Print {
             keyword: Token {
                 sigil: Keyword(
                     Print,
                 ),
-                range: 0..5,
+                offset: 0..5,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 5,
+                },
             },
-            expr: Node {
-                range: 6..7,
+            expr: Span {
+                offset: 6..7,
+                pos: Pos {
+                    line: 0,
+                    col: 6,
+                }..Pos {
+                    line: 0,
+                    col: 7,
+                },
                 node: Num {
                     val: 1.0,
                 },

@@ -1,50 +1,51 @@
 use std::ops::Range;
 
-use crate::lexer::{Keyword, Sigil, Token};
+use crate::token::{Keyword, Pos, Sigil, Token};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Prog {
-    pub stmts: Vec<Node<Stmt>>,
+    pub stmts: Vec<Span<Stmt>>,
 }
 
-/// A wrapper type which adds properties common to all AST nodes.
+/// A wrapper type which adds information about position in source code.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Node<T> {
-    pub range: Range<usize>,
+pub struct Span<T> {
+    pub offset: Range<usize>,
+    pub pos: Range<Pos>,
     pub node: T,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Stmt {
     Expr {
-        expr: Node<Expr>,
+        expr: Box<Span<Expr>>,
     },
     Let {
         keyword: Token,
-        pat: Node<Pat>,
+        pat: Box<Span<Pat>>,
         eq_tok: Token,
-        init: Node<Expr>,
+        init: Box<Span<Expr>>,
     },
     Print {
         keyword: Token,
-        expr: Node<Expr>,
+        expr: Box<Span<Expr>>,
     },
     Block {
         brace_l: Token,
-        stmts: Vec<Node<Stmt>>,
+        stmts: Vec<Span<Stmt>>,
         brace_r: Token,
     },
     If {
         keyword: Token,
-        condition: Node<Expr>,
+        condition: Box<Span<Expr>>,
         then_keyword: Token,
-        cons_branch: Box<Node<Stmt>>,
+        cons_branch: Box<Span<Stmt>>,
         else_keyword: Option<Token>,
-        alt_branch: Option<Box<Node<Stmt>>>,
+        alt_branch: Option<Box<Span<Stmt>>>,
     },
     Return {
         keyword: Token,
-        expr: Option<Node<Expr>>,
+        expr: Option<Box<Span<Expr>>>,
     },
     FuncDecl {
         keyword: Token,
@@ -52,7 +53,7 @@ pub enum Stmt {
         param_paren_l: Token,
         params: Vec<String>,
         param_paren_r: Token,
-        body: Box<Node<Stmt>>,
+        body: Box<Span<Stmt>>,
     },
 }
 
@@ -63,13 +64,13 @@ pub enum Pat {
     },
     Obj {
         brace_l: Token,
-        props: Vec<(String, Node<Pat>)>,
+        props: Vec<(String, Span<Pat>)>,
         brace_r: Token,
     },
     Default {
-        pat: Box<Node<Pat>>,
+        pat: Box<Span<Pat>>,
         eq_tok: Token,
-        default: Node<Expr>,
+        default: Box<Span<Expr>>,
     },
 }
 
@@ -89,35 +90,35 @@ pub enum Expr {
         name: String,
     },
     BinOp {
-        left: Box<Node<Expr>>,
+        left: Box<Span<Expr>>,
         op: BinOp,
         op_tok: Token,
-        right: Box<Node<Expr>>,
+        right: Box<Span<Expr>>,
     },
     UnaryOp {
         op: UnaryOp,
         op_tok: Token,
-        expr: Box<Node<Expr>>,
+        expr: Box<Span<Expr>>,
     },
     Assign {
-        place: Box<Node<Expr>>,
+        place: Box<Span<Expr>>,
         eq_tok: Token,
-        expr: Box<Node<Expr>>,
+        expr: Box<Span<Expr>>,
     },
     Obj {
         brace_l: Token,
-        props: Vec<(String, Node<Expr>)>,
+        props: Vec<(String, Span<Expr>)>,
         brace_r: Token,
     },
     PropAccess {
-        obj: Box<Node<Expr>>,
+        obj: Box<Span<Expr>>,
         dot_tok: Token,
         prop: String,
     },
     FuncCall {
-        callee: Box<Node<Expr>>,
+        callee: Box<Span<Expr>>,
         paren_l: Token,
-        args: Vec<Node<Expr>>,
+        args: Vec<Span<Expr>>,
         paren_r: Token,
     },
 }

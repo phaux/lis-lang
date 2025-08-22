@@ -8,7 +8,14 @@ Err(
         found: Some(
             Token {
                 sigil: Semi,
-                range: 0..1,
+                offset: 0..1,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 1,
+                },
             },
         ),
     },

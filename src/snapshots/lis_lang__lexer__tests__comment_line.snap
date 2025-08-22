@@ -7,44 +7,100 @@ expression: tokens
         sigil: Keyword(
             Let,
         ),
-        range: 0..3,
+        offset: 0..3,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 3,
+        },
     },
     Token {
         sigil: Ident {
             name: "x",
         },
-        range: 4..5,
+        offset: 4..5,
+        pos: Pos {
+            line: 0,
+            col: 4,
+        }..Pos {
+            line: 0,
+            col: 5,
+        },
     },
     Token {
         sigil: Eq,
-        range: 6..7,
+        offset: 6..7,
+        pos: Pos {
+            line: 0,
+            col: 6,
+        }..Pos {
+            line: 0,
+            col: 7,
+        },
     },
     Token {
         sigil: Num {
             val: 1.0,
         },
-        range: 8..9,
+        offset: 8..9,
+        pos: Pos {
+            line: 0,
+            col: 8,
+        }..Pos {
+            line: 0,
+            col: 9,
+        },
     },
     Token {
         sigil: Semi,
-        range: 9..10,
+        offset: 9..10,
+        pos: Pos {
+            line: 0,
+            col: 9,
+        }..Pos {
+            line: 0,
+            col: 10,
+        },
     },
     Token {
         sigil: Comment {
             body: " this is a comment",
         },
-        range: 11..31,
+        offset: 11..31,
+        pos: Pos {
+            line: 0,
+            col: 11,
+        }..Pos {
+            line: 0,
+            col: 31,
+        },
     },
     Token {
         sigil: Keyword(
             Print,
         ),
-        range: 32..37,
+        offset: 32..37,
+        pos: Pos {
+            line: 1,
+            col: 0,
+        }..Pos {
+            line: 1,
+            col: 5,
+        },
     },
     Token {
         sigil: Ident {
             name: "x",
         },
-        range: 38..39,
+        offset: 38..39,
+        pos: Pos {
+            line: 1,
+            col: 6,
+        }..Pos {
+            line: 1,
+            col: 7,
+        },
     },
 ]

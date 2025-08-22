@@ -10,7 +10,14 @@ Err(
                 sigil: Ident {
                     name: "b",
                 },
-                range: 7..8,
+                offset: 7..8,
+                pos: Pos {
+                    line: 0,
+                    col: 7,
+                }..Pos {
+                    line: 0,
+                    col: 8,
+                },
             },
         ),
     },

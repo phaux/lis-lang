@@ -3,37 +3,93 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 9..125,
+    Span {
+        offset: 9..125,
+        pos: Pos {
+            line: 1,
+            col: 8,
+        }..Pos {
+            line: 4,
+            col: 54,
+        },
         node: FuncCall {
-            callee: Node {
-                range: 9..110,
+            callee: Span {
+                offset: 9..110,
+                pos: Pos {
+                    line: 1,
+                    col: 8,
+                }..Pos {
+                    line: 4,
+                    col: 39,
+                },
                 node: PropAccess {
-                    obj: Node {
-                        range: 9..85,
+                    obj: Span {
+                        offset: 9..85,
+                        pos: Pos {
+                            line: 1,
+                            col: 8,
+                        }..Pos {
+                            line: 4,
+                            col: 14,
+                        },
                         node: PropAccess {
-                            obj: Node {
-                                range: 9..80,
+                            obj: Span {
+                                offset: 9..80,
+                                pos: Pos {
+                                    line: 1,
+                                    col: 8,
+                                }..Pos {
+                                    line: 4,
+                                    col: 9,
+                                },
                                 node: FuncCall {
-                                    callee: Node {
-                                        range: 9..13,
+                                    callee: Span {
+                                        offset: 9..13,
+                                        pos: Pos {
+                                            line: 1,
+                                            col: 8,
+                                        }..Pos {
+                                            line: 1,
+                                            col: 12,
+                                        },
                                         node: Var {
                                             name: "func",
                                         },
                                     },
                                     paren_l: Token {
                                         sigil: ParenL,
-                                        range: 13..14,
+                                        offset: 13..14,
+                                        pos: Pos {
+                                            line: 1,
+                                            col: 12,
+                                        }..Pos {
+                                            line: 1,
+                                            col: 13,
+                                        },
                                     },
                                     args: [
-                                        Node {
-                                            range: 27..28,
+                                        Span {
+                                            offset: 27..28,
+                                            pos: Pos {
+                                                line: 2,
+                                                col: 12,
+                                            }..Pos {
+                                                line: 2,
+                                                col: 13,
+                                            },
                                             node: Num {
                                                 val: 1.0,
                                             },
                                         },
-                                        Node {
-                                            range: 69..70,
+                                        Span {
+                                            offset: 69..70,
+                                            pos: Pos {
+                                                line: 3,
+                                                col: 24,
+                                            }..Pos {
+                                                line: 3,
+                                                col: 25,
+                                            },
                                             node: Num {
                                                 val: 2.0,
                                             },
@@ -41,32 +97,67 @@ Ok(
                                     ],
                                     paren_r: Token {
                                         sigil: ParenR,
-                                        range: 79..80,
+                                        offset: 79..80,
+                                        pos: Pos {
+                                            line: 4,
+                                            col: 8,
+                                        }..Pos {
+                                            line: 4,
+                                            col: 9,
+                                        },
                                     },
                                 },
                             },
                             dot_tok: Token {
                                 sigil: Dot,
-                                range: 80..81,
+                                offset: 80..81,
+                                pos: Pos {
+                                    line: 4,
+                                    col: 9,
+                                }..Pos {
+                                    line: 4,
+                                    col: 10,
+                                },
                             },
                             prop: "prop",
                         },
                     },
                     dot_tok: Token {
                         sigil: Dot,
-                        range: 100..101,
+                        offset: 100..101,
+                        pos: Pos {
+                            line: 4,
+                            col: 29,
+                        }..Pos {
+                            line: 4,
+                            col: 30,
+                        },
                     },
                     prop: "toString",
                 },
             },
             paren_l: Token {
                 sigil: ParenL,
-                range: 111..112,
+                offset: 111..112,
+                pos: Pos {
+                    line: 4,
+                    col: 40,
+                }..Pos {
+                    line: 4,
+                    col: 41,
+                },
             },
             args: [],
             paren_r: Token {
                 sigil: ParenR,
-                range: 124..125,
+                offset: 124..125,
+                pos: Pos {
+                    line: 4,
+                    col: 53,
+                }..Pos {
+                    line: 4,
+                    col: 54,
+                },
             },
         },
     },

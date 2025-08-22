@@ -3,17 +3,38 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..2,
+    Span {
+        offset: 0..2,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 2,
+        },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                range: 0..1,
+                offset: 0..1,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 1,
+                },
             },
             props: [],
             brace_r: Token {
                 sigil: CurlyR,
-                range: 1..2,
+                offset: 1..2,
+                pos: Pos {
+                    line: 0,
+                    col: 1,
+                }..Pos {
+                    line: 0,
+                    col: 2,
+                },
             },
         },
     },

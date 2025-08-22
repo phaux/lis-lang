@@ -3,33 +3,75 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..12,
+    Span {
+        offset: 0..12,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 12,
+        },
         node: FuncCall {
-            callee: Node {
-                range: 0..10,
+            callee: Span {
+                offset: 0..10,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 10,
+                },
                 node: PropAccess {
-                    obj: Node {
-                        range: 0..3,
+                    obj: Span {
+                        offset: 0..3,
+                        pos: Pos {
+                            line: 0,
+                            col: 0,
+                        }..Pos {
+                            line: 0,
+                            col: 3,
+                        },
                         node: Var {
                             name: "obj",
                         },
                     },
                     dot_tok: Token {
                         sigil: Dot,
-                        range: 3..4,
+                        offset: 3..4,
+                        pos: Pos {
+                            line: 0,
+                            col: 3,
+                        }..Pos {
+                            line: 0,
+                            col: 4,
+                        },
                     },
                     prop: "method",
                 },
             },
             paren_l: Token {
                 sigil: ParenL,
-                range: 10..11,
+                offset: 10..11,
+                pos: Pos {
+                    line: 0,
+                    col: 10,
+                }..Pos {
+                    line: 0,
+                    col: 11,
+                },
             },
             args: [],
             paren_r: Token {
                 sigil: ParenR,
-                range: 11..12,
+                offset: 11..12,
+                pos: Pos {
+                    line: 0,
+                    col: 11,
+                }..Pos {
+                    line: 0,
+                    col: 12,
+                },
             },
         },
     },

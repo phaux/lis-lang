@@ -1,8 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
-    ast::{BinOp, Expr, Node, Pat, Prog, Stmt, UnaryOp},
+    ast::{BinOp, Expr, Span, Pat, Prog, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
+    token::{Pos, Token},
 };
 
 #[must_use]
@@ -23,7 +24,7 @@ pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<Val, ExecError>
     Ok(Val::Nil)
 }
 
-fn exec_stmt(scope: Rc<Scope>, stmt: &Node<Stmt>) -> Result<ExecResult, ExecError> {
+fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecError> {
     match &stmt.node {
         Stmt::Expr { expr } => {
             eval_expr(&scope, expr)?;
@@ -75,9 +76,9 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Node<Stmt>) -> Result<ExecResult, ExecErro
             alt_branch,
             ..
         } => {
-            let condition = eval_expr(&scope, condition)?;
-            if let Val::Bool(condition) = condition {
-                if condition {
+            let val = eval_expr(&scope, condition)?;
+            if let Val::Bool(val) = val {
+                if val {
                     exec_stmt(scope, cons_branch)
                 } else if let Some(alt_branch) = alt_branch {
                     exec_stmt(scope, alt_branch)
@@ -85,13 +86,19 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Node<Stmt>) -> Result<ExecResult, ExecErro
                     Ok(ExecResult::Void)
                 }
             } else {
-                Err(ExecError::InvalidCondition(condition.type_of()))
+                Err(ExecError {
+                    pos: condition.pos.start,
+                    scope: Rc::clone(&scope),
+                    kind: ExecErrorKind::InvalidCondition {
+                        cond_ty: val.type_of(),
+                    },
+                })
             }
         }
     }
 }
 
-pub fn eval_expr(scope: &Rc<Scope>, expr: &Node<Expr>) -> Result<Val, ExecError> {
+pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError> {
     match &expr.node {
         Expr::Nil => Ok(Val::Nil),
         Expr::Bool { val } => Ok(Val::Bool(*val)),
@@ -99,10 +106,16 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Node<Expr>) -> Result<Val, ExecError>
         Expr::Str { val } => Ok(Val::Str(val.clone())),
         Expr::Var { name } => Ok(scope.lookup(name).unwrap_or_default()),
         Expr::Assign { place, expr, .. } => eval_assign(scope, place, expr),
-        Expr::UnaryOp { op, expr, .. } => eval_unary_op(scope, *op, expr),
+        Expr::UnaryOp {
+            op, op_tok, expr, ..
+        } => eval_unary_op(scope, *op, op_tok, expr),
         Expr::BinOp {
-            left, op, right, ..
-        } => eval_bin_op(scope, left, *op, right),
+            op,
+            op_tok,
+            left,
+            right,
+            ..
+        } => eval_bin_op(scope, *op, op_tok, left, right),
         Expr::Obj { props, .. } => {
             let mut obj = Obj {
                 props: HashMap::new(),
@@ -113,12 +126,18 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Node<Expr>) -> Result<Val, ExecError>
             }
             Ok(Val::Obj(Rc::new(obj)))
         }
-        Expr::PropAccess { obj, prop, .. } => match eval_expr(scope, obj)? {
+        Expr::PropAccess { obj, prop, dot_tok } => match eval_expr(scope, obj)? {
             Val::Obj(obj) => match obj.props.get(prop) {
                 Some(value) => Ok(value.clone()),
                 None => Ok(Val::Nil),
             },
-            v => Err(ExecError::InvalidPropAccess(v.type_of())),
+            v => Err(ExecError {
+                pos: dot_tok.pos.start,
+                scope: Rc::clone(scope),
+                kind: ExecErrorKind::InvalidPropAccess {
+                    obj_ty: v.type_of(),
+                },
+            }),
         },
         Expr::FuncCall { callee, args, .. } => eval_func_call(scope, callee, args),
     }
@@ -126,13 +145,19 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Node<Expr>) -> Result<Val, ExecError>
 
 fn eval_func_call(
     scope: &Rc<Scope>,
-    callee: &Node<Expr>,
-    args: &[Node<Expr>],
+    callee: &Span<Expr>,
+    args: &[Span<Expr>],
 ) -> Result<Val, ExecError> {
     // Evaluate the callee
     let callee_val = eval_expr(scope, callee)?;
     let Val::Func(callee_val) = callee_val else {
-        return Err(ExecError::InvalidCall(callee_val.type_of()));
+        return Err(ExecError {
+            pos: callee.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::InvalidCall {
+                called_ty: callee_val.type_of(),
+            },
+        });
     };
 
     // Evaluate the arguments
@@ -158,9 +183,10 @@ fn eval_func_call(
 
 fn eval_bin_op(
     scope: &Rc<Scope>,
-    left: &Node<Expr>,
     op: BinOp,
-    right: &Node<Expr>,
+    op_tok: &Token,
+    left: &Span<Expr>,
+    right: &Span<Expr>,
 ) -> Result<Val, ExecError> {
     // Handle short-circuit evaluation for logical operators
     match op {
@@ -173,10 +199,14 @@ fn eval_bin_op(
             match (left_val, right_val) {
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l || r)),
                 (l, r) => {
-                    return Err(ExecError::InvalidBinOp {
-                        op,
-                        left: l.type_of(),
-                        right: r.type_of(),
+                    return Err(ExecError {
+                        pos: op_tok.pos.start,
+                        scope: Rc::clone(scope),
+                        kind: ExecErrorKind::InvalidBinOp {
+                            op,
+                            l_ty: l.type_of(),
+                            r_ty: r.type_of(),
+                        },
                     });
                 }
             }
@@ -190,10 +220,14 @@ fn eval_bin_op(
             match (left_val, right_val) {
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l && r)),
                 (l, r) => {
-                    return Err(ExecError::InvalidBinOp {
-                        op,
-                        left: l.type_of(),
-                        right: r.type_of(),
+                    return Err(ExecError {
+                        pos: op_tok.pos.start,
+                        scope: Rc::clone(scope),
+                        kind: ExecErrorKind::InvalidBinOp {
+                            op,
+                            l_ty: l.type_of(),
+                            r_ty: r.type_of(),
+                        },
                     });
                 }
             }
@@ -209,44 +243,60 @@ fn eval_bin_op(
         (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l + r)),
         (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
         (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
-        (BinOp::Div, Val::Num(l), Val::Num(r)) => {
-            if r == 0.0 {
-                return Err(ExecError::DivByZero);
-            }
-            Ok(Val::Num(l / r))
-        }
+        (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l / r)),
         (BinOp::Eq, l, r) => Ok(Val::Bool(l == r)),
         (BinOp::NotEq, l, r) => Ok(Val::Bool(l != r)),
         (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
-        (op, l, r) => Err(ExecError::InvalidBinOp {
-            op,
-            left: l.type_of(),
-            right: r.type_of(),
+        (op, l, r) => Err(ExecError {
+            pos: op_tok.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::InvalidBinOp {
+                op,
+                l_ty: l.type_of(),
+                r_ty: r.type_of(),
+            },
         }),
     }
 }
 
-fn eval_unary_op(scope: &Rc<Scope>, op: UnaryOp, expr: &Node<Expr>) -> Result<Val, ExecError> {
+fn eval_unary_op(
+    scope: &Rc<Scope>,
+    op: UnaryOp,
+    op_tok: &Token,
+    expr: &Span<Expr>,
+) -> Result<Val, ExecError> {
     let val = eval_expr(scope, expr)?;
     match (op, val) {
         (UnaryOp::Pos, Val::Num(n)) => Ok(Val::Num(n)),
         (UnaryOp::Neg, Val::Num(n)) => Ok(Val::Num(-n)),
         (UnaryOp::Not, Val::Bool(b)) => Ok(Val::Bool(!b)),
-        (op, val) => Err(ExecError::InvalidUnaryOp {
-            op,
-            ty: val.type_of(),
+        (op, val) => Err(ExecError {
+            pos: op_tok.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::InvalidUnaryOp {
+                op,
+                val_ty: val.type_of(),
+            },
         }),
     }
 }
 
-fn eval_assign(scope: &Rc<Scope>, place: &Node<Expr>, expr: &Node<Expr>) -> Result<Val, ExecError> {
+fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Result<Val, ExecError> {
     let Expr::Var { name } = &place.node else {
-        return Err(ExecError::InvalidAssign);
+        return Err(ExecError {
+            pos: place.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::InvalidAssign,
+        });
     };
     let val = eval_expr(scope, expr)?;
     if !scope.assign(name, val.clone()) {
-        return Err(ExecError::UndefVar {
-            name: name.to_string(),
+        return Err(ExecError {
+            pos: place.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::UndefVar {
+                name: name.to_string(),
+            },
         });
     }
     Ok(val)
@@ -254,7 +304,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Node<Expr>, expr: &Node<Expr>) -> Resu
 
 pub fn match_pattern(
     scope: &Rc<Scope>,
-    pat: &Node<Pat>,
+    pat: &Span<Pat>,
     matched_val: Val,
 ) -> Result<(), ExecError> {
     match &pat.node {
@@ -265,7 +315,13 @@ pub fn match_pattern(
         Pat::Obj { props, .. } => {
             // Object pattern matches each property of the matched value
             let Val::Obj(matched_obj) = matched_val else {
-                return Err(ExecError::InvalidMatchObj(matched_val.type_of()));
+                return Err(ExecError {
+                    pos: pat.pos.start,
+                    scope: Rc::clone(scope),
+                    kind: ExecErrorKind::InvalidMatchObj {
+                        matched_ty: matched_val.type_of(),
+                    },
+                });
             };
             for (prop_name, prop_pat) in props {
                 let val = matched_obj
@@ -289,42 +345,70 @@ pub fn match_pattern(
 }
 
 /// Error which can happen during program execution.
+#[derive(Debug)]
+pub struct ExecError {
+    /// Byte offset in the source code where the error occurred.
+    pub pos: Pos,
+    /// The scope where the error occurred, which can be used to show backtrace.
+    #[allow(dead_code, reason = "only used for displaying via debug")]
+    pub scope: Rc<Scope>,
+    /// The kind of error.
+    pub kind: ExecErrorKind,
+}
+
+impl std::error::Error for ExecError {}
+
 #[derive(Debug, PartialEq)]
-pub enum ExecError {
-    DivByZero,
-    InvalidCondition(Type),
-    InvalidUnaryOp { op: UnaryOp, ty: Type },
-    InvalidBinOp { op: BinOp, left: Type, right: Type },
-    InvalidPropAccess(Type),
+pub enum ExecErrorKind {
+    InvalidCondition { cond_ty: Type },
+    InvalidUnaryOp { op: UnaryOp, val_ty: Type },
+    InvalidBinOp { op: BinOp, l_ty: Type, r_ty: Type },
+    InvalidPropAccess { obj_ty: Type },
     UndefVar { name: String },
     InvalidAssign,
-    InvalidCall(Type),
-    InvalidMatchObj(Type),
+    InvalidCall { called_ty: Type },
+    InvalidMatchObj { matched_ty: Type },
 }
 
 impl std::fmt::Display for ExecError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} at {}", self.kind, self.pos)
+    }
+}
+
+impl std::fmt::Display for ExecErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ExecError::DivByZero => write!(f, "division by zero"),
-            ExecError::InvalidCondition(ty) => write!(f, "unexpected {ty:?} in a condition"),
-            ExecError::InvalidUnaryOp { op, ty } => write!(f, "invalid {op:?} on {ty:?} value"),
-            ExecError::InvalidBinOp { op, left, right } => {
-                write!(f, "invalid {op:?} between {left:?} and {right:?} values")
+            ExecErrorKind::InvalidCondition { cond_ty } => {
+                write!(f, "unexpected {cond_ty:?} value in a condition")
             }
-            ExecError::InvalidPropAccess(ty) => {
-                write!(f, "invalid property access on {ty:?} value")
+            ExecErrorKind::InvalidUnaryOp { op, val_ty } => {
+                write!(f, "invalid {op:?} on {val_ty:?} value")
             }
-            ExecError::UndefVar { name } => write!(f, "undefined variable {name:?}"),
-            ExecError::InvalidAssign => write!(f, "invalid left-hand side of assignment"),
-            ExecError::InvalidCall(ty) => write!(f, "invalid call on {ty:?} value"),
-            ExecError::InvalidMatchObj(ty) => {
-                write!(f, "invalid object destructuring of {ty:?} value")
+            ExecErrorKind::InvalidBinOp {
+                op,
+                l_ty: left_ty,
+                r_ty: right_ty,
+            } => {
+                write!(
+                    f,
+                    "invalid {op:?} between {left_ty:?} and {right_ty:?} values"
+                )
+            }
+            ExecErrorKind::InvalidPropAccess { obj_ty } => {
+                write!(f, "invalid property access on {obj_ty:?} value")
+            }
+            ExecErrorKind::UndefVar { name } => write!(f, "undefined variable {name:?}"),
+            ExecErrorKind::InvalidAssign => write!(f, "invalid left-hand side of assignment"),
+            ExecErrorKind::InvalidCall { called_ty } => {
+                write!(f, "invalid call on {called_ty:?} value")
+            }
+            ExecErrorKind::InvalidMatchObj { matched_ty } => {
+                write!(f, "invalid object destructuring of {matched_ty:?} value")
             }
         }
     }
 }
-
-impl std::error::Error for ExecError {}
 
 #[cfg(test)]
 #[path = "vm.tests.rs"]

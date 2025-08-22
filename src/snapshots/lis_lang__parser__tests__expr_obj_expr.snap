@@ -3,21 +3,49 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..22,
+    Span {
+        offset: 0..22,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 22,
+        },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                range: 0..1,
+                offset: 0..1,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 1,
+                },
             },
             props: [
                 (
                     "x",
-                    Node {
-                        range: 5..10,
+                    Span {
+                        offset: 5..10,
+                        pos: Pos {
+                            line: 0,
+                            col: 5,
+                        }..Pos {
+                            line: 0,
+                            col: 10,
+                        },
                         node: BinOp {
-                            left: Node {
-                                range: 5..6,
+                            left: Span {
+                                offset: 5..6,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 5,
+                                }..Pos {
+                                    line: 0,
+                                    col: 6,
+                                },
                                 node: Num {
                                     val: 1.0,
                                 },
@@ -25,10 +53,24 @@ Ok(
                             op: Add,
                             op_tok: Token {
                                 sigil: Plus,
-                                range: 7..8,
+                                offset: 7..8,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 7,
+                                }..Pos {
+                                    line: 0,
+                                    col: 8,
+                                },
                             },
-                            right: Node {
-                                range: 9..10,
+                            right: Span {
+                                offset: 9..10,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 9,
+                                }..Pos {
+                                    line: 0,
+                                    col: 10,
+                                },
                                 node: Num {
                                     val: 2.0,
                                 },
@@ -38,11 +80,25 @@ Ok(
                 ),
                 (
                     "y",
-                    Node {
-                        range: 15..20,
+                    Span {
+                        offset: 15..20,
+                        pos: Pos {
+                            line: 0,
+                            col: 15,
+                        }..Pos {
+                            line: 0,
+                            col: 20,
+                        },
                         node: BinOp {
-                            left: Node {
-                                range: 15..16,
+                            left: Span {
+                                offset: 15..16,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 15,
+                                }..Pos {
+                                    line: 0,
+                                    col: 16,
+                                },
                                 node: Num {
                                     val: 3.0,
                                 },
@@ -50,10 +106,24 @@ Ok(
                             op: Mul,
                             op_tok: Token {
                                 sigil: Star,
-                                range: 17..18,
+                                offset: 17..18,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 17,
+                                }..Pos {
+                                    line: 0,
+                                    col: 18,
+                                },
                             },
-                            right: Node {
-                                range: 19..20,
+                            right: Span {
+                                offset: 19..20,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 19,
+                                }..Pos {
+                                    line: 0,
+                                    col: 20,
+                                },
                                 node: Num {
                                     val: 4.0,
                                 },
@@ -64,7 +134,14 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                range: 21..22,
+                offset: 21..22,
+                pos: Pos {
+                    line: 0,
+                    col: 21,
+                }..Pos {
+                    line: 0,
+                    col: 22,
+                },
             },
         },
     },

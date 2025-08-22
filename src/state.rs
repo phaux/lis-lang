@@ -7,7 +7,7 @@ use std::{
 
 use uuid::Uuid;
 
-use crate::ast::{Node, Stmt};
+use crate::ast::{Span, Stmt};
 
 #[derive(Default)]
 pub struct Scope {
@@ -110,7 +110,7 @@ pub struct Obj {
 pub struct Func {
     pub id: Uuid,
     pub params: Vec<String>,
-    pub body: Rc<Node<Stmt>>,
+    pub body: Rc<Span<Stmt>>,
     pub closure_scope: Rc<Scope>,
 }
 
@@ -123,7 +123,7 @@ impl Debug for Func {
 }
 
 impl Func {
-    pub fn new(scope: Rc<Scope>, params: Vec<String>, body: Rc<Node<Stmt>>) -> Self {
+    pub fn new(scope: Rc<Scope>, params: Vec<String>, body: Rc<Span<Stmt>>) -> Self {
         Self {
             id: Uuid::new_v4(),
             params,

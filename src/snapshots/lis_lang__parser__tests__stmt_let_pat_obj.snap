@@ -3,27 +3,62 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..16,
+    Span {
+        offset: 0..16,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 16,
+        },
         node: Let {
             keyword: Token {
                 sigil: Keyword(
                     Let,
                 ),
-                range: 0..3,
+                offset: 0..3,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 3,
+                },
             },
-            pat: Node {
-                range: 4..10,
+            pat: Span {
+                offset: 4..10,
+                pos: Pos {
+                    line: 0,
+                    col: 4,
+                }..Pos {
+                    line: 0,
+                    col: 10,
+                },
                 node: Obj {
                     brace_l: Token {
                         sigil: CurlyL,
-                        range: 4..5,
+                        offset: 4..5,
+                        pos: Pos {
+                            line: 0,
+                            col: 4,
+                        }..Pos {
+                            line: 0,
+                            col: 5,
+                        },
                     },
                     props: [
                         (
                             "x",
-                            Node {
-                                range: 5..6,
+                            Span {
+                                offset: 5..6,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 5,
+                                }..Pos {
+                                    line: 0,
+                                    col: 6,
+                                },
                                 node: Ident {
                                     name: "x",
                                 },
@@ -31,8 +66,15 @@ Ok(
                         ),
                         (
                             "y",
-                            Node {
-                                range: 8..9,
+                            Span {
+                                offset: 8..9,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 8,
+                                }..Pos {
+                                    line: 0,
+                                    col: 9,
+                                },
                                 node: Ident {
                                     name: "y",
                                 },
@@ -41,16 +83,37 @@ Ok(
                     ],
                     brace_r: Token {
                         sigil: CurlyR,
-                        range: 9..10,
+                        offset: 9..10,
+                        pos: Pos {
+                            line: 0,
+                            col: 9,
+                        }..Pos {
+                            line: 0,
+                            col: 10,
+                        },
                     },
                 },
             },
             eq_tok: Token {
                 sigil: Eq,
-                range: 11..12,
+                offset: 11..12,
+                pos: Pos {
+                    line: 0,
+                    col: 11,
+                }..Pos {
+                    line: 0,
+                    col: 12,
+                },
             },
-            init: Node {
-                range: 13..16,
+            init: Span {
+                offset: 13..16,
+                pos: Pos {
+                    line: 0,
+                    col: 13,
+                }..Pos {
+                    line: 0,
+                    col: 16,
+                },
                 node: Var {
                     name: "obj",
                 },

@@ -3,18 +3,39 @@ source: src/parser.tests.rs
 expression: ast
 ---
 Ok(
-    Node {
-        range: 0..29,
+    Span {
+        offset: 0..29,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 29,
+        },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                range: 0..1,
+                offset: 0..1,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 1,
+                },
             },
             props: [
                 (
                     "name",
-                    Node {
-                        range: 10..16,
+                    Span {
+                        offset: 10..16,
+                        pos: Pos {
+                            line: 0,
+                            col: 10,
+                        }..Pos {
+                            line: 0,
+                            col: 16,
+                        },
                         node: Str {
                             val: "john",
                         },
@@ -22,8 +43,15 @@ Ok(
                 ),
                 (
                     "age",
-                    Node {
-                        range: 25..27,
+                    Span {
+                        offset: 25..27,
+                        pos: Pos {
+                            line: 0,
+                            col: 25,
+                        }..Pos {
+                            line: 0,
+                            col: 27,
+                        },
                         node: Num {
                             val: 25.0,
                         },
@@ -32,7 +60,14 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                range: 28..29,
+                offset: 28..29,
+                pos: Pos {
+                    line: 0,
+                    col: 28,
+                }..Pos {
+                    line: 0,
+                    col: 29,
+                },
             },
         },
     },
