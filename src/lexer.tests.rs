@@ -48,3 +48,10 @@ fn comment_block() {
     let tokens: Vec<_> = Lexer::new(input).collect();
     insta::assert_debug_snapshot!(tokens);
 }
+
+#[test]
+fn comparison_operators() {
+    let input = "a < b <= c > d >= e";
+    let tokens: Vec<_> = Lexer::new(input).collect();
+    insta::assert_debug_snapshot!(tokens);
+}

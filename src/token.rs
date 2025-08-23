@@ -39,6 +39,10 @@ pub enum Sigil {
     ParenR,
     CurlyL,
     CurlyR,
+    Less,
+    LessEq,
+    Greater,
+    GreaterEq,
     Invalid,
 }
 
@@ -67,6 +71,10 @@ impl std::fmt::Display for Sigil {
             Sigil::ParenR => write!(f, ")"),
             Sigil::CurlyL => write!(f, "{{"),
             Sigil::CurlyR => write!(f, "}}"),
+            Sigil::Less => write!(f, "<"),
+            Sigil::LessEq => write!(f, "<="),
+            Sigil::Greater => write!(f, ">"),
+            Sigil::GreaterEq => write!(f, ">="),
             Sigil::Invalid => write!(f, "invalid token"),
         }
     }

@@ -1,0 +1,167 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        offset: 0..19,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 19,
+        },
+        node: BinOp {
+            left: Span {
+                offset: 0..14,
+                pos: Pos {
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    line: 0,
+                    col: 14,
+                },
+                node: BinOp {
+                    left: Span {
+                        offset: 0..10,
+                        pos: Pos {
+                            line: 0,
+                            col: 0,
+                        }..Pos {
+                            line: 0,
+                            col: 10,
+                        },
+                        node: BinOp {
+                            left: Span {
+                                offset: 0..5,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 0,
+                                }..Pos {
+                                    line: 0,
+                                    col: 5,
+                                },
+                                node: BinOp {
+                                    left: Span {
+                                        offset: 0..1,
+                                        pos: Pos {
+                                            line: 0,
+                                            col: 0,
+                                        }..Pos {
+                                            line: 0,
+                                            col: 1,
+                                        },
+                                        node: Var {
+                                            name: "a",
+                                        },
+                                    },
+                                    op: Less,
+                                    op_tok: Token {
+                                        sigil: Less,
+                                        offset: 2..3,
+                                        pos: Pos {
+                                            line: 0,
+                                            col: 2,
+                                        }..Pos {
+                                            line: 0,
+                                            col: 3,
+                                        },
+                                    },
+                                    right: Span {
+                                        offset: 4..5,
+                                        pos: Pos {
+                                            line: 0,
+                                            col: 4,
+                                        }..Pos {
+                                            line: 0,
+                                            col: 5,
+                                        },
+                                        node: Var {
+                                            name: "b",
+                                        },
+                                    },
+                                },
+                            },
+                            op: LessEq,
+                            op_tok: Token {
+                                sigil: LessEq,
+                                offset: 6..8,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 6,
+                                }..Pos {
+                                    line: 0,
+                                    col: 8,
+                                },
+                            },
+                            right: Span {
+                                offset: 9..10,
+                                pos: Pos {
+                                    line: 0,
+                                    col: 9,
+                                }..Pos {
+                                    line: 0,
+                                    col: 10,
+                                },
+                                node: Var {
+                                    name: "c",
+                                },
+                            },
+                        },
+                    },
+                    op: Greater,
+                    op_tok: Token {
+                        sigil: Greater,
+                        offset: 11..12,
+                        pos: Pos {
+                            line: 0,
+                            col: 11,
+                        }..Pos {
+                            line: 0,
+                            col: 12,
+                        },
+                    },
+                    right: Span {
+                        offset: 13..14,
+                        pos: Pos {
+                            line: 0,
+                            col: 13,
+                        }..Pos {
+                            line: 0,
+                            col: 14,
+                        },
+                        node: Var {
+                            name: "d",
+                        },
+                    },
+                },
+            },
+            op: GreaterEq,
+            op_tok: Token {
+                sigil: GreaterEq,
+                offset: 15..17,
+                pos: Pos {
+                    line: 0,
+                    col: 15,
+                }..Pos {
+                    line: 0,
+                    col: 17,
+                },
+            },
+            right: Span {
+                offset: 18..19,
+                pos: Pos {
+                    line: 0,
+                    col: 18,
+                }..Pos {
+                    line: 0,
+                    col: 19,
+                },
+                node: Var {
+                    name: "e",
+                },
+            },
+        },
+    },
+)

@@ -307,3 +307,9 @@ fn comments_only_prog() {
     let ast = Parser::new(src).parse_prog();
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn expr_comparison_operators() {
+    let ast = Parser::new("a < b <= c > d >= e").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}

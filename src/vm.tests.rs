@@ -299,6 +299,100 @@ fn op_logical_comparison() {
 }
 
 #[test]
+fn op_comparison_operators() {
+    let scope = Rc::new(Scope::root());
+    // Numeric comparisons
+    assert_eq!(eval_str(&scope, "1 < 2").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "2 <= 2").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "2 > 1").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "2 >= 2").unwrap(), Val::Bool(true));
+
+    // String comparisons
+    assert_eq!(
+        eval_str(&scope, "\"apple\" < \"banana\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"apple\" <= \"apple\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"banana\" > \"apple\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"apple\" >= \"apple\"").unwrap(),
+        Val::Bool(true)
+    );
+
+    // Boolean comparisons are not supported
+    assert!(matches!(
+        eval_str(&scope, "true < false"),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 5 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Less,
+                l_ty: Type::Bool,
+                r_ty: Type::Bool,
+            },
+        })
+    ));
+
+    // Comparing string to number is not supported
+    assert!(matches!(
+        eval_str(&scope, "\"apple\" < 1"),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 8 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Less,
+                l_ty: Type::Str,
+                r_ty: Type::Num,
+            },
+        })
+    ));
+    assert!(matches!(
+        eval_str(&scope, "1 < \"apple\""),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 2 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Less,
+                l_ty: Type::Num,
+                r_ty: Type::Str,
+            },
+        })
+    ));
+
+    // Chained comparisons are not supported
+    assert!(matches!(
+        eval_str(&scope, "1 < 2 <= 2 < 3"),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 6 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::LessEq,
+                l_ty: Type::Bool,
+                r_ty: Type::Num,
+            },
+        })
+    ));
+    assert!(matches!(
+        eval_str(&scope, "\"a\" < \"b\" < \"c\""),
+        Err(ExecError {
+            pos: Pos { line: 0, col: 10 },
+            scope: _,
+            kind: ExecErrorKind::InvalidBinOp {
+                op: BinOp::Less,
+                l_ty: Type::Bool,
+                r_ty: Type::Str,
+            },
+        })
+    ));
+}
+
+#[test]
 fn op_logical_short_circuiting() {
     let scope = Rc::new(Scope::root());
     scope.declare("side_effect", Val::Num(0.0));

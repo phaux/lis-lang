@@ -137,6 +137,10 @@ pub enum BinOp {
     Div,
     Eq,
     NotEq,
+    Less,
+    LessEq,
+    Greater,
+    GreaterEq,
     Concat,
 }
 
@@ -172,6 +176,10 @@ impl BinOp {
             Sigil::Slash => Some(BinOp::Div),
             Sigil::EqEq => Some(BinOp::Eq),
             Sigil::BangEq => Some(BinOp::NotEq),
+            Sigil::Less => Some(BinOp::Less),
+            Sigil::LessEq => Some(BinOp::LessEq),
+            Sigil::Greater => Some(BinOp::Greater),
+            Sigil::GreaterEq => Some(BinOp::GreaterEq),
             _ => None,
         }
     }
@@ -181,7 +189,7 @@ impl BinOp {
         match self {
             BinOp::Or => 2,
             BinOp::And => 3,
-            BinOp::Eq | BinOp::NotEq => 4,
+            BinOp::Eq | BinOp::NotEq | BinOp::Less | BinOp::LessEq | BinOp::Greater | BinOp::GreaterEq => 4,
             BinOp::Concat => 5,
             BinOp::Add | BinOp::Sub => 6,
             BinOp::Mul | BinOp::Div => 7,

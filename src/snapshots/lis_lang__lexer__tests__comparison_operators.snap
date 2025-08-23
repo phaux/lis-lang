@@ -1,0 +1,115 @@
+---
+source: src/lexer.tests.rs
+expression: tokens
+---
+[
+    Token {
+        sigil: Ident {
+            name: "a",
+        },
+        offset: 0..1,
+        pos: Pos {
+            line: 0,
+            col: 0,
+        }..Pos {
+            line: 0,
+            col: 1,
+        },
+    },
+    Token {
+        sigil: Less,
+        offset: 2..3,
+        pos: Pos {
+            line: 0,
+            col: 2,
+        }..Pos {
+            line: 0,
+            col: 3,
+        },
+    },
+    Token {
+        sigil: Ident {
+            name: "b",
+        },
+        offset: 4..5,
+        pos: Pos {
+            line: 0,
+            col: 4,
+        }..Pos {
+            line: 0,
+            col: 5,
+        },
+    },
+    Token {
+        sigil: LessEq,
+        offset: 6..8,
+        pos: Pos {
+            line: 0,
+            col: 6,
+        }..Pos {
+            line: 0,
+            col: 8,
+        },
+    },
+    Token {
+        sigil: Ident {
+            name: "c",
+        },
+        offset: 9..10,
+        pos: Pos {
+            line: 0,
+            col: 9,
+        }..Pos {
+            line: 0,
+            col: 10,
+        },
+    },
+    Token {
+        sigil: Greater,
+        offset: 11..12,
+        pos: Pos {
+            line: 0,
+            col: 11,
+        }..Pos {
+            line: 0,
+            col: 12,
+        },
+    },
+    Token {
+        sigil: Ident {
+            name: "d",
+        },
+        offset: 13..14,
+        pos: Pos {
+            line: 0,
+            col: 13,
+        }..Pos {
+            line: 0,
+            col: 14,
+        },
+    },
+    Token {
+        sigil: GreaterEq,
+        offset: 15..17,
+        pos: Pos {
+            line: 0,
+            col: 15,
+        }..Pos {
+            line: 0,
+            col: 17,
+        },
+    },
+    Token {
+        sigil: Ident {
+            name: "e",
+        },
+        offset: 18..19,
+        pos: Pos {
+            line: 0,
+            col: 18,
+        }..Pos {
+            line: 0,
+            col: 19,
+        },
+    },
+]

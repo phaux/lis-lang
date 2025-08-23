@@ -87,6 +87,20 @@ impl Iterator for Lexer<'_> {
                 ')' => Sigil::ParenR,
                 '{' => Sigil::CurlyL,
                 '}' => Sigil::CurlyR,
+                '<' => match self.peek_char() {
+                    Some('=') => {
+                        self.next_char();
+                        Sigil::LessEq
+                    }
+                    _ => Sigil::Less,
+                },
+                '>' => match self.peek_char() {
+                    Some('=') => {
+                        self.next_char();
+                        Sigil::GreaterEq
+                    }
+                    _ => Sigil::Greater,
+                },
                 '"' => self.parse_str(),
                 ch if ch.is_alphabetic() || ch == '_' => self.parse_word(ch),
                 ch if ch.is_ascii_digit() => self.parse_num(ch),
