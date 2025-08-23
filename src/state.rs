@@ -14,26 +14,26 @@ use crate::ast::{Span, Stmt};
 
 /// A scope stores declared variables.
 /// It also has a pointer to the parent scope, which is used for variable lookup.
-#[derive(Default)]
+#[derive(Debug)]
 pub struct Scope {
     pub vars: RefCell<HashMap<String, Val>>,
     pub parent: Option<Rc<Scope>>,
 }
 
-impl Debug for Scope {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Scope")
-            .field("parent", &self.parent)
-            .finish_non_exhaustive()
-    }
-}
-
 impl Scope {
-    /// Creates a new scope with the given parent.
-    pub fn new(parent: Rc<Scope>) -> Self {
+    /// Creates a new root scope.
+    pub fn root() -> Self {
         Scope {
             vars: RefCell::new(HashMap::new()),
-            parent: Some(parent),
+            parent: None,
+        }
+    }
+
+    /// Creates a new child scope.
+    pub fn new_child(self: &Rc<Self>) -> Self {
+        Scope {
+            vars: RefCell::new(HashMap::new()),
+            parent: Some(Rc::clone(self)),
         }
     }
 
@@ -129,17 +129,6 @@ impl Debug for Func {
         f.debug_struct("Func")
             .field("id", &self.id)
             .finish_non_exhaustive()
-    }
-}
-
-impl Func {
-    pub fn new(scope: Rc<Scope>, params: Vec<String>, body: Rc<Span<Stmt>>) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            params,
-            body,
-            closure_scope: scope,
-        }
     }
 }
 

@@ -6,6 +6,8 @@
 
 use std::{collections::HashMap, rc::Rc};
 
+use uuid::Uuid;
+
 use crate::{
     ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
@@ -22,10 +24,10 @@ pub enum ExecResult {
 }
 
 /// Executes a whole program.
-pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<Val, ExecError> {
-    let prog_scope = Rc::new(Scope::new(global_scope));
+pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError> {
+    let prog_scope = Rc::new(global_scope.new_child());
     for stmt in &prog.stmts {
-        match exec_stmt(Rc::clone(&prog_scope), stmt)? {
+        match exec_stmt(&prog_scope, stmt)? {
             ExecResult::Void => {}
             ExecResult::Return(val) => {
                 // Top-level return was encountered.
@@ -36,24 +38,24 @@ pub fn exec_prog(global_scope: Rc<Scope>, prog: &Prog) -> Result<Val, ExecError>
     Ok(Val::Nil)
 }
 
-fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecError> {
+fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecError> {
     match &stmt.node {
         Stmt::Expr { expr } => {
-            eval_expr(&scope, expr)?;
+            eval_expr(scope, expr)?;
             Ok(ExecResult::Void)
         }
         Stmt::Block { stmts, .. } => {
-            let block_scope = Rc::new(Scope::new(scope));
+            let block_scope = Rc::new(scope.new_child());
             for stmt in stmts {
-                if let ExecResult::Return(val) = exec_stmt(Rc::clone(&block_scope), stmt)? {
+                if let ExecResult::Return(val) = exec_stmt(&block_scope, stmt)? {
                     return Ok(ExecResult::Return(val));
                 }
             }
             Ok(ExecResult::Void)
         }
         Stmt::Let { pat, init, .. } => {
-            let val = eval_expr(&scope, init)?;
-            match_pattern(&scope, pat, val)?;
+            let val = eval_expr(scope, init)?;
+            match_pattern(scope, pat, val)?;
             Ok(ExecResult::Void)
         }
         Stmt::FuncDecl {
@@ -61,24 +63,25 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErro
         } => {
             scope.declare(
                 name,
-                Val::Func(Rc::new(Func::new(
-                    Rc::clone(&scope),
-                    params.clone(),
-                    Rc::new(*body.clone()),
-                ))),
+                Val::Func(Rc::new(Func {
+                    id: Uuid::new_v4(),
+                    params: params.clone(),
+                    body: Rc::new(*body.clone()),
+                    closure_scope: Rc::clone(scope),
+                })),
             );
             Ok(ExecResult::Void)
         }
         Stmt::Return { expr, .. } => {
             let val = if let Some(expr) = expr {
-                eval_expr(&scope, expr)?
+                eval_expr(scope, expr)?
             } else {
                 Val::Nil
             };
             Ok(ExecResult::Return(val))
         }
         Stmt::Print { expr, .. } => {
-            let value = eval_expr(&scope, expr)?;
+            let value = eval_expr(scope, expr)?;
             println!("{value:?}");
             Ok(ExecResult::Void)
         }
@@ -88,7 +91,7 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErro
             alt_branch,
             ..
         } => {
-            let val = eval_expr(&scope, condition)?;
+            let val = eval_expr(scope, condition)?;
             if let Val::Bool(val) = val {
                 if val {
                     exec_stmt(scope, cons_branch)
@@ -100,7 +103,7 @@ fn exec_stmt(scope: Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErro
             } else {
                 Err(ExecError {
                     pos: condition.pos.start,
-                    scope: Rc::clone(&scope),
+                    scope: Rc::clone(scope),
                     kind: ExecErrorKind::InvalidCondition {
                         cond_ty: val.type_of(),
                     },
@@ -179,8 +182,10 @@ fn eval_func_call(
         arg_vals.push(eval_expr(scope, arg)?);
     }
 
-    // Create a new scope for the function
-    let func_scope = Scope::new(Rc::clone(&callee_val.closure_scope));
+    // Create a new scope for the body of the function
+    let func_scope = callee_val.closure_scope.new_child();
+
+    // Populate the scope with the parameters
     for (idx, name) in callee_val.params.iter().enumerate() {
         // For each parameter, either use the provided argument or default to Nil
         let val = arg_vals.get(idx).cloned().unwrap_or(Val::Nil);
@@ -188,7 +193,7 @@ fn eval_func_call(
     }
 
     // Execute the function body
-    match exec_stmt(Rc::new(func_scope), &callee_val.body)? {
+    match exec_stmt(&Rc::new(func_scope), &callee_val.body)? {
         ExecResult::Return(val) => Ok(val),
         ExecResult::Void => Ok(Val::Nil),
     }

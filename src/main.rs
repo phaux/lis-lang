@@ -31,9 +31,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         std::io::stdin().read_to_string(&mut buffer)?;
         buffer
     };
-    let scope = Rc::new(Scope::default());
+    let scope = Rc::new(Scope::root());
     let ast = Parser::new(&input).parse_prog()?;
-    let result = exec_prog(Rc::clone(&scope), &ast)?;
+    let result = exec_prog(&scope, &ast)?;
     println!("{result:?}");
     Ok(())
 }
