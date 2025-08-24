@@ -635,12 +635,116 @@ fn func_too_many_args() {
     let result = exec_str(
         &scope,
         r"
-        fn foo(x, y) {
-            return x + y;
+        fn foo(a, b) {
+            return a + b;
         }
         return foo(1, 2, 3);
         ",
-    )
-    .unwrap();
-    assert_eq!(result, Val::Num(3.0));
+    );
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap(), Val::Num(3.0));
+}
+
+#[test]
+fn while_loop() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        let i = 0;
+        let sum = 0;
+        while i < 5 do {
+            sum = sum + i;
+            i = i + 1;
+        }
+        return sum;
+        ",
+    );
+    assert_eq!(result.unwrap(), Val::Num(10.0));
+}
+
+#[test]
+fn while_loop_with_break() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        let i = 0;
+        let sum = 0;
+        while i < 10 do {
+            if i == 5 then {
+                break;
+            } else {
+                sum = sum + i;
+                i = i + 1;
+            }
+        }
+        return sum;
+        ",
+    );
+    assert_eq!(result.unwrap(), Val::Num(10.0));
+}
+
+#[test]
+fn while_loop_with_continue() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        let i = 0;
+        let sum = 0;
+        while i < 5 do {
+            i = i + 1;
+            if i < 3 then {
+                continue;
+            } else {
+                sum = sum + i;
+            }
+        }
+        return sum;
+        ",
+    );
+    assert_eq!(result.unwrap(), Val::Num(12.0)); // 3 + 4 + 5 = 12
+}
+
+#[test]
+fn break_outside_loop() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(&scope, "break;");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidControlFlow,
+        })
+    ));
+}
+
+#[test]
+fn continue_outside_loop() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(&scope, "continue;");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 0, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidControlFlow,
+        })
+    ));
+}
+
+#[test]
+fn break_in_func() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(&scope, "fn foo() { break; }\nfoo();");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos { line: 1, col: 0 },
+            scope: _,
+            kind: ExecErrorKind::InvalidControlFlow,
+        })
+    ));
 }

@@ -21,6 +21,8 @@ use crate::{
 pub enum ExecResult {
     Void,
     Return(Val),
+    Break,
+    Continue,
 }
 
 /// Executes a whole program.
@@ -32,6 +34,14 @@ pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError
             ExecResult::Return(val) => {
                 // Top-level return was encountered.
                 return Ok(val);
+            }
+            ExecResult::Break | ExecResult::Continue => {
+                // Break or continue used outside of a loop.
+                return Err(ExecError {
+                    pos: stmt.pos.start,
+                    scope: Rc::clone(&prog_scope),
+                    kind: ExecErrorKind::InvalidControlFlow,
+                });
             }
         }
     }
@@ -45,13 +55,7 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
             Ok(ExecResult::Void)
         }
         Stmt::Block { stmts, .. } => {
-            let block_scope = Rc::new(scope.new_child());
-            for stmt in stmts {
-                if let ExecResult::Return(val) = exec_stmt(&block_scope, stmt)? {
-                    return Ok(ExecResult::Return(val));
-                }
-            }
-            Ok(ExecResult::Void)
+            exec_block(scope, stmts)
         }
         Stmt::Let { pat, init, .. } => {
             let val = eval_expr(scope, init)?;
@@ -90,27 +94,83 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
             cons_branch,
             alt_branch,
             ..
-        } => {
-            let val = eval_expr(scope, condition)?;
-            if let Val::Bool(val) = val {
-                if val {
-                    exec_stmt(scope, cons_branch)
-                } else if let Some(alt_branch) = alt_branch {
-                    exec_stmt(scope, alt_branch)
-                } else {
-                    Ok(ExecResult::Void)
-                }
-            } else {
-                Err(ExecError {
-                    pos: condition.pos.start,
-                    scope: Rc::clone(scope),
-                    kind: ExecErrorKind::InvalidCondition {
-                        cond_ty: val.type_of(),
-                    },
-                })
-            }
+        } => exec_if_stmt(scope, condition, cons_branch, alt_branch.as_deref()),
+        Stmt::While {
+            condition, body, ..
+        } => exec_while_stmt(scope, condition, body),
+        Stmt::Break { .. } => Ok(ExecResult::Break),
+        Stmt::Continue { .. } => Ok(ExecResult::Continue),
+    }
+}
+
+fn exec_block(scope: &Rc<Scope>, stmts: &[Span<Stmt>]) -> Result<ExecResult, ExecError> {
+    let block_scope = Rc::new(scope.new_child());
+    for stmt in stmts {
+        match exec_stmt(&block_scope, stmt)? {
+            ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
+            ExecResult::Break => return Ok(ExecResult::Break),
+            ExecResult::Continue => return Ok(ExecResult::Continue),
+            ExecResult::Void => {}
         }
     }
+    Ok(ExecResult::Void)
+}
+
+fn exec_if_stmt(
+    scope: &Rc<Scope>,
+    condition: &Span<Expr>,
+    cons_branch: &Span<Stmt>,
+    alt_branch: Option<&Span<Stmt>>,
+) -> Result<ExecResult, ExecError> {
+    let cond_val = eval_expr(scope, condition)?;
+    let Val::Bool(cond_val) = cond_val else {
+        // Condition value must be a boolean.
+        return Err(ExecError {
+            pos: condition.pos.start,
+            scope: Rc::clone(scope),
+            kind: ExecErrorKind::InvalidCondition {
+                cond_ty: cond_val.type_of(),
+            },
+        });
+    };
+    if cond_val {
+        exec_stmt(scope, cons_branch)
+    } else if let Some(alt_branch) = alt_branch {
+        exec_stmt(scope, alt_branch)
+    } else {
+        Ok(ExecResult::Void)
+    }
+}
+
+fn exec_while_stmt(
+    scope: &Rc<Scope>,
+    condition: &Span<Expr>,
+    body: &Span<Stmt>,
+) -> Result<ExecResult, ExecError> {
+    let loop_scope = Rc::new(scope.new_child());
+    loop {
+        let cond_val = eval_expr(&loop_scope, condition)?;
+        let Val::Bool(cond_val) = cond_val else {
+            // Condition value must be a boolean.
+            return Err(ExecError {
+                pos: condition.pos.start,
+                scope: Rc::clone(scope),
+                kind: ExecErrorKind::InvalidCondition {
+                    cond_ty: cond_val.type_of(),
+                },
+            });
+        };
+        if cond_val {
+            match exec_stmt(&loop_scope, body)? {
+                ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
+                ExecResult::Break => break,
+                ExecResult::Continue | ExecResult::Void => {}
+            }
+        } else {
+            break;
+        }
+    }
+    Ok(ExecResult::Void)
 }
 
 /// Evaluates a single expression.
@@ -195,6 +255,14 @@ fn eval_func_call(
     // Execute the function body
     match exec_stmt(&Rc::new(func_scope), &callee_val.body)? {
         ExecResult::Return(val) => Ok(val),
+        ExecResult::Break | ExecResult::Continue => {
+            // Break or continue used inside a function
+            Err(ExecError {
+                pos: callee.pos.start,
+                scope: Rc::clone(scope),
+                kind: ExecErrorKind::InvalidControlFlow,
+            })
+        }
         ExecResult::Void => Ok(Val::Nil),
     }
 }
@@ -400,6 +468,7 @@ pub enum ExecErrorKind {
     InvalidAssign,
     InvalidCall { called_ty: Type },
     InvalidMatchObj { matched_ty: Type },
+    InvalidControlFlow,
 }
 
 impl std::fmt::Display for ExecError {
@@ -436,7 +505,10 @@ impl std::fmt::Display for ExecErrorKind {
                 write!(f, "invalid call on {called_ty:?} value")
             }
             ExecErrorKind::InvalidMatchObj { matched_ty } => {
-                write!(f, "invalid object destructuring of {matched_ty:?} value")
+                write!(f, "cannot destructure a {matched_ty:?} value")
+            }
+            ExecErrorKind::InvalidControlFlow => {
+                write!(f, "break and continue cannot be used outside of a loop")
             }
         }
     }

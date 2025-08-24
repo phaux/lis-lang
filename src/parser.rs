@@ -95,7 +95,24 @@ impl<'a> Parser<'a> {
                 Sigil::Keyword(Keyword::Fn) => return self.parse_func_decl(),
                 Sigil::Keyword(Keyword::Print) => return self.parse_print_stmt(),
                 Sigil::Keyword(Keyword::If) => return self.parse_if_stmt(),
+                Sigil::Keyword(Keyword::While) => return self.parse_while_stmt(),
                 Sigil::Keyword(Keyword::Return) => return self.parse_return_stmt(),
+                Sigil::Keyword(Keyword::Break) => {
+                    let keyword = self.tokens.next().unwrap();
+                    return Ok(Span {
+                        offset: keyword.offset.clone(),
+                        pos: keyword.pos.clone(),
+                        node: Stmt::Break { keyword },
+                    });
+                }
+                Sigil::Keyword(Keyword::Continue) => {
+                    let keyword = self.tokens.next().unwrap();
+                    return Ok(Span {
+                        offset: keyword.offset.clone(),
+                        pos: keyword.pos.clone(),
+                        node: Stmt::Continue { keyword },
+                    });
+                }
                 _ => {}
             }
         }
@@ -716,6 +733,53 @@ impl<'a> Parser<'a> {
                 paren_l,
                 args,
                 paren_r,
+            },
+        })
+    }
+
+    fn parse_while_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
+        // Consume 'while' keyword
+        let keyword = self.tokens.next().unwrap();
+
+        // Parse condition
+        let condition = Box::new(self.parse_expr(0)?);
+
+        // Expect 'do' keyword
+        let do_keyword = match self.tokens.next() {
+            Some(
+                tok @ Token {
+                    sigil: Sigil::Keyword(Keyword::Do),
+                    ..
+                },
+            ) => tok,
+            tok => {
+                return Err(ParseError {
+                    expected: "'do' keyword after while condition",
+                    found: tok,
+                });
+            }
+        };
+
+        // Parse body (must be a block statement)
+        let stmt = self.parse_stmt()?;
+        let body = match &stmt.node {
+            Stmt::Block { .. } => Box::new(stmt),
+            _ => {
+                return Err(ParseError {
+                    expected: "block statement as while loop body",
+                    found: None,
+                });
+            }
+        };
+
+        Ok(Span {
+            offset: keyword.offset.start..body.offset.end,
+            pos: keyword.pos.start..body.pos.end,
+            node: Stmt::While {
+                keyword,
+                condition,
+                do_keyword,
+                body,
             },
         })
     }

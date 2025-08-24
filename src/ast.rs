@@ -59,6 +59,18 @@ pub enum Stmt {
         param_paren_r: Token,
         body: Box<Span<Stmt>>,
     },
+    While {
+        keyword: Token,
+        condition: Box<Span<Expr>>,
+        do_keyword: Token,
+        body: Box<Span<Stmt>>,
+    },
+    Break {
+        keyword: Token,
+    },
+    Continue {
+        keyword: Token,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -189,7 +201,12 @@ impl BinOp {
         match self {
             BinOp::Or => 2,
             BinOp::And => 3,
-            BinOp::Eq | BinOp::NotEq | BinOp::Less | BinOp::LessEq | BinOp::Greater | BinOp::GreaterEq => 4,
+            BinOp::Eq
+            | BinOp::NotEq
+            | BinOp::Less
+            | BinOp::LessEq
+            | BinOp::Greater
+            | BinOp::GreaterEq => 4,
             BinOp::Concat => 5,
             BinOp::Add | BinOp::Sub => 6,
             BinOp::Mul | BinOp::Div => 7,
@@ -203,8 +220,15 @@ impl Stmt {
     #[must_use]
     pub fn needs_separator(&self) -> bool {
         match self {
-            Stmt::Expr { .. } | Stmt::Let { .. } | Stmt::Print { .. } | Stmt::Return { .. } => true,
+            Stmt::Expr { .. }
+            | Stmt::Let { .. }
+            | Stmt::Print { .. }
+            | Stmt::Return { .. }
+            | Stmt::Break { .. }
+            | Stmt::Continue { .. } => true,
+
             Stmt::Block { .. } | Stmt::FuncDecl { .. } => false,
+
             Stmt::If {
                 cons_branch,
                 alt_branch,
@@ -216,6 +240,8 @@ impl Stmt {
                     cons_branch.node.needs_separator()
                 }
             }
+            
+            Stmt::While { body, .. } => body.node.needs_separator(),
         }
     }
 }
