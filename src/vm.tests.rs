@@ -664,6 +664,21 @@ fn while_loop() {
 }
 
 #[test]
+fn while_loop_blockless() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        let i = 0;
+        let sum = 0;
+        while i < 5 do sum = sum + (i = i + 1);
+        return sum;
+        ",
+    );
+    assert_eq!(result.unwrap(), Val::Num(15.0));
+}
+
+#[test]
 fn while_loop_with_break() {
     let scope = Rc::new(Scope::root());
     let result = exec_str(
