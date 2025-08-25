@@ -1,0 +1,73 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        range: Pos {
+            offset: 0,
+            line: 0,
+            col: 0,
+        }..Pos {
+            offset: 5,
+            line: 0,
+            col: 5,
+        },
+        node: Lambda {
+            pipe_l: Token {
+                sigil: Pipe,
+                range: Pos {
+                    offset: 0,
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    offset: 1,
+                    line: 0,
+                    col: 1,
+                },
+            },
+            params: [
+                "x",
+            ],
+            pipe_r: Token {
+                sigil: Pipe,
+                range: Pos {
+                    offset: 2,
+                    line: 0,
+                    col: 2,
+                }..Pos {
+                    offset: 3,
+                    line: 0,
+                    col: 3,
+                },
+            },
+            body: Span {
+                range: Pos {
+                    offset: 4,
+                    line: 0,
+                    col: 4,
+                }..Pos {
+                    offset: 5,
+                    line: 0,
+                    col: 5,
+                },
+                node: Expr {
+                    expr: Span {
+                        range: Pos {
+                            offset: 4,
+                            line: 0,
+                            col: 4,
+                        }..Pos {
+                            offset: 5,
+                            line: 0,
+                            col: 5,
+                        },
+                        node: Var {
+                            name: "x",
+                        },
+                    },
+                },
+            },
+        },
+    },
+)

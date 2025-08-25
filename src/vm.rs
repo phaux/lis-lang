@@ -210,6 +210,14 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             }),
         },
         Expr::FuncCall { callee, args, .. } => eval_func_call(scope, callee, args),
+        Expr::Lambda { params, body, .. } => {
+            Ok(Val::Func(Rc::new(Func {
+                id: Uuid::new_v4(),
+                params: params.clone(),
+                body: Rc::new(*body.clone()),
+                closure_scope: Rc::clone(scope),
+            })))
+        }
     }
 }
 
@@ -246,7 +254,12 @@ fn eval_func_call(
     }
 
     // Execute the function body
-    match exec_stmt(&Rc::new(func_scope), &callee_val.body)? {
+    let body_stmt = &callee_val.body;
+    if let Stmt::Expr { expr } = &body_stmt.node {
+        // This is a lambda with an expression body. Evaluate and return.
+        return eval_expr(&Rc::new(func_scope), expr);
+    }
+    match exec_stmt(&Rc::new(func_scope), body_stmt)? {
         ExecResult::Return(val) => Ok(val),
         ExecResult::Break | ExecResult::Continue => {
             // Break or continue used inside a function

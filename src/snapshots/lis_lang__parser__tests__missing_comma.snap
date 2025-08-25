@@ -1,0 +1,25 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "comma or closing pipe of lambda parameters",
+        found: Some(
+            Token {
+                sigil: Ident {
+                    name: "y",
+                },
+                range: Pos {
+                    offset: 3,
+                    line: 0,
+                    col: 3,
+                }..Pos {
+                    offset: 4,
+                    line: 0,
+                    col: 4,
+                },
+            },
+        ),
+    },
+)

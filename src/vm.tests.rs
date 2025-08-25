@@ -74,6 +74,51 @@ fn if_non_bool_cond() {
 }
 
 #[test]
+fn lambda_closure() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        let f = |x| x + 1;
+        return f(1);
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(2.0));
+
+    let result = exec_str(
+        &scope,
+        r"
+        let x = 10;
+        let f = || x;
+        return f();
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(10.0));
+
+    let result = exec_str(
+        &scope,
+        r"
+        return (|x, y| x * y)(2, 3);
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(6.0));
+
+    let result = exec_str(
+        &scope,
+        r"
+        let factory = |x| |y| x + y;
+        let add5 = factory(5);
+        return add5(10);
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(15.0));
+}
+
+#[test]
 fn block_scopes() {
     let scope = Rc::new(Scope::root());
     scope.declare("outer", Val::default());

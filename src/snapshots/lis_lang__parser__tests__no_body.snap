@@ -1,0 +1,10 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Err(
+    ParseError {
+        expected: "lambda body",
+        found: None,
+    },
+)

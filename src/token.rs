@@ -39,6 +39,7 @@ pub enum Sigil {
     Less,
     LessEq,
     Greater,
+    Pipe,
     GreaterEq,
     Invalid,
 }
@@ -71,6 +72,7 @@ impl std::fmt::Display for Sigil {
             Sigil::Less => write!(f, "<"),
             Sigil::LessEq => write!(f, "<="),
             Sigil::Greater => write!(f, ">"),
+            Sigil::Pipe => write!(f, "|"),
             Sigil::GreaterEq => write!(f, ">="),
             Sigil::Invalid => write!(f, "invalid token"),
         }

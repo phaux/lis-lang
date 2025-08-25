@@ -313,3 +313,27 @@ fn expr_comparison_operators() {
     let ast = Parser::new("a < b <= c > d >= e").parse_expr(0);
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn expr_lambda() {
+    let ast = Parser::new("|| nil").parse_expr(0);
+    insta::assert_debug_snapshot!("no_params_expr_body", ast);
+
+    let ast = Parser::new("|x| x").parse_expr(0);
+    insta::assert_debug_snapshot!("one_param_expr_body", ast);
+
+    let ast = Parser::new("|x, y| x + y").parse_expr(0);
+    insta::assert_debug_snapshot!("multi_param_expr_body", ast);
+
+    let ast = Parser::new("|| {}").parse_expr(0);
+    insta::assert_debug_snapshot!("no_params_block_body", ast);
+
+    let ast = Parser::new("|x, y| { print(x); print(y); }").parse_expr(0);
+    insta::assert_debug_snapshot!("multi_param_block_body", ast);
+
+    let ast = Parser::new("||").parse_expr(0);
+    insta::assert_debug_snapshot!("no_body", ast);
+
+    let ast = Parser::new("|x y| x").parse_expr(0);
+    insta::assert_debug_snapshot!("missing_comma", ast);
+}

@@ -617,6 +617,11 @@ impl<'a> Parser<'a> {
                 });
             }
 
+            // Handle lambda expression
+            if tok.sigil == Sigil::Pipe {
+                return self.parse_lambda_expr(tok);
+            }
+
             // Handle parenthesized expression
             if tok.sigil == Sigil::ParenL {
                 return self.parse_paren_expr(tok);
@@ -815,6 +820,79 @@ impl<'a> Parser<'a> {
                 brace_l: brace_l.clone(),
                 props,
                 brace_r: brace_r.clone(),
+            },
+        })
+    }
+
+    fn parse_lambda_expr(&mut self, pipe_l: &Token) -> Result<Span<Expr>, ParseError> {
+        // Parse parameters
+        let mut params = Vec::new();
+        let mut needs_separator = false;
+        let pipe_r = loop {
+            // Always break on closing pipe
+            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::Pipe) {
+                break tok;
+            }
+
+            // If needs separator - repeat on comma or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.sigil == Sigil::Comma
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "comma or closing pipe of lambda parameters",
+                    found: tok,
+                });
+            }
+
+            // Parse parameter name
+            match self.tokens.next() {
+                Some(Token {
+                    sigil: Sigil::Ident { name },
+                    ..
+                }) => params.push(name),
+                tok => {
+                    return Err(ParseError {
+                        expected: "parameter name identifier",
+                        found: tok,
+                    });
+                }
+            }
+            needs_separator = true;
+        };
+
+        // Parse lambda body. It can be a block statement or an expression.
+        let body = if let Some(tok) = self.tokens.peek() {
+            match tok.sigil {
+                Sigil::CurlyL => self.parse_block_stmt()?,
+                _ => {
+                    let expr = self.parse_expr(0)?;
+                    Span {
+                        range: expr.range.clone(),
+                        node: Stmt::Expr {
+                            expr: Box::new(expr),
+                        },
+                    }
+                }
+            }
+        } else {
+            return Err(ParseError {
+                expected: "lambda body",
+                found: None,
+            });
+        };
+
+        Ok(Span {
+            range: pipe_l.range.start..body.range.end,
+            node: Expr::Lambda {
+                pipe_l: pipe_l.clone(),
+                params,
+                pipe_r,
+                body: Box::new(body),
             },
         })
     }

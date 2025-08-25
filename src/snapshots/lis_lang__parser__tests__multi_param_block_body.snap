@@ -1,0 +1,168 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        range: Pos {
+            offset: 0,
+            line: 0,
+            col: 0,
+        }..Pos {
+            offset: 30,
+            line: 0,
+            col: 30,
+        },
+        node: Lambda {
+            pipe_l: Token {
+                sigil: Pipe,
+                range: Pos {
+                    offset: 0,
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    offset: 1,
+                    line: 0,
+                    col: 1,
+                },
+            },
+            params: [
+                "x",
+                "y",
+            ],
+            pipe_r: Token {
+                sigil: Pipe,
+                range: Pos {
+                    offset: 5,
+                    line: 0,
+                    col: 5,
+                }..Pos {
+                    offset: 6,
+                    line: 0,
+                    col: 6,
+                },
+            },
+            body: Span {
+                range: Pos {
+                    offset: 7,
+                    line: 0,
+                    col: 7,
+                }..Pos {
+                    offset: 30,
+                    line: 0,
+                    col: 30,
+                },
+                node: Block {
+                    brace_l: Token {
+                        sigil: CurlyL,
+                        range: Pos {
+                            offset: 7,
+                            line: 0,
+                            col: 7,
+                        }..Pos {
+                            offset: 8,
+                            line: 0,
+                            col: 8,
+                        },
+                    },
+                    stmts: [
+                        Span {
+                            range: Pos {
+                                offset: 9,
+                                line: 0,
+                                col: 9,
+                            }..Pos {
+                                offset: 17,
+                                line: 0,
+                                col: 17,
+                            },
+                            node: Print {
+                                keyword: Token {
+                                    sigil: Keyword(
+                                        Print,
+                                    ),
+                                    range: Pos {
+                                        offset: 9,
+                                        line: 0,
+                                        col: 9,
+                                    }..Pos {
+                                        offset: 14,
+                                        line: 0,
+                                        col: 14,
+                                    },
+                                },
+                                expr: Span {
+                                    range: Pos {
+                                        offset: 14,
+                                        line: 0,
+                                        col: 14,
+                                    }..Pos {
+                                        offset: 17,
+                                        line: 0,
+                                        col: 17,
+                                    },
+                                    node: Var {
+                                        name: "x",
+                                    },
+                                },
+                            },
+                        },
+                        Span {
+                            range: Pos {
+                                offset: 19,
+                                line: 0,
+                                col: 19,
+                            }..Pos {
+                                offset: 27,
+                                line: 0,
+                                col: 27,
+                            },
+                            node: Print {
+                                keyword: Token {
+                                    sigil: Keyword(
+                                        Print,
+                                    ),
+                                    range: Pos {
+                                        offset: 19,
+                                        line: 0,
+                                        col: 19,
+                                    }..Pos {
+                                        offset: 24,
+                                        line: 0,
+                                        col: 24,
+                                    },
+                                },
+                                expr: Span {
+                                    range: Pos {
+                                        offset: 24,
+                                        line: 0,
+                                        col: 24,
+                                    }..Pos {
+                                        offset: 27,
+                                        line: 0,
+                                        col: 27,
+                                    },
+                                    node: Var {
+                                        name: "y",
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    brace_r: Token {
+                        sigil: CurlyR,
+                        range: Pos {
+                            offset: 29,
+                            line: 0,
+                            col: 29,
+                        }..Pos {
+                            offset: 30,
+                            line: 0,
+                            col: 30,
+                        },
+                    },
+                },
+            },
+        },
+    },
+)
