@@ -104,6 +104,11 @@ pub enum Expr {
     Var {
         name: String,
     },
+    UnaryOp {
+        op: UnaryOp,
+        op_tok: Token,
+        expr: Box<Span<Expr>>,
+    },
     BinOp {
         left: Box<Span<Expr>>,
         op: BinOp,
@@ -112,14 +117,7 @@ pub enum Expr {
     },
     Compare {
         left: Box<Span<Expr>>,
-        ops: Vec<CompareOp>,
-        op_toks: Vec<Token>,
-        comparators: Vec<Span<Expr>>,
-    },
-    UnaryOp {
-        op: UnaryOp,
-        op_tok: Token,
-        expr: Box<Span<Expr>>,
+        comparators: Vec<(CompareOp, Token, Span<Expr>)>,
     },
     Assign {
         place: Box<Span<Expr>>,

@@ -578,9 +578,7 @@ impl<'a> Parser<'a> {
                 }
 
                 let op_tok = self.tokens.next().unwrap();
-                let mut ops = vec![op];
-                let mut op_toks = vec![op_tok];
-                let mut comparators = vec![self.parse_expr(next_prec)?];
+                let mut comparators = vec![(op, op_tok, self.parse_expr(next_prec)?)];
 
                 while let Some(op_token) = self.tokens.peek() {
                     let Some(op) = CompareOp::try_from_token(op_token) else {
@@ -589,18 +587,14 @@ impl<'a> Parser<'a> {
                     // All comparison operators have the same precedence
                     let op_tok = self.tokens.next().unwrap();
                     let right = self.parse_expr(next_prec)?;
-                    ops.push(op);
-                    op_toks.push(op_tok);
-                    comparators.push(right);
+                    comparators.push((op, op_tok, right));
                 }
 
-                let end_range = comparators.last().unwrap().range.end;
+                let end = comparators.last().unwrap().2.range.end;
                 left = Span {
-                    range: left.range.start..end_range,
+                    range: left.range.start..end,
                     node: Expr::Compare {
                         left: Box::new(left),
-                        ops,
-                        op_toks,
                         comparators,
                     },
                 };

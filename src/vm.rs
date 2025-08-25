@@ -187,15 +187,9 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             right,
             ..
         } => eval_bin_op(scope, *op, op_tok, left, right),
-        Expr::Compare {
-            left,
-            ops,
-            op_toks,
-            comparators,
-        } => {
+        Expr::Compare { left, comparators } => {
             let mut prev_val = eval_expr(scope, left)?;
-            for ((op, op_tok), comparator) in ops.iter().zip(op_toks.iter()).zip(comparators.iter())
-            {
+            for (op, op_tok, comparator) in comparators {
                 let current_val = eval_expr(scope, comparator)?;
                 let result = match (op, &prev_val, &current_val) {
                     (CompareOp::Eq, l, r) => l == r,
@@ -251,14 +245,12 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             }),
         },
         Expr::FuncCall { callee, args, .. } => eval_func_call(scope, callee, args),
-        Expr::Lambda { params, body, .. } => {
-            Ok(Val::Func(Rc::new(Func {
-                id: Uuid::new_v4(),
-                params: params.clone(),
-                body: Rc::new(*body.clone()),
-                closure_scope: Rc::clone(scope),
-            })))
-        }
+        Expr::Lambda { params, body, .. } => Ok(Val::Func(Rc::new(Func {
+            id: Uuid::new_v4(),
+            params: params.clone(),
+            body: Rc::new(*body.clone()),
+            closure_scope: Rc::clone(scope),
+        }))),
     }
 }
 
@@ -486,15 +478,36 @@ impl std::error::Error for ExecError {}
 
 #[derive(Debug, PartialEq)]
 pub enum ExecErrorKind {
-    InvalidCondition { cond_ty: Type },
-    InvalidUnaryOp { op: UnaryOp, val_ty: Type },
-    InvalidBinOp { op: BinOp, l_ty: Type, r_ty: Type },
-    InvalidCompareOp { op: CompareOp, l_ty: Type, r_ty: Type },
-    InvalidPropAccess { obj_ty: Type },
-    UndefVar { name: String },
+    InvalidCondition {
+        cond_ty: Type,
+    },
+    InvalidUnaryOp {
+        op: UnaryOp,
+        val_ty: Type,
+    },
+    InvalidBinOp {
+        op: BinOp,
+        l_ty: Type,
+        r_ty: Type,
+    },
+    InvalidCompareOp {
+        op: CompareOp,
+        l_ty: Type,
+        r_ty: Type,
+    },
+    InvalidPropAccess {
+        obj_ty: Type,
+    },
+    UndefVar {
+        name: String,
+    },
     InvalidAssign,
-    InvalidCall { called_ty: Type },
-    InvalidMatchObj { matched_ty: Type },
+    InvalidCall {
+        called_ty: Type,
+    },
+    InvalidMatchObj {
+        matched_ty: Type,
+    },
     InvalidControlFlow,
 }
 
