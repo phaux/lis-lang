@@ -6,10 +6,7 @@ Err(
     ParseError {
         expected: "semicolon or end of input",
         found: Some(
-            Token {
-                sigil: Num {
-                    val: 1.0,
-                },
+            Span {
                 range: Pos {
                     offset: 2,
                     line: 0,
@@ -18,6 +15,9 @@ Err(
                     offset: 3,
                     line: 0,
                     col: 3,
+                },
+                node: Num {
+                    val: 1.0,
                 },
             },
         ),

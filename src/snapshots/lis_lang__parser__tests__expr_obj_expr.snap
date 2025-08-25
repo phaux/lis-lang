@@ -14,8 +14,7 @@ Ok(
             col: 22,
         },
         node: Obj {
-            brace_l: Token {
-                sigil: CurlyL,
+            brace_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,10 +24,22 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             props: [
                 (
-                    "x",
+                    Span {
+                        range: Pos {
+                            offset: 2,
+                            line: 0,
+                            col: 2,
+                        }..Pos {
+                            offset: 3,
+                            line: 0,
+                            col: 3,
+                        },
+                        node: "x",
+                    },
                     Span {
                         range: Pos {
                             offset: 5,
@@ -54,9 +65,7 @@ Ok(
                                     val: 1.0,
                                 },
                             },
-                            op: Add,
-                            op_tok: Token {
-                                sigil: Plus,
+                            op: Span {
                                 range: Pos {
                                     offset: 7,
                                     line: 0,
@@ -66,6 +75,7 @@ Ok(
                                     line: 0,
                                     col: 8,
                                 },
+                                node: Add,
                             },
                             right: Span {
                                 range: Pos {
@@ -85,7 +95,18 @@ Ok(
                     },
                 ),
                 (
-                    "y",
+                    Span {
+                        range: Pos {
+                            offset: 12,
+                            line: 0,
+                            col: 12,
+                        }..Pos {
+                            offset: 13,
+                            line: 0,
+                            col: 13,
+                        },
+                        node: "y",
+                    },
                     Span {
                         range: Pos {
                             offset: 15,
@@ -111,9 +132,7 @@ Ok(
                                     val: 3.0,
                                 },
                             },
-                            op: Mul,
-                            op_tok: Token {
-                                sigil: Star,
+                            op: Span {
                                 range: Pos {
                                     offset: 17,
                                     line: 0,
@@ -123,6 +142,7 @@ Ok(
                                     line: 0,
                                     col: 18,
                                 },
+                                node: Mul,
                             },
                             right: Span {
                                 range: Pos {
@@ -142,8 +162,7 @@ Ok(
                     },
                 ),
             ],
-            brace_r: Token {
-                sigil: CurlyR,
+            brace_r: Span {
                 range: Pos {
                     offset: 21,
                     line: 0,
@@ -153,6 +172,7 @@ Ok(
                     line: 0,
                     col: 22,
                 },
+                node: (),
             },
         },
     },

@@ -14,10 +14,7 @@ Ok(
             col: 20,
         },
         node: If {
-            keyword: Token {
-                sigil: Keyword(
-                    If,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 9,
                     line: 1,
@@ -27,6 +24,7 @@ Ok(
                     line: 1,
                     col: 10,
                 },
+                node: (),
             },
             condition: Span {
                 range: Pos {
@@ -42,10 +40,7 @@ Ok(
                     name: "x",
                 },
             },
-            then_keyword: Token {
-                sigil: Keyword(
-                    Then,
-                ),
+            then_keyword: Span {
                 range: Pos {
                     offset: 14,
                     line: 1,
@@ -55,6 +50,7 @@ Ok(
                     line: 1,
                     col: 17,
                 },
+                node: (),
             },
             cons_branch: Span {
                 range: Pos {
@@ -67,10 +63,7 @@ Ok(
                     col: 25,
                 },
                 node: Print {
-                    keyword: Token {
-                        sigil: Keyword(
-                            Print,
-                        ),
+                    keyword: Span {
                         range: Pos {
                             offset: 19,
                             line: 1,
@@ -80,6 +73,7 @@ Ok(
                             line: 1,
                             col: 23,
                         },
+                        node: (),
                     },
                     expr: Span {
                         range: Pos {
@@ -98,10 +92,7 @@ Ok(
                 },
             },
             else_keyword: Some(
-                Token {
-                    sigil: Keyword(
-                        Else,
-                    ),
+                Span {
                     range: Pos {
                         offset: 35,
                         line: 2,
@@ -111,6 +102,7 @@ Ok(
                         line: 2,
                         col: 12,
                     },
+                    node: (),
                 },
             ),
             alt_branch: Some(
@@ -125,10 +117,7 @@ Ok(
                         col: 20,
                     },
                     node: If {
-                        keyword: Token {
-                            sigil: Keyword(
-                                If,
-                            ),
+                        keyword: Span {
                             range: Pos {
                                 offset: 40,
                                 line: 2,
@@ -138,6 +127,7 @@ Ok(
                                 line: 2,
                                 col: 15,
                             },
+                            node: (),
                         },
                         condition: Span {
                             range: Pos {
@@ -153,10 +143,7 @@ Ok(
                                 name: "y",
                             },
                         },
-                        then_keyword: Token {
-                            sigil: Keyword(
-                                Then,
-                            ),
+                        then_keyword: Span {
                             range: Pos {
                                 offset: 45,
                                 line: 2,
@@ -166,6 +153,7 @@ Ok(
                                 line: 2,
                                 col: 22,
                             },
+                            node: (),
                         },
                         cons_branch: Span {
                             range: Pos {
@@ -178,10 +166,7 @@ Ok(
                                 col: 30,
                             },
                             node: Print {
-                                keyword: Token {
-                                    sigil: Keyword(
-                                        Print,
-                                    ),
+                                keyword: Span {
                                     range: Pos {
                                         offset: 50,
                                         line: 2,
@@ -191,6 +176,7 @@ Ok(
                                         line: 2,
                                         col: 28,
                                     },
+                                    node: (),
                                 },
                                 expr: Span {
                                     range: Pos {
@@ -209,10 +195,7 @@ Ok(
                             },
                         },
                         else_keyword: Some(
-                            Token {
-                                sigil: Keyword(
-                                    Else,
-                                ),
+                            Span {
                                 range: Pos {
                                     offset: 66,
                                     line: 3,
@@ -222,6 +205,7 @@ Ok(
                                     line: 3,
                                     col: 12,
                                 },
+                                node: (),
                             },
                         ),
                         alt_branch: Some(
@@ -236,10 +220,7 @@ Ok(
                                     col: 20,
                                 },
                                 node: Print {
-                                    keyword: Token {
-                                        sigil: Keyword(
-                                            Print,
-                                        ),
+                                    keyword: Span {
                                         range: Pos {
                                             offset: 71,
                                             line: 3,
@@ -249,6 +230,7 @@ Ok(
                                             line: 3,
                                             col: 18,
                                         },
+                                        node: (),
                                     },
                                     expr: Span {
                                         range: Pos {

@@ -3,7 +3,10 @@
 
 use std::str::FromStr as _;
 
-use crate::token::{Keyword, Pos, Sigil, Token};
+use crate::{
+    span::{Pos, Span},
+    token::{Keyword, Token},
+};
 
 pub struct Lexer<'a> {
     input: &'a str,
@@ -38,7 +41,7 @@ impl<'a> Lexer<'a> {
 }
 
 impl Iterator for Lexer<'_> {
-    type Item = Token;
+    type Item = Span<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -50,61 +53,61 @@ impl Iterator for Lexer<'_> {
                 '/' => match self.peek_char() {
                     Some('/') => self.parse_line_comment(),
                     Some('*') => self.parse_block_comment(),
-                    _ => Sigil::Slash,
+                    _ => Token::Slash,
                 },
                 '=' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();
-                        Sigil::EqEq
+                        Token::EqEq
                     }
-                    _ => Sigil::Eq,
+                    _ => Token::Eq,
                 },
                 '+' => match self.peek_char() {
                     Some('+') => {
                         self.next_char();
-                        Sigil::PlusPlus
+                        Token::PlusPlus
                     }
-                    _ => Sigil::Plus,
+                    _ => Token::Plus,
                 },
                 '!' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();
-                        Sigil::BangEq
+                        Token::BangEq
                     }
-                    _ => Sigil::Bang,
+                    _ => Token::Bang,
                 },
-                ';' => Sigil::Semi,
-                '-' => Sigil::Minus,
-                '*' => Sigil::Star,
-                '.' => Sigil::Dot,
-                ':' => Sigil::Colon,
-                ',' => Sigil::Comma,
-                '(' => Sigil::ParenL,
-                ')' => Sigil::ParenR,
-                '{' => Sigil::CurlyL,
-                '}' => Sigil::CurlyR,
-                '|' => Sigil::Pipe,
+                ';' => Token::Semi,
+                '-' => Token::Minus,
+                '*' => Token::Star,
+                '.' => Token::Dot,
+                ':' => Token::Colon,
+                ',' => Token::Comma,
+                '(' => Token::ParenL,
+                ')' => Token::ParenR,
+                '{' => Token::CurlyL,
+                '}' => Token::CurlyR,
+                '|' => Token::Pipe,
                 '<' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();
-                        Sigil::LessEq
+                        Token::LessEq
                     }
-                    _ => Sigil::Less,
+                    _ => Token::Less,
                 },
                 '>' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();
-                        Sigil::GreaterEq
+                        Token::GreaterEq
                     }
-                    _ => Sigil::Greater,
+                    _ => Token::Greater,
                 },
                 '"' => self.parse_str(),
                 ch if ch.is_alphabetic() || ch == '_' => self.parse_word(ch),
                 ch if ch.is_ascii_digit() => self.parse_num(ch),
-                _ => Sigil::Invalid,
+                _ => Token::Invalid,
             };
-            return Some(Token {
-                sigil,
+            return Some(Span {
+                node: sigil,
                 range: pos_start..self.pos,
             });
         }
@@ -112,7 +115,7 @@ impl Iterator for Lexer<'_> {
 }
 
 impl Lexer<'_> {
-    fn parse_num(&mut self, first: char) -> Sigil {
+    fn parse_num(&mut self, first: char) -> Token {
         let mut val_str = String::new();
         val_str.push(first);
         while let Some(ch) = self.peek_char()
@@ -122,12 +125,12 @@ impl Lexer<'_> {
             val_str.push(ch);
         }
         let Ok(val) = val_str.parse::<f64>() else {
-            return Sigil::Invalid;
+            return Token::Invalid;
         };
-        Sigil::Num { val }
+        Token::Num { val }
     }
 
-    fn parse_word(&mut self, first: char) -> Sigil {
+    fn parse_word(&mut self, first: char) -> Token {
         let mut word = String::new();
         word.push(first);
         while let Some(ch) = self.peek_char()
@@ -137,12 +140,12 @@ impl Lexer<'_> {
             word.push(ch);
         }
         match Keyword::from_str(&word) {
-            Ok(keyword) => Sigil::Keyword(keyword),
-            Err(()) => Sigil::Ident { name: word },
+            Ok(keyword) => Token::Keyword(keyword),
+            Err(()) => Token::Ident { name: word },
         }
     }
 
-    fn parse_str(&mut self) -> Sigil {
+    fn parse_str(&mut self) -> Token {
         let mut val = String::new();
         while let Some(ch) = self.next_char() {
             match ch {
@@ -159,10 +162,10 @@ impl Lexer<'_> {
                 ch => val.push(ch),
             }
         }
-        Sigil::Str { val }
+        Token::Str { val }
     }
 
-    fn parse_line_comment(&mut self) -> Sigil {
+    fn parse_line_comment(&mut self) -> Token {
         // Consume the second '/'
         self.next_char();
         let mut body = String::new();
@@ -173,10 +176,10 @@ impl Lexer<'_> {
             self.next_char();
             body.push(ch);
         }
-        Sigil::Comment { body }
+        Token::Comment { body }
     }
 
-    fn parse_block_comment(&mut self) -> Sigil {
+    fn parse_block_comment(&mut self) -> Token {
         // Consume the '*'
         self.next_char();
         let mut body = String::new();
@@ -190,7 +193,7 @@ impl Lexer<'_> {
             }
             body.push(ch);
         }
-        Sigil::Comment { body }
+        Token::Comment { body }
     }
 }
 

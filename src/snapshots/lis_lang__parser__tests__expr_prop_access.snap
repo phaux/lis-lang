@@ -50,8 +50,7 @@ Ok(
                                     name: "obj",
                                 },
                             },
-                            dot_tok: Token {
-                                sigil: Dot,
+                            dot_tok: Span {
                                 range: Pos {
                                     offset: 3,
                                     line: 0,
@@ -61,12 +60,23 @@ Ok(
                                     line: 0,
                                     col: 4,
                                 },
+                                node: (),
                             },
-                            prop: "a",
+                            prop: Span {
+                                range: Pos {
+                                    offset: 4,
+                                    line: 0,
+                                    col: 4,
+                                }..Pos {
+                                    offset: 5,
+                                    line: 0,
+                                    col: 5,
+                                },
+                                node: "a",
+                            },
                         },
                     },
-                    dot_tok: Token {
-                        sigil: Dot,
+                    dot_tok: Span {
                         range: Pos {
                             offset: 5,
                             line: 0,
@@ -76,12 +86,23 @@ Ok(
                             line: 0,
                             col: 6,
                         },
+                        node: (),
                     },
-                    prop: "b",
+                    prop: Span {
+                        range: Pos {
+                            offset: 6,
+                            line: 0,
+                            col: 6,
+                        }..Pos {
+                            offset: 7,
+                            line: 0,
+                            col: 7,
+                        },
+                        node: "b",
+                    },
                 },
             },
-            dot_tok: Token {
-                sigil: Dot,
+            dot_tok: Span {
                 range: Pos {
                     offset: 7,
                     line: 0,
@@ -91,8 +112,20 @@ Ok(
                     line: 0,
                     col: 8,
                 },
+                node: (),
             },
-            prop: "c",
+            prop: Span {
+                range: Pos {
+                    offset: 8,
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    offset: 9,
+                    line: 0,
+                    col: 9,
+                },
+                node: "c",
+            },
         },
     },
 )

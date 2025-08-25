@@ -6,10 +6,7 @@ Err(
     ParseError {
         expected: "expression",
         found: Some(
-            Token {
-                sigil: Keyword(
-                    Else,
-                ),
+            Span {
                 range: Pos {
                     offset: 15,
                     line: 0,
@@ -19,6 +16,9 @@ Err(
                     line: 0,
                     col: 19,
                 },
+                node: Keyword(
+                    Else,
+                ),
             },
         ),
     },

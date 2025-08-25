@@ -61,8 +61,7 @@ Ok(
                                             name: "func",
                                         },
                                     },
-                                    paren_l: Token {
-                                        sigil: ParenL,
+                                    paren_l: Span {
                                         range: Pos {
                                             offset: 13,
                                             line: 1,
@@ -72,6 +71,7 @@ Ok(
                                             line: 1,
                                             col: 13,
                                         },
+                                        node: (),
                                     },
                                     args: [
                                         Span {
@@ -103,8 +103,7 @@ Ok(
                                             },
                                         },
                                     ],
-                                    paren_r: Token {
-                                        sigil: ParenR,
+                                    paren_r: Span {
                                         range: Pos {
                                             offset: 79,
                                             line: 4,
@@ -114,11 +113,11 @@ Ok(
                                             line: 4,
                                             col: 9,
                                         },
+                                        node: (),
                                     },
                                 },
                             },
-                            dot_tok: Token {
-                                sigil: Dot,
+                            dot_tok: Span {
                                 range: Pos {
                                     offset: 80,
                                     line: 4,
@@ -128,12 +127,23 @@ Ok(
                                     line: 4,
                                     col: 10,
                                 },
+                                node: (),
                             },
-                            prop: "prop",
+                            prop: Span {
+                                range: Pos {
+                                    offset: 81,
+                                    line: 4,
+                                    col: 10,
+                                }..Pos {
+                                    offset: 85,
+                                    line: 4,
+                                    col: 14,
+                                },
+                                node: "prop",
+                            },
                         },
                     },
-                    dot_tok: Token {
-                        sigil: Dot,
+                    dot_tok: Span {
                         range: Pos {
                             offset: 100,
                             line: 4,
@@ -143,12 +153,23 @@ Ok(
                             line: 4,
                             col: 30,
                         },
+                        node: (),
                     },
-                    prop: "toString",
+                    prop: Span {
+                        range: Pos {
+                            offset: 102,
+                            line: 4,
+                            col: 31,
+                        }..Pos {
+                            offset: 110,
+                            line: 4,
+                            col: 39,
+                        },
+                        node: "toString",
+                    },
                 },
             },
-            paren_l: Token {
-                sigil: ParenL,
+            paren_l: Span {
                 range: Pos {
                     offset: 111,
                     line: 4,
@@ -158,10 +179,10 @@ Ok(
                     line: 4,
                     col: 41,
                 },
+                node: (),
             },
             args: [],
-            paren_r: Token {
-                sigil: ParenR,
+            paren_r: Span {
                 range: Pos {
                     offset: 124,
                     line: 4,
@@ -171,6 +192,7 @@ Ok(
                     line: 4,
                     col: 54,
                 },
+                node: (),
             },
         },
     },

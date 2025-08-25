@@ -30,9 +30,7 @@ Ok(
             },
             comparators: [
                 (
-                    Less,
-                    Token {
-                        sigil: Less,
+                    Span {
                         range: Pos {
                             offset: 2,
                             line: 0,
@@ -42,6 +40,7 @@ Ok(
                             line: 0,
                             col: 3,
                         },
+                        node: Less,
                     },
                     Span {
                         range: Pos {
@@ -59,9 +58,7 @@ Ok(
                     },
                 ),
                 (
-                    LessEq,
-                    Token {
-                        sigil: LessEq,
+                    Span {
                         range: Pos {
                             offset: 6,
                             line: 0,
@@ -71,6 +68,7 @@ Ok(
                             line: 0,
                             col: 8,
                         },
+                        node: LessEq,
                     },
                     Span {
                         range: Pos {
@@ -88,9 +86,7 @@ Ok(
                     },
                 ),
                 (
-                    Greater,
-                    Token {
-                        sigil: Greater,
+                    Span {
                         range: Pos {
                             offset: 11,
                             line: 0,
@@ -100,6 +96,7 @@ Ok(
                             line: 0,
                             col: 12,
                         },
+                        node: Greater,
                     },
                     Span {
                         range: Pos {
@@ -117,9 +114,7 @@ Ok(
                     },
                 ),
                 (
-                    GreaterEq,
-                    Token {
-                        sigil: GreaterEq,
+                    Span {
                         range: Pos {
                             offset: 15,
                             line: 0,
@@ -129,6 +124,7 @@ Ok(
                             line: 0,
                             col: 17,
                         },
+                        node: GreaterEq,
                     },
                     Span {
                         range: Pos {
@@ -146,9 +142,7 @@ Ok(
                     },
                 ),
                 (
-                    Eq,
-                    Token {
-                        sigil: EqEq,
+                    Span {
                         range: Pos {
                             offset: 20,
                             line: 0,
@@ -158,6 +152,7 @@ Ok(
                             line: 0,
                             col: 22,
                         },
+                        node: Eq,
                     },
                     Span {
                         range: Pos {
@@ -175,9 +170,7 @@ Ok(
                     },
                 ),
                 (
-                    NotEq,
-                    Token {
-                        sigil: BangEq,
+                    Span {
                         range: Pos {
                             offset: 25,
                             line: 0,
@@ -187,6 +180,7 @@ Ok(
                             line: 0,
                             col: 27,
                         },
+                        node: NotEq,
                     },
                     Span {
                         range: Pos {

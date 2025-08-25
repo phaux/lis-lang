@@ -39,8 +39,7 @@ Ok(
                             name: "obj",
                         },
                     },
-                    dot_tok: Token {
-                        sigil: Dot,
+                    dot_tok: Span {
                         range: Pos {
                             offset: 3,
                             line: 0,
@@ -50,12 +49,23 @@ Ok(
                             line: 0,
                             col: 4,
                         },
+                        node: (),
                     },
-                    prop: "method",
+                    prop: Span {
+                        range: Pos {
+                            offset: 4,
+                            line: 0,
+                            col: 4,
+                        }..Pos {
+                            offset: 10,
+                            line: 0,
+                            col: 10,
+                        },
+                        node: "method",
+                    },
                 },
             },
-            paren_l: Token {
-                sigil: ParenL,
+            paren_l: Span {
                 range: Pos {
                     offset: 10,
                     line: 0,
@@ -65,10 +75,10 @@ Ok(
                     line: 0,
                     col: 11,
                 },
+                node: (),
             },
             args: [],
-            paren_r: Token {
-                sigil: ParenR,
+            paren_r: Span {
                 range: Pos {
                     offset: 11,
                     line: 0,
@@ -78,6 +88,7 @@ Ok(
                     line: 0,
                     col: 12,
                 },
+                node: (),
             },
         },
     },

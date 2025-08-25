@@ -14,10 +14,7 @@ Ok(
             col: 39,
         },
         node: If {
-            keyword: Token {
-                sigil: Keyword(
-                    If,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,6 +24,7 @@ Ok(
                     line: 0,
                     col: 2,
                 },
+                node: (),
             },
             condition: Span {
                 range: Pos {
@@ -42,10 +40,7 @@ Ok(
                     name: "x",
                 },
             },
-            then_keyword: Token {
-                sigil: Keyword(
-                    Then,
-                ),
+            then_keyword: Span {
                 range: Pos {
                     offset: 5,
                     line: 0,
@@ -55,6 +50,7 @@ Ok(
                     line: 0,
                     col: 9,
                 },
+                node: (),
             },
             cons_branch: Span {
                 range: Pos {
@@ -67,8 +63,7 @@ Ok(
                     col: 21,
                 },
                 node: Block {
-                    brace_l: Token {
-                        sigil: CurlyL,
+                    brace_l: Span {
                         range: Pos {
                             offset: 10,
                             line: 0,
@@ -78,6 +73,7 @@ Ok(
                             line: 0,
                             col: 11,
                         },
+                        node: (),
                     },
                     stmts: [
                         Span {
@@ -91,10 +87,7 @@ Ok(
                                 col: 19,
                             },
                             node: Print {
-                                keyword: Token {
-                                    sigil: Keyword(
-                                        Print,
-                                    ),
+                                keyword: Span {
                                     range: Pos {
                                         offset: 12,
                                         line: 0,
@@ -104,6 +97,7 @@ Ok(
                                         line: 0,
                                         col: 17,
                                     },
+                                    node: (),
                                 },
                                 expr: Span {
                                     range: Pos {
@@ -122,8 +116,7 @@ Ok(
                             },
                         },
                     ],
-                    brace_r: Token {
-                        sigil: CurlyR,
+                    brace_r: Span {
                         range: Pos {
                             offset: 20,
                             line: 0,
@@ -133,14 +126,12 @@ Ok(
                             line: 0,
                             col: 21,
                         },
+                        node: (),
                     },
                 },
             },
             else_keyword: Some(
-                Token {
-                    sigil: Keyword(
-                        Else,
-                    ),
+                Span {
                     range: Pos {
                         offset: 22,
                         line: 0,
@@ -150,6 +141,7 @@ Ok(
                         line: 0,
                         col: 26,
                     },
+                    node: (),
                 },
             ),
             alt_branch: Some(
@@ -164,8 +156,7 @@ Ok(
                         col: 39,
                     },
                     node: Block {
-                        brace_l: Token {
-                            sigil: CurlyL,
+                        brace_l: Span {
                             range: Pos {
                                 offset: 27,
                                 line: 0,
@@ -175,6 +166,7 @@ Ok(
                                 line: 0,
                                 col: 28,
                             },
+                            node: (),
                         },
                         stmts: [
                             Span {
@@ -188,10 +180,7 @@ Ok(
                                     col: 36,
                                 },
                                 node: Print {
-                                    keyword: Token {
-                                        sigil: Keyword(
-                                            Print,
-                                        ),
+                                    keyword: Span {
                                         range: Pos {
                                             offset: 29,
                                             line: 0,
@@ -201,6 +190,7 @@ Ok(
                                             line: 0,
                                             col: 34,
                                         },
+                                        node: (),
                                     },
                                     expr: Span {
                                         range: Pos {
@@ -219,8 +209,7 @@ Ok(
                                 },
                             },
                         ],
-                        brace_r: Token {
-                            sigil: CurlyR,
+                        brace_r: Span {
                             range: Pos {
                                 offset: 38,
                                 line: 0,
@@ -230,6 +219,7 @@ Ok(
                                 line: 0,
                                 col: 39,
                             },
+                            node: (),
                         },
                     },
                 },

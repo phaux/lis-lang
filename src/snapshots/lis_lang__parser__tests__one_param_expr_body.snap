@@ -14,8 +14,7 @@ Ok(
             col: 5,
         },
         node: Lambda {
-            pipe_l: Token {
-                sigil: Pipe,
+            pipe_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,12 +24,23 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             params: [
-                "x",
+                Span {
+                    range: Pos {
+                        offset: 1,
+                        line: 0,
+                        col: 1,
+                    }..Pos {
+                        offset: 2,
+                        line: 0,
+                        col: 2,
+                    },
+                    node: "x",
+                },
             ],
-            pipe_r: Token {
-                sigil: Pipe,
+            pipe_r: Span {
                 range: Pos {
                     offset: 2,
                     line: 0,
@@ -40,6 +50,7 @@ Ok(
                     line: 0,
                     col: 3,
                 },
+                node: (),
             },
             body: Span {
                 range: Pos {

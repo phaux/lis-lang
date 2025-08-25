@@ -9,9 +9,9 @@ use std::{collections::HashMap, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
-    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pattern, Prog, Stmt, UnaryOp},
+    span::{Pos, Span},
     state::{Func, Obj, Scope, Type, Val},
-    token::{Pos, Token},
 };
 
 /// Result of executing a statement.
@@ -63,7 +63,7 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
             name, params, body, ..
         } => {
             scope.declare(
-                name,
+                &name.node,
                 Val::Func(Rc::new(Func {
                     id: Uuid::new_v4(),
                     params: params.clone(),
@@ -177,63 +177,23 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
         Expr::Str { val } => Ok(Val::Str(val.clone())),
         Expr::Var { name } => Ok(scope.lookup(name).unwrap_or_default()),
         Expr::Assign { place, expr, .. } => eval_assign(scope, place, expr),
-        Expr::UnaryOp {
-            op, op_tok, expr, ..
-        } => eval_unary_op(scope, *op, op_tok, expr),
+        Expr::UnaryOp { op, expr, .. } => eval_unary_op(scope, op, expr),
         Expr::BinOp {
-            op,
-            op_tok,
-            left,
-            right,
-            ..
-        } => eval_bin_op(scope, *op, op_tok, left, right),
-        Expr::Compare { left, comparators } => {
-            let mut prev_val = eval_expr(scope, left)?;
-            for (op, op_tok, comparator) in comparators {
-                let current_val = eval_expr(scope, comparator)?;
-                let result = match (op, &prev_val, &current_val) {
-                    (CompareOp::Eq, l, r) => l == r,
-                    (CompareOp::NotEq, l, r) => l != r,
-                    (CompareOp::Less, Val::Num(l), Val::Num(r)) => l < r,
-                    (CompareOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
-                    (CompareOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
-                    (CompareOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
-                    (CompareOp::Less, Val::Str(l), Val::Str(r)) => l < r,
-                    (CompareOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
-                    (CompareOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
-                    (CompareOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
-                    _ => {
-                        return Err(ExecError {
-                            pos: op_tok.range.start,
-                            kind: ExecErrorKind::InvalidCompareOp {
-                                op: *op,
-                                l_ty: prev_val.type_of(),
-                                r_ty: current_val.type_of(),
-                            },
-                        });
-                    }
-                };
-
-                if !result {
-                    return Ok(Val::Bool(false));
-                }
-
-                prev_val = current_val;
-            }
-            Ok(Val::Bool(true))
-        }
+            op, left, right, ..
+        } => eval_bin_op(scope, op, left, right),
+        Expr::CompareChain { left, comparators } => eval_compare(scope, left, comparators),
         Expr::Obj { props, .. } => {
             let mut obj = Obj {
                 props: HashMap::new(),
             };
             for (key, val) in props {
                 let val = eval_expr(scope, val)?;
-                obj.props.insert(key.clone(), val);
+                obj.props.insert(key.node.clone(), val);
             }
             Ok(Val::Obj(Rc::new(obj)))
         }
         Expr::PropAccess { obj, prop, dot_tok } => match eval_expr(scope, obj)? {
-            Val::Obj(obj) => match obj.props.get(prop) {
+            Val::Obj(obj) => match obj.props.get(&prop.node) {
                 Some(value) => Ok(value.clone()),
                 None => Ok(Val::Nil),
             },
@@ -252,6 +212,46 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             closure_scope: Rc::clone(scope),
         }))),
     }
+}
+
+fn eval_compare(
+    scope: &Rc<Scope>,
+    left: &Span<Expr>,
+    comparators: &[(Span<CompareOp>, Span<Expr>)],
+) -> Result<Val, ExecError> {
+    let mut prev_val = eval_expr(scope, left)?;
+    for (op, comparator) in comparators {
+        let current_val = eval_expr(scope, comparator)?;
+        let result = match (op.node, &prev_val, &current_val) {
+            (CompareOp::Eq, l, r) => l == r,
+            (CompareOp::NotEq, l, r) => l != r,
+            (CompareOp::Less, Val::Num(l), Val::Num(r)) => l < r,
+            (CompareOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
+            (CompareOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
+            (CompareOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
+            (CompareOp::Less, Val::Str(l), Val::Str(r)) => l < r,
+            (CompareOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
+            (CompareOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
+            (CompareOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
+            _ => {
+                return Err(ExecError {
+                    pos: op.range.start,
+                    kind: ExecErrorKind::InvalidCompareOp {
+                        op: op.node,
+                        l_ty: prev_val.type_of(),
+                        r_ty: current_val.type_of(),
+                    },
+                });
+            }
+        };
+
+        if !result {
+            return Ok(Val::Bool(false));
+        }
+
+        prev_val = current_val;
+    }
+    Ok(Val::Bool(true))
 }
 
 fn eval_func_call(
@@ -283,7 +283,7 @@ fn eval_func_call(
     for (idx, name) in callee_val.params.iter().enumerate() {
         // For each parameter, either use the provided argument or default to Nil
         let val = arg_vals.get(idx).cloned().unwrap_or(Val::Nil);
-        func_scope.declare(name, val);
+        func_scope.declare(&name.node, val);
     }
 
     // Execute the function body
@@ -307,13 +307,12 @@ fn eval_func_call(
 
 fn eval_bin_op(
     scope: &Rc<Scope>,
-    op: BinOp,
-    op_tok: &Token,
+    op: &Span<BinOp>,
     left: &Span<Expr>,
     right: &Span<Expr>,
 ) -> Result<Val, ExecError> {
     // Handle short-circuit evaluation for logical operators
-    match op {
+    match op.node {
         BinOp::Or => {
             let left_val = eval_expr(scope, left)?;
             if let Val::Bool(true) = left_val {
@@ -324,9 +323,9 @@ fn eval_bin_op(
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l || r)),
                 (l, r) => {
                     return Err(ExecError {
-                        pos: op_tok.range.start,
+                        pos: op.range.start,
                         kind: ExecErrorKind::InvalidBinOp {
-                            op,
+                            op: op.node,
                             l_ty: l.type_of(),
                             r_ty: r.type_of(),
                         },
@@ -344,9 +343,9 @@ fn eval_bin_op(
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l && r)),
                 (l, r) => {
                     return Err(ExecError {
-                        pos: op_tok.range.start,
+                        pos: op.range.start,
                         kind: ExecErrorKind::InvalidBinOp {
-                            op,
+                            op: op.node,
                             l_ty: l.type_of(),
                             r_ty: r.type_of(),
                         },
@@ -361,16 +360,16 @@ fn eval_bin_op(
     let left_val = eval_expr(scope, left)?;
     let right_val = eval_expr(scope, right)?;
 
-    match (op, left_val, right_val) {
+    match (op.node, left_val, right_val) {
         (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l + r)),
         (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
         (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
         (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l / r)),
         (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
-        (op, l, r) => Err(ExecError {
-            pos: op_tok.range.start,
+        (_, l, r) => Err(ExecError {
+            pos: op.range.start,
             kind: ExecErrorKind::InvalidBinOp {
-                op,
+                op: op.node,
                 l_ty: l.type_of(),
                 r_ty: r.type_of(),
             },
@@ -380,19 +379,18 @@ fn eval_bin_op(
 
 fn eval_unary_op(
     scope: &Rc<Scope>,
-    op: UnaryOp,
-    op_tok: &Token,
+    op: &Span<UnaryOp>,
     expr: &Span<Expr>,
 ) -> Result<Val, ExecError> {
     let val = eval_expr(scope, expr)?;
-    match (op, val) {
+    match (op.node, val) {
         (UnaryOp::Pos, Val::Num(n)) => Ok(Val::Num(n)),
         (UnaryOp::Neg, Val::Num(n)) => Ok(Val::Num(-n)),
         (UnaryOp::Not, Val::Bool(b)) => Ok(Val::Bool(!b)),
-        (op, val) => Err(ExecError {
-            pos: op_tok.range.start,
+        (_, val) => Err(ExecError {
+            pos: op.range.start,
             kind: ExecErrorKind::InvalidUnaryOp {
-                op,
+                op: op.node,
                 val_ty: val.type_of(),
             },
         }),
@@ -426,15 +424,15 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
 /// Additionally, pattern matching can destructure objects and recursively match on their properties.
 pub fn match_pattern(
     scope: &Rc<Scope>,
-    pat: &Span<Pat>,
+    pat: &Span<Pattern>,
     matched_val: Val,
 ) -> Result<(), ExecError> {
     match &pat.node {
-        Pat::Ident { name } => {
+        Pattern::Ident { name } => {
             // Identifier pattern binds the matched value to a variable
             scope.declare(name.as_str(), matched_val);
         }
-        Pat::Obj { props, .. } => {
+        Pattern::Obj { props, .. } => {
             // Object pattern recursively matches each property of the matched value
             let Val::Obj(matched_obj) = matched_val else {
                 return Err(ExecError {
@@ -447,13 +445,13 @@ pub fn match_pattern(
             for (prop_name, prop_pat) in props {
                 let val = matched_obj
                     .props
-                    .get(prop_name)
+                    .get(&prop_name.node)
                     .cloned()
                     .unwrap_or(Val::Nil);
                 match_pattern(scope, prop_pat, val)?;
             }
         }
-        Pat::Default { pat, default, .. } => {
+        Pattern::Default { pat, default, .. } => {
             // Default pattern replaces the matched value if it's nil.
             let matched_val = match matched_val {
                 Val::Nil => eval_expr(scope, default)?,

@@ -39,9 +39,7 @@ Ok(
                             val: 1.0,
                         },
                     },
-                    op: Add,
-                    op_tok: Token {
-                        sigil: Plus,
+                    op: Span {
                         range: Pos {
                             offset: 3,
                             line: 0,
@@ -51,6 +49,7 @@ Ok(
                             line: 0,
                             col: 4,
                         },
+                        node: Add,
                     },
                     right: Span {
                         range: Pos {
@@ -68,8 +67,7 @@ Ok(
                     },
                 },
             },
-            dot_tok: Token {
-                sigil: Dot,
+            dot_tok: Span {
                 range: Pos {
                     offset: 7,
                     line: 0,
@@ -79,8 +77,20 @@ Ok(
                     line: 0,
                     col: 8,
                 },
+                node: (),
             },
-            prop: "toString",
+            prop: Span {
+                range: Pos {
+                    offset: 8,
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    offset: 16,
+                    line: 0,
+                    col: 16,
+                },
+                node: "toString",
+            },
         },
     },
 )

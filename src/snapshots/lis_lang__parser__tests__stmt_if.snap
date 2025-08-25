@@ -14,10 +14,7 @@ Ok(
             col: 17,
         },
         node: If {
-            keyword: Token {
-                sigil: Keyword(
-                    If,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,6 +24,7 @@ Ok(
                     line: 0,
                     col: 2,
                 },
+                node: (),
             },
             condition: Span {
                 range: Pos {
@@ -42,10 +40,7 @@ Ok(
                     val: 1.0,
                 },
             },
-            then_keyword: Token {
-                sigil: Keyword(
-                    Then,
-                ),
+            then_keyword: Span {
                 range: Pos {
                     offset: 5,
                     line: 0,
@@ -55,6 +50,7 @@ Ok(
                     line: 0,
                     col: 9,
                 },
+                node: (),
             },
             cons_branch: Span {
                 range: Pos {
@@ -67,10 +63,7 @@ Ok(
                     col: 17,
                 },
                 node: Print {
-                    keyword: Token {
-                        sigil: Keyword(
-                            Print,
-                        ),
+                    keyword: Span {
                         range: Pos {
                             offset: 10,
                             line: 0,
@@ -80,6 +73,7 @@ Ok(
                             line: 0,
                             col: 15,
                         },
+                        node: (),
                     },
                     expr: Span {
                         range: Pos {

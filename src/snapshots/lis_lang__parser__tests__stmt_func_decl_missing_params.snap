@@ -6,8 +6,7 @@ Err(
     ParseError {
         expected: "opening parenthesis of function parameters",
         found: Some(
-            Token {
-                sigil: CurlyL,
+            Span {
                 range: Pos {
                     offset: 7,
                     line: 0,
@@ -17,6 +16,7 @@ Err(
                     line: 0,
                     col: 8,
                 },
+                node: CurlyL,
             },
         ),
     },

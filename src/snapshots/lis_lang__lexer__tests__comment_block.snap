@@ -3,10 +3,7 @@ source: src/lexer.tests.rs
 expression: tokens
 ---
 [
-    Token {
-        sigil: Keyword(
-            Let,
-        ),
+    Span {
         range: Pos {
             offset: 0,
             line: 0,
@@ -16,11 +13,11 @@ expression: tokens
             line: 0,
             col: 3,
         },
+        node: Keyword(
+            Let,
+        ),
     },
-    Token {
-        sigil: Ident {
-            name: "x",
-        },
+    Span {
         range: Pos {
             offset: 4,
             line: 0,
@@ -30,9 +27,11 @@ expression: tokens
             line: 0,
             col: 5,
         },
+        node: Ident {
+            name: "x",
+        },
     },
-    Token {
-        sigil: Eq,
+    Span {
         range: Pos {
             offset: 6,
             line: 0,
@@ -42,11 +41,9 @@ expression: tokens
             line: 0,
             col: 7,
         },
+        node: Eq,
     },
-    Token {
-        sigil: Comment {
-            body: " block comment ",
-        },
+    Span {
         range: Pos {
             offset: 8,
             line: 0,
@@ -56,11 +53,11 @@ expression: tokens
             line: 0,
             col: 27,
         },
-    },
-    Token {
-        sigil: Num {
-            val: 1.0,
+        node: Comment {
+            body: " block comment ",
         },
+    },
+    Span {
         range: Pos {
             offset: 28,
             line: 0,
@@ -70,9 +67,11 @@ expression: tokens
             line: 0,
             col: 29,
         },
+        node: Num {
+            val: 1.0,
+        },
     },
-    Token {
-        sigil: Semi,
+    Span {
         range: Pos {
             offset: 29,
             line: 0,
@@ -82,5 +81,6 @@ expression: tokens
             line: 0,
             col: 30,
         },
+        node: Semi,
     },
 ]

@@ -3,10 +3,7 @@ source: src/lexer.tests.rs
 expression: tokens
 ---
 [
-    Token {
-        sigil: Ident {
-            name: "x",
-        },
+    Span {
         range: Pos {
             offset: 1,
             line: 0,
@@ -16,9 +13,11 @@ expression: tokens
             line: 0,
             col: 2,
         },
+        node: Ident {
+            name: "x",
+        },
     },
-    Token {
-        sigil: Eq,
+    Span {
         range: Pos {
             offset: 3,
             line: 0,
@@ -28,11 +27,9 @@ expression: tokens
             line: 0,
             col: 4,
         },
+        node: Eq,
     },
-    Token {
-        sigil: Num {
-            val: 5.5,
-        },
+    Span {
         range: Pos {
             offset: 5,
             line: 0,
@@ -41,6 +38,9 @@ expression: tokens
             offset: 8,
             line: 0,
             col: 8,
+        },
+        node: Num {
+            val: 5.5,
         },
     },
 ]

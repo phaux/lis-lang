@@ -14,10 +14,7 @@ Ok(
             col: 6,
         },
         node: Return {
-            keyword: Token {
-                sigil: Keyword(
-                    Return,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,6 +24,7 @@ Ok(
                     line: 0,
                     col: 6,
                 },
+                node: (),
             },
             expr: None,
         },

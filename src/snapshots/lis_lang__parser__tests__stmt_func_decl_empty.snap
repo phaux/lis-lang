@@ -14,10 +14,7 @@ Ok(
             col: 17,
         },
         node: FuncDecl {
-            keyword: Token {
-                sigil: Keyword(
-                    Fn,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,10 +24,21 @@ Ok(
                     line: 0,
                     col: 2,
                 },
+                node: (),
             },
-            name: "sayHello",
-            param_paren_l: Token {
-                sigil: ParenL,
+            name: Span {
+                range: Pos {
+                    offset: 3,
+                    line: 0,
+                    col: 3,
+                }..Pos {
+                    offset: 11,
+                    line: 0,
+                    col: 11,
+                },
+                node: "sayHello",
+            },
+            param_paren_l: Span {
                 range: Pos {
                     offset: 11,
                     line: 0,
@@ -40,10 +48,10 @@ Ok(
                     line: 0,
                     col: 12,
                 },
+                node: (),
             },
             params: [],
-            param_paren_r: Token {
-                sigil: ParenR,
+            param_paren_r: Span {
                 range: Pos {
                     offset: 12,
                     line: 0,
@@ -53,6 +61,7 @@ Ok(
                     line: 0,
                     col: 13,
                 },
+                node: (),
             },
             body: Span {
                 range: Pos {
@@ -65,8 +74,7 @@ Ok(
                     col: 17,
                 },
                 node: Block {
-                    brace_l: Token {
-                        sigil: CurlyL,
+                    brace_l: Span {
                         range: Pos {
                             offset: 14,
                             line: 0,
@@ -76,10 +84,10 @@ Ok(
                             line: 0,
                             col: 15,
                         },
+                        node: (),
                     },
                     stmts: [],
-                    brace_r: Token {
-                        sigil: CurlyR,
+                    brace_r: Span {
                         range: Pos {
                             offset: 16,
                             line: 0,
@@ -89,6 +97,7 @@ Ok(
                             line: 0,
                             col: 17,
                         },
+                        node: (),
                     },
                 },
             },

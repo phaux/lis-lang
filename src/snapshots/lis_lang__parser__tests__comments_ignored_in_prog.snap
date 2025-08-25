@@ -16,10 +16,7 @@ Ok(
                     col: 17,
                 },
                 node: Let {
-                    keyword: Token {
-                        sigil: Keyword(
-                            Let,
-                        ),
+                    keyword: Span {
                         range: Pos {
                             offset: 27,
                             line: 2,
@@ -29,6 +26,7 @@ Ok(
                             line: 2,
                             col: 11,
                         },
+                        node: (),
                     },
                     pat: Span {
                         range: Pos {
@@ -44,8 +42,7 @@ Ok(
                             name: "x",
                         },
                     },
-                    eq_tok: Token {
-                        sigil: Eq,
+                    eq_tok: Span {
                         range: Pos {
                             offset: 33,
                             line: 2,
@@ -55,6 +52,7 @@ Ok(
                             line: 2,
                             col: 15,
                         },
+                        node: (),
                     },
                     init: Span {
                         range: Pos {
@@ -83,10 +81,7 @@ Ok(
                     col: 38,
                 },
                 node: Let {
-                    keyword: Token {
-                        sigil: Keyword(
-                            Let,
-                        ),
+                    keyword: Span {
                         range: Pos {
                             offset: 48,
                             line: 2,
@@ -96,6 +91,7 @@ Ok(
                             line: 2,
                             col: 32,
                         },
+                        node: (),
                     },
                     pat: Span {
                         range: Pos {
@@ -111,8 +107,7 @@ Ok(
                             name: "y",
                         },
                     },
-                    eq_tok: Token {
-                        sigil: Eq,
+                    eq_tok: Span {
                         range: Pos {
                             offset: 54,
                             line: 2,
@@ -122,6 +117,7 @@ Ok(
                             line: 2,
                             col: 36,
                         },
+                        node: (),
                     },
                     init: Span {
                         range: Pos {
@@ -150,10 +146,7 @@ Ok(
                     col: 15,
                 },
                 node: Print {
-                    keyword: Token {
-                        sigil: Keyword(
-                            Print,
-                        ),
+                    keyword: Span {
                         range: Pos {
                             offset: 67,
                             line: 3,
@@ -163,6 +156,7 @@ Ok(
                             line: 3,
                             col: 13,
                         },
+                        node: (),
                     },
                     expr: Span {
                         range: Pos {

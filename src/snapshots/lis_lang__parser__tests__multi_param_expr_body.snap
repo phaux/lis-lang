@@ -14,8 +14,7 @@ Ok(
             col: 12,
         },
         node: Lambda {
-            pipe_l: Token {
-                sigil: Pipe,
+            pipe_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,13 +24,35 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             params: [
-                "x",
-                "y",
+                Span {
+                    range: Pos {
+                        offset: 1,
+                        line: 0,
+                        col: 1,
+                    }..Pos {
+                        offset: 2,
+                        line: 0,
+                        col: 2,
+                    },
+                    node: "x",
+                },
+                Span {
+                    range: Pos {
+                        offset: 4,
+                        line: 0,
+                        col: 4,
+                    }..Pos {
+                        offset: 5,
+                        line: 0,
+                        col: 5,
+                    },
+                    node: "y",
+                },
             ],
-            pipe_r: Token {
-                sigil: Pipe,
+            pipe_r: Span {
                 range: Pos {
                     offset: 5,
                     line: 0,
@@ -41,6 +62,7 @@ Ok(
                     line: 0,
                     col: 6,
                 },
+                node: (),
             },
             body: Span {
                 range: Pos {
@@ -78,9 +100,7 @@ Ok(
                                     name: "x",
                                 },
                             },
-                            op: Add,
-                            op_tok: Token {
-                                sigil: Plus,
+                            op: Span {
                                 range: Pos {
                                     offset: 9,
                                     line: 0,
@@ -90,6 +110,7 @@ Ok(
                                     line: 0,
                                     col: 10,
                                 },
+                                node: Add,
                             },
                             right: Span {
                                 range: Pos {

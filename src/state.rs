@@ -10,7 +10,7 @@ use std::{
 
 use uuid::Uuid;
 
-use crate::ast::{Span, Stmt};
+use crate::{ast::Stmt, span::Span};
 
 /// A scope stores declared variables.
 /// It also has a pointer to the parent scope, which is used for variable lookup.
@@ -117,7 +117,7 @@ pub struct Obj {
 #[derive(Clone)]
 pub struct Func {
     pub id: Uuid,
-    pub params: Vec<String>,
+    pub params: Vec<Span<String>>,
     /// AST of the function body.
     pub body: Rc<Span<Stmt>>,
     /// Pointer to the scope in which the function was declared.

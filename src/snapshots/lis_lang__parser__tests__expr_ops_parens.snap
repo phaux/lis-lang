@@ -39,9 +39,7 @@ Ok(
                             val: 1.0,
                         },
                     },
-                    op: Add,
-                    op_tok: Token {
-                        sigil: Plus,
+                    op: Span {
                         range: Pos {
                             offset: 3,
                             line: 0,
@@ -51,6 +49,7 @@ Ok(
                             line: 0,
                             col: 4,
                         },
+                        node: Add,
                     },
                     right: Span {
                         range: Pos {
@@ -68,9 +67,7 @@ Ok(
                     },
                 },
             },
-            op: Mul,
-            op_tok: Token {
-                sigil: Star,
+            op: Span {
                 range: Pos {
                     offset: 8,
                     line: 0,
@@ -80,6 +77,7 @@ Ok(
                     line: 0,
                     col: 9,
                 },
+                node: Mul,
             },
             right: Span {
                 range: Pos {

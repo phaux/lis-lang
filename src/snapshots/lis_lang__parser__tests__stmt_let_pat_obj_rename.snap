@@ -14,10 +14,7 @@ Ok(
             col: 16,
         },
         node: Let {
-            keyword: Token {
-                sigil: Keyword(
-                    Let,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,6 +24,7 @@ Ok(
                     line: 0,
                     col: 3,
                 },
+                node: (),
             },
             pat: Span {
                 range: Pos {
@@ -39,8 +37,7 @@ Ok(
                     col: 10,
                 },
                 node: Obj {
-                    brace_l: Token {
-                        sigil: CurlyL,
+                    brace_l: Span {
                         range: Pos {
                             offset: 4,
                             line: 0,
@@ -50,10 +47,22 @@ Ok(
                             line: 0,
                             col: 5,
                         },
+                        node: (),
                     },
                     props: [
                         (
-                            "x",
+                            Span {
+                                range: Pos {
+                                    offset: 5,
+                                    line: 0,
+                                    col: 5,
+                                }..Pos {
+                                    offset: 6,
+                                    line: 0,
+                                    col: 6,
+                                },
+                                node: "x",
+                            },
                             Span {
                                 range: Pos {
                                     offset: 8,
@@ -70,8 +79,7 @@ Ok(
                             },
                         ),
                     ],
-                    brace_r: Token {
-                        sigil: CurlyR,
+                    brace_r: Span {
                         range: Pos {
                             offset: 9,
                             line: 0,
@@ -81,11 +89,11 @@ Ok(
                             line: 0,
                             col: 10,
                         },
+                        node: (),
                     },
                 },
             },
-            eq_tok: Token {
-                sigil: Eq,
+            eq_tok: Span {
                 range: Pos {
                     offset: 11,
                     line: 0,
@@ -95,6 +103,7 @@ Ok(
                     line: 0,
                     col: 12,
                 },
+                node: (),
             },
             init: Span {
                 range: Pos {

@@ -14,8 +14,7 @@ Ok(
             col: 30,
         },
         node: Lambda {
-            pipe_l: Token {
-                sigil: Pipe,
+            pipe_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,13 +24,35 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             params: [
-                "x",
-                "y",
+                Span {
+                    range: Pos {
+                        offset: 1,
+                        line: 0,
+                        col: 1,
+                    }..Pos {
+                        offset: 2,
+                        line: 0,
+                        col: 2,
+                    },
+                    node: "x",
+                },
+                Span {
+                    range: Pos {
+                        offset: 4,
+                        line: 0,
+                        col: 4,
+                    }..Pos {
+                        offset: 5,
+                        line: 0,
+                        col: 5,
+                    },
+                    node: "y",
+                },
             ],
-            pipe_r: Token {
-                sigil: Pipe,
+            pipe_r: Span {
                 range: Pos {
                     offset: 5,
                     line: 0,
@@ -41,6 +62,7 @@ Ok(
                     line: 0,
                     col: 6,
                 },
+                node: (),
             },
             body: Span {
                 range: Pos {
@@ -53,8 +75,7 @@ Ok(
                     col: 30,
                 },
                 node: Block {
-                    brace_l: Token {
-                        sigil: CurlyL,
+                    brace_l: Span {
                         range: Pos {
                             offset: 7,
                             line: 0,
@@ -64,6 +85,7 @@ Ok(
                             line: 0,
                             col: 8,
                         },
+                        node: (),
                     },
                     stmts: [
                         Span {
@@ -77,10 +99,7 @@ Ok(
                                 col: 17,
                             },
                             node: Print {
-                                keyword: Token {
-                                    sigil: Keyword(
-                                        Print,
-                                    ),
+                                keyword: Span {
                                     range: Pos {
                                         offset: 9,
                                         line: 0,
@@ -90,6 +109,7 @@ Ok(
                                         line: 0,
                                         col: 14,
                                     },
+                                    node: (),
                                 },
                                 expr: Span {
                                     range: Pos {
@@ -118,10 +138,7 @@ Ok(
                                 col: 27,
                             },
                             node: Print {
-                                keyword: Token {
-                                    sigil: Keyword(
-                                        Print,
-                                    ),
+                                keyword: Span {
                                     range: Pos {
                                         offset: 19,
                                         line: 0,
@@ -131,6 +148,7 @@ Ok(
                                         line: 0,
                                         col: 24,
                                     },
+                                    node: (),
                                 },
                                 expr: Span {
                                     range: Pos {
@@ -149,8 +167,7 @@ Ok(
                             },
                         },
                     ],
-                    brace_r: Token {
-                        sigil: CurlyR,
+                    brace_r: Span {
                         range: Pos {
                             offset: 29,
                             line: 0,
@@ -160,6 +177,7 @@ Ok(
                             line: 0,
                             col: 30,
                         },
+                        node: (),
                     },
                 },
             },

@@ -3,10 +3,7 @@ source: src/lexer.tests.rs
 expression: tokens
 ---
 [
-    Token {
-        sigil: Ident {
-            name: "a",
-        },
+    Span {
         range: Pos {
             offset: 0,
             line: 0,
@@ -16,9 +13,11 @@ expression: tokens
             line: 0,
             col: 1,
         },
+        node: Ident {
+            name: "a",
+        },
     },
-    Token {
-        sigil: Less,
+    Span {
         range: Pos {
             offset: 2,
             line: 0,
@@ -28,11 +27,9 @@ expression: tokens
             line: 0,
             col: 3,
         },
+        node: Less,
     },
-    Token {
-        sigil: Ident {
-            name: "b",
-        },
+    Span {
         range: Pos {
             offset: 4,
             line: 0,
@@ -42,9 +39,11 @@ expression: tokens
             line: 0,
             col: 5,
         },
+        node: Ident {
+            name: "b",
+        },
     },
-    Token {
-        sigil: LessEq,
+    Span {
         range: Pos {
             offset: 6,
             line: 0,
@@ -54,11 +53,9 @@ expression: tokens
             line: 0,
             col: 8,
         },
+        node: LessEq,
     },
-    Token {
-        sigil: Ident {
-            name: "c",
-        },
+    Span {
         range: Pos {
             offset: 9,
             line: 0,
@@ -68,9 +65,11 @@ expression: tokens
             line: 0,
             col: 10,
         },
+        node: Ident {
+            name: "c",
+        },
     },
-    Token {
-        sigil: Greater,
+    Span {
         range: Pos {
             offset: 11,
             line: 0,
@@ -80,11 +79,9 @@ expression: tokens
             line: 0,
             col: 12,
         },
+        node: Greater,
     },
-    Token {
-        sigil: Ident {
-            name: "d",
-        },
+    Span {
         range: Pos {
             offset: 13,
             line: 0,
@@ -94,9 +91,11 @@ expression: tokens
             line: 0,
             col: 14,
         },
+        node: Ident {
+            name: "d",
+        },
     },
-    Token {
-        sigil: GreaterEq,
+    Span {
         range: Pos {
             offset: 15,
             line: 0,
@@ -106,11 +105,9 @@ expression: tokens
             line: 0,
             col: 17,
         },
+        node: GreaterEq,
     },
-    Token {
-        sigil: Ident {
-            name: "e",
-        },
+    Span {
         range: Pos {
             offset: 18,
             line: 0,
@@ -119,6 +116,9 @@ expression: tokens
             offset: 19,
             line: 0,
             col: 19,
+        },
+        node: Ident {
+            name: "e",
         },
     },
 ]

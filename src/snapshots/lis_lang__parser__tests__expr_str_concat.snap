@@ -28,9 +28,7 @@ Ok(
                     val: "hello",
                 },
             },
-            op: Concat,
-            op_tok: Token {
-                sigil: PlusPlus,
+            op: Span {
                 range: Pos {
                     offset: 8,
                     line: 0,
@@ -40,6 +38,7 @@ Ok(
                     line: 0,
                     col: 10,
                 },
+                node: Concat,
             },
             right: Span {
                 range: Pos {

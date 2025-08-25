@@ -50,8 +50,7 @@ Ok(
                                     name: "func",
                                 },
                             },
-                            paren_l: Token {
-                                sigil: ParenL,
+                            paren_l: Span {
                                 range: Pos {
                                     offset: 4,
                                     line: 0,
@@ -61,10 +60,10 @@ Ok(
                                     line: 0,
                                     col: 5,
                                 },
+                                node: (),
                             },
                             args: [],
-                            paren_r: Token {
-                                sigil: ParenR,
+                            paren_r: Span {
                                 range: Pos {
                                     offset: 5,
                                     line: 0,
@@ -74,11 +73,11 @@ Ok(
                                     line: 0,
                                     col: 6,
                                 },
+                                node: (),
                             },
                         },
                     },
-                    dot_tok: Token {
-                        sigil: Dot,
+                    dot_tok: Span {
                         range: Pos {
                             offset: 6,
                             line: 0,
@@ -88,12 +87,23 @@ Ok(
                             line: 0,
                             col: 7,
                         },
+                        node: (),
                     },
-                    prop: "prop",
+                    prop: Span {
+                        range: Pos {
+                            offset: 7,
+                            line: 0,
+                            col: 7,
+                        }..Pos {
+                            offset: 11,
+                            line: 0,
+                            col: 11,
+                        },
+                        node: "prop",
+                    },
                 },
             },
-            eq_tok: Token {
-                sigil: Eq,
+            eq_tok: Span {
                 range: Pos {
                     offset: 12,
                     line: 0,
@@ -103,6 +113,7 @@ Ok(
                     line: 0,
                     col: 13,
                 },
+                node: (),
             },
             expr: Span {
                 range: Pos {
@@ -129,9 +140,7 @@ Ok(
                             val: 1.0,
                         },
                     },
-                    op: Add,
-                    op_tok: Token {
-                        sigil: Plus,
+                    op: Span {
                         range: Pos {
                             offset: 16,
                             line: 0,
@@ -141,6 +150,7 @@ Ok(
                             line: 0,
                             col: 17,
                         },
+                        node: Add,
                     },
                     right: Span {
                         range: Pos {

@@ -433,7 +433,6 @@ fn op_comparison_operators() {
             },
         })
     ));
-
 }
 
 #[test]
@@ -452,14 +451,32 @@ fn op_chained_comparison() {
     assert_eq!(eval_str(&scope, "1 > 2 < 3").unwrap(), Val::Bool(false));
     assert_eq!(eval_str(&scope, "3 < 2 < 1").unwrap(), Val::Bool(false));
     assert_eq!(eval_str(&scope, "1 == 2 == 1").unwrap(), Val::Bool(false));
-    assert_eq!(eval_str(&scope, "1 < 2 == 3 > 1").unwrap(), Val::Bool(false));
+    assert_eq!(
+        eval_str(&scope, "1 < 2 == 3 > 1").unwrap(),
+        Val::Bool(false)
+    );
 
     // String cases
-    assert_eq!(eval_str(&scope, "\"a\" < \"b\" < \"c\"").unwrap(), Val::Bool(true));
-    assert_eq!(eval_str(&scope, "\"a\" <= \"b\" < \"c\"").unwrap(), Val::Bool(true));
-    assert_eq!(eval_str(&scope, "\"c\" > \"b\" > \"a\"").unwrap(), Val::Bool(true));
-    assert_eq!(eval_str(&scope, "\"c\" >= \"c\" > \"a\"").unwrap(), Val::Bool(true));
-    assert_eq!(eval_str(&scope, "\"a\" == \"a\" == \"a\"").unwrap(), Val::Bool(true));
+    assert_eq!(
+        eval_str(&scope, "\"a\" < \"b\" < \"c\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"a\" <= \"b\" < \"c\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"c\" > \"b\" > \"a\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"c\" >= \"c\" > \"a\"").unwrap(),
+        Val::Bool(true)
+    );
+    assert_eq!(
+        eval_str(&scope, "\"a\" == \"a\" == \"a\"").unwrap(),
+        Val::Bool(true)
+    );
 
     // Type errors
     assert!(matches!(

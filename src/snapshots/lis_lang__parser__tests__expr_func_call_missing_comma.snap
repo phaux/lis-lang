@@ -6,10 +6,7 @@ Err(
     ParseError {
         expected: "comma or closing parenthesis of function arguments",
         found: Some(
-            Token {
-                sigil: Ident {
-                    name: "b",
-                },
+            Span {
                 range: Pos {
                     offset: 7,
                     line: 0,
@@ -18,6 +15,9 @@ Err(
                     offset: 8,
                     line: 0,
                     col: 8,
+                },
+                node: Ident {
+                    name: "b",
                 },
             },
         ),

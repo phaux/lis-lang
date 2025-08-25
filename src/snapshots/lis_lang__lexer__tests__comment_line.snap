@@ -3,10 +3,7 @@ source: src/lexer.tests.rs
 expression: tokens
 ---
 [
-    Token {
-        sigil: Keyword(
-            Let,
-        ),
+    Span {
         range: Pos {
             offset: 0,
             line: 0,
@@ -16,11 +13,11 @@ expression: tokens
             line: 0,
             col: 3,
         },
+        node: Keyword(
+            Let,
+        ),
     },
-    Token {
-        sigil: Ident {
-            name: "x",
-        },
+    Span {
         range: Pos {
             offset: 4,
             line: 0,
@@ -30,9 +27,11 @@ expression: tokens
             line: 0,
             col: 5,
         },
+        node: Ident {
+            name: "x",
+        },
     },
-    Token {
-        sigil: Eq,
+    Span {
         range: Pos {
             offset: 6,
             line: 0,
@@ -42,11 +41,9 @@ expression: tokens
             line: 0,
             col: 7,
         },
+        node: Eq,
     },
-    Token {
-        sigil: Num {
-            val: 1.0,
-        },
+    Span {
         range: Pos {
             offset: 8,
             line: 0,
@@ -56,9 +53,11 @@ expression: tokens
             line: 0,
             col: 9,
         },
+        node: Num {
+            val: 1.0,
+        },
     },
-    Token {
-        sigil: Semi,
+    Span {
         range: Pos {
             offset: 9,
             line: 0,
@@ -68,11 +67,9 @@ expression: tokens
             line: 0,
             col: 10,
         },
+        node: Semi,
     },
-    Token {
-        sigil: Comment {
-            body: " this is a comment",
-        },
+    Span {
         range: Pos {
             offset: 11,
             line: 0,
@@ -82,11 +79,11 @@ expression: tokens
             line: 0,
             col: 31,
         },
+        node: Comment {
+            body: " this is a comment",
+        },
     },
-    Token {
-        sigil: Keyword(
-            Print,
-        ),
+    Span {
         range: Pos {
             offset: 32,
             line: 1,
@@ -96,11 +93,11 @@ expression: tokens
             line: 1,
             col: 5,
         },
+        node: Keyword(
+            Print,
+        ),
     },
-    Token {
-        sigil: Ident {
-            name: "x",
-        },
+    Span {
         range: Pos {
             offset: 38,
             line: 1,
@@ -109,6 +106,9 @@ expression: tokens
             offset: 39,
             line: 1,
             col: 7,
+        },
+        node: Ident {
+            name: "x",
         },
     },
 ]

@@ -30,9 +30,7 @@ Ok(
             },
             comparators: [
                 (
-                    Less,
-                    Token {
-                        sigil: Less,
+                    Span {
                         range: Pos {
                             offset: 2,
                             line: 0,
@@ -42,6 +40,7 @@ Ok(
                             line: 0,
                             col: 3,
                         },
+                        node: Less,
                     },
                     Span {
                         range: Pos {
@@ -59,9 +58,7 @@ Ok(
                     },
                 ),
                 (
-                    Less,
-                    Token {
-                        sigil: Less,
+                    Span {
                         range: Pos {
                             offset: 6,
                             line: 0,
@@ -71,6 +68,7 @@ Ok(
                             line: 0,
                             col: 7,
                         },
+                        node: Less,
                     },
                     Span {
                         range: Pos {

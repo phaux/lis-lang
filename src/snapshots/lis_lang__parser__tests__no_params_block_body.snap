@@ -14,8 +14,7 @@ Ok(
             col: 5,
         },
         node: Lambda {
-            pipe_l: Token {
-                sigil: Pipe,
+            pipe_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,10 +24,10 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             params: [],
-            pipe_r: Token {
-                sigil: Pipe,
+            pipe_r: Span {
                 range: Pos {
                     offset: 1,
                     line: 0,
@@ -38,6 +37,7 @@ Ok(
                     line: 0,
                     col: 2,
                 },
+                node: (),
             },
             body: Span {
                 range: Pos {
@@ -50,8 +50,7 @@ Ok(
                     col: 5,
                 },
                 node: Block {
-                    brace_l: Token {
-                        sigil: CurlyL,
+                    brace_l: Span {
                         range: Pos {
                             offset: 3,
                             line: 0,
@@ -61,10 +60,10 @@ Ok(
                             line: 0,
                             col: 4,
                         },
+                        node: (),
                     },
                     stmts: [],
-                    brace_r: Token {
-                        sigil: CurlyR,
+                    brace_r: Span {
                         range: Pos {
                             offset: 4,
                             line: 0,
@@ -74,6 +73,7 @@ Ok(
                             line: 0,
                             col: 5,
                         },
+                        node: (),
                     },
                 },
             },

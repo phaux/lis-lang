@@ -6,8 +6,7 @@ Err(
     ParseError {
         expected: "expression",
         found: Some(
-            Token {
-                sigil: Semi,
+            Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -17,6 +16,7 @@ Err(
                     line: 0,
                     col: 1,
                 },
+                node: Semi,
             },
         ),
     },

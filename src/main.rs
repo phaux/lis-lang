@@ -6,6 +6,7 @@
 pub(crate) mod ast;
 pub(crate) mod lexer;
 pub(crate) mod parser;
+pub(crate) mod span;
 pub(crate) mod state;
 pub(crate) mod token;
 pub(crate) mod vm;

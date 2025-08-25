@@ -14,10 +14,7 @@ Ok(
             col: 7,
         },
         node: Print {
-            keyword: Token {
-                sigil: Keyword(
-                    Print,
-                ),
+            keyword: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -27,6 +24,7 @@ Ok(
                     line: 0,
                     col: 5,
                 },
+                node: (),
             },
             expr: Span {
                 range: Pos {

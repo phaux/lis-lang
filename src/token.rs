@@ -1,19 +1,7 @@
 //! This module defines types which represent [Token]s.
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub sigil: Sigil,
-    pub range: std::ops::Range<Pos>,
-}
-
-impl std::fmt::Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "`{}` at {}", self.sigil, self.range.start)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Sigil {
+pub enum Token {
     Keyword(Keyword),
     Ident { name: String },
     Num { val: f64 },
@@ -44,37 +32,37 @@ pub enum Sigil {
     Invalid,
 }
 
-impl std::fmt::Display for Sigil {
+impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Sigil::Keyword(keyword) => write!(f, "{keyword}"),
-            Sigil::Ident { name } => write!(f, "{name}"),
-            Sigil::Num { val } => write!(f, "{val:?}"),
-            Sigil::Str { val } => write!(f, "{val:?}"),
-            Sigil::Comment { .. } => write!(f, "comment"),
-            Sigil::Eq => write!(f, "="),
-            Sigil::EqEq => write!(f, "=="),
-            Sigil::Bang => write!(f, "!"),
-            Sigil::BangEq => write!(f, "!="),
-            Sigil::Semi => write!(f, ";"),
-            Sigil::Plus => write!(f, "+"),
-            Sigil::PlusPlus => write!(f, "++"),
-            Sigil::Minus => write!(f, "-"),
-            Sigil::Star => write!(f, "*"),
-            Sigil::Slash => write!(f, "/"),
-            Sigil::Dot => write!(f, "."),
-            Sigil::Colon => write!(f, ":"),
-            Sigil::Comma => write!(f, ","),
-            Sigil::ParenL => write!(f, "("),
-            Sigil::ParenR => write!(f, ")"),
-            Sigil::CurlyL => write!(f, "{{"),
-            Sigil::CurlyR => write!(f, "}}"),
-            Sigil::Less => write!(f, "<"),
-            Sigil::LessEq => write!(f, "<="),
-            Sigil::Greater => write!(f, ">"),
-            Sigil::Pipe => write!(f, "|"),
-            Sigil::GreaterEq => write!(f, ">="),
-            Sigil::Invalid => write!(f, "invalid token"),
+            Token::Keyword(keyword) => write!(f, "{keyword}"),
+            Token::Ident { name } => write!(f, "{name}"),
+            Token::Num { val } => write!(f, "{val:?}"),
+            Token::Str { val } => write!(f, "{val:?}"),
+            Token::Comment { .. } => write!(f, "comment"),
+            Token::Eq => write!(f, "="),
+            Token::EqEq => write!(f, "=="),
+            Token::Bang => write!(f, "!"),
+            Token::BangEq => write!(f, "!="),
+            Token::Semi => write!(f, ";"),
+            Token::Plus => write!(f, "+"),
+            Token::PlusPlus => write!(f, "++"),
+            Token::Minus => write!(f, "-"),
+            Token::Star => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::Dot => write!(f, "."),
+            Token::Colon => write!(f, ":"),
+            Token::Comma => write!(f, ","),
+            Token::ParenL => write!(f, "("),
+            Token::ParenR => write!(f, ")"),
+            Token::CurlyL => write!(f, "{{"),
+            Token::CurlyR => write!(f, "}}"),
+            Token::Less => write!(f, "<"),
+            Token::LessEq => write!(f, "<="),
+            Token::Greater => write!(f, ">"),
+            Token::Pipe => write!(f, "|"),
+            Token::GreaterEq => write!(f, ">="),
+            Token::Invalid => write!(f, "invalid token"),
         }
     }
 }
@@ -148,22 +136,5 @@ impl std::fmt::Display for Keyword {
             Keyword::And => write!(f, "and"),
             Keyword::Or => write!(f, "or"),
         }
-    }
-}
-
-/// Position in the input string.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Default, Clone, Copy)]
-pub struct Pos {
-    /// Byte offset.
-    pub offset: usize,
-    /// 0-based line number.
-    pub line: usize,
-    /// 0-based column number.
-    pub col: usize,
-}
-
-impl std::fmt::Display for Pos {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.line, self.col)
     }
 }

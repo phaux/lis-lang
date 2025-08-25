@@ -6,8 +6,7 @@ Err(
     ParseError {
         expected: "function name identifier",
         found: Some(
-            Token {
-                sigil: ParenL,
+            Span {
                 range: Pos {
                     offset: 3,
                     line: 0,
@@ -17,6 +16,7 @@ Err(
                     line: 0,
                     col: 4,
                 },
+                node: ParenL,
             },
         ),
     },

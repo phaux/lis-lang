@@ -14,8 +14,7 @@ Ok(
             col: 29,
         },
         node: Obj {
-            brace_l: Token {
-                sigil: CurlyL,
+            brace_l: Span {
                 range: Pos {
                     offset: 0,
                     line: 0,
@@ -25,10 +24,22 @@ Ok(
                     line: 0,
                     col: 1,
                 },
+                node: (),
             },
             props: [
                 (
-                    "name",
+                    Span {
+                        range: Pos {
+                            offset: 2,
+                            line: 0,
+                            col: 2,
+                        }..Pos {
+                            offset: 8,
+                            line: 0,
+                            col: 8,
+                        },
+                        node: "name",
+                    },
                     Span {
                         range: Pos {
                             offset: 10,
@@ -45,7 +56,18 @@ Ok(
                     },
                 ),
                 (
-                    "age",
+                    Span {
+                        range: Pos {
+                            offset: 18,
+                            line: 0,
+                            col: 18,
+                        }..Pos {
+                            offset: 23,
+                            line: 0,
+                            col: 23,
+                        },
+                        node: "age",
+                    },
                     Span {
                         range: Pos {
                             offset: 25,
@@ -62,8 +84,7 @@ Ok(
                     },
                 ),
             ],
-            brace_r: Token {
-                sigil: CurlyR,
+            brace_r: Span {
                 range: Pos {
                     offset: 28,
                     line: 0,
@@ -73,6 +94,7 @@ Ok(
                     line: 0,
                     col: 29,
                 },
+                node: (),
             },
         },
     },

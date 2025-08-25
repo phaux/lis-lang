@@ -7,9 +7,10 @@ use std::{
 };
 
 use crate::{
-    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pattern, Prog, Stmt, UnaryOp},
     lexer::Lexer,
-    token::{Keyword, Sigil, Token},
+    span::Span,
+    token::{Keyword, Token},
 };
 
 /// Error that can occur during parsing.
@@ -18,7 +19,7 @@ pub struct ParseError {
     /// Description of what was expected.
     pub expected: &'static str,
     /// Token that caused the error or `None` if the error was caused by end of input.
-    pub found: Option<Token>,
+    pub found: Option<Span<Token>>,
 }
 
 impl std::error::Error for ParseError {}
@@ -41,20 +42,20 @@ pub struct Parser<'a> {
     tokens: Peekable<FilterTokens<'a>>,
 }
 
-type FilterTokens<'a> = Filter<Lexer<'a>, fn(&Token) -> bool>;
+type FilterTokens<'a> = Filter<Lexer<'a>, fn(&Span<Token>) -> bool>;
 
 impl<'a> Parser<'a> {
     #[must_use]
     pub fn new(input: &'a str) -> Self {
         Parser {
             tokens: Lexer::new(input)
-                .filter(Parser::is_not_comment as fn(&Token) -> bool)
+                .filter(Parser::is_not_comment as fn(&Span<Token>) -> bool)
                 .peekable(),
         }
     }
 
-    fn is_not_comment(tok: &Token) -> bool {
-        !matches!(tok.sigil, Sigil::Comment { .. })
+    fn is_not_comment(tok: &Span<Token>) -> bool {
+        !matches!(tok.node, Token::Comment { .. })
     }
 
     pub fn parse_prog(&mut self) -> Result<Prog, ParseError> {
@@ -66,7 +67,7 @@ impl<'a> Parser<'a> {
             if needs_separator {
                 let tok = self.tokens.next();
                 if let Some(tok) = &tok
-                    && tok.sigil == Sigil::Semi
+                    && tok.node == Token::Semi
                 {
                     needs_separator = false;
                     continue;
@@ -89,26 +90,30 @@ impl<'a> Parser<'a> {
     fn parse_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Parse statement based on first token
         if let Some(tok) = self.tokens.peek() {
-            match tok.sigil {
-                Sigil::CurlyL => return self.parse_block_stmt(),
-                Sigil::Keyword(Keyword::Let) => return self.parse_let_stmt(),
-                Sigil::Keyword(Keyword::Fn) => return self.parse_func_decl(),
-                Sigil::Keyword(Keyword::Print) => return self.parse_print_stmt(),
-                Sigil::Keyword(Keyword::If) => return self.parse_if_stmt(),
-                Sigil::Keyword(Keyword::While) => return self.parse_while_stmt(),
-                Sigil::Keyword(Keyword::Return) => return self.parse_return_stmt(),
-                Sigil::Keyword(Keyword::Break) => {
+            match tok.node {
+                Token::CurlyL => return self.parse_block_stmt(),
+                Token::Keyword(Keyword::Let) => return self.parse_let_stmt(),
+                Token::Keyword(Keyword::Fn) => return self.parse_func_decl(),
+                Token::Keyword(Keyword::Print) => return self.parse_print_stmt(),
+                Token::Keyword(Keyword::If) => return self.parse_if_stmt(),
+                Token::Keyword(Keyword::While) => return self.parse_while_stmt(),
+                Token::Keyword(Keyword::Return) => return self.parse_return_stmt(),
+                Token::Keyword(Keyword::Break) => {
                     let keyword = self.tokens.next().unwrap();
                     return Ok(Span {
                         range: keyword.range.clone(),
-                        node: Stmt::Break { keyword },
+                        node: Stmt::Break {
+                            keyword: keyword.without_node(),
+                        },
                     });
                 }
-                Sigil::Keyword(Keyword::Continue) => {
+                Token::Keyword(Keyword::Continue) => {
                     let keyword = self.tokens.next().unwrap();
                     return Ok(Span {
                         range: keyword.range.clone(),
-                        node: Stmt::Continue { keyword },
+                        node: Stmt::Continue {
+                            keyword: keyword.without_node(),
+                        },
                     });
                 }
                 _ => {}
@@ -125,22 +130,22 @@ impl<'a> Parser<'a> {
 
     fn parse_block_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume opening brace
-        let brace_l = self.tokens.next().unwrap();
+        let brace_l = self.tokens.next().unwrap().without_node();
 
         // Parse a list of statements
         let mut stmts = Vec::new();
         let mut needs_separator = false;
         let brace_r = loop {
             // Always break on closing brace
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::CurlyR) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on semicolon or fail
             if needs_separator {
                 let tok = self.tokens.next();
                 if let Some(tok) = &tok
-                    && tok.sigil == Sigil::Semi
+                    && tok.node == Token::Semi
                 {
                     needs_separator = false;
                     continue;
@@ -169,7 +174,7 @@ impl<'a> Parser<'a> {
 
     fn parse_let_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'let' keyword
-        let keyword = self.tokens.next().unwrap();
+        let keyword = self.tokens.next().unwrap().without_node();
 
         // Parse the pattern
         let pat = Box::new(self.parse_pattern()?);
@@ -177,10 +182,10 @@ impl<'a> Parser<'a> {
         // Expect '=' after pattern in let statement
         let eq_tok = match self.tokens.next() {
             Some(
-                tok @ Token {
-                    sigil: Sigil::Eq, ..
+                tok @ Span {
+                    node: Token::Eq, ..
                 },
-            ) => tok,
+            ) => tok.without_node(),
             tok => {
                 return Err(ParseError {
                     expected: "equals sign of let statement",
@@ -203,21 +208,19 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_pattern(&mut self) -> Result<Span<Pat>, ParseError> {
+    fn parse_pattern(&mut self) -> Result<Span<Pattern>, ParseError> {
         match self.tokens.next() {
-            Some(Token {
-                sigil: Sigil::Ident { name },
+            Some(Span {
+                node: Token::Ident { name },
                 range,
             }) => Ok(Span {
                 range,
-                node: Pat::Ident { name },
+                node: Pattern::Ident { name },
             }),
-            Some(
-                tok @ Token {
-                    sigil: Sigil::CurlyL,
-                    ..
-                },
-            ) => self.parse_obj_pat(tok),
+            Some(Span {
+                node: Token::CurlyL,
+                range,
+            }) => self.parse_obj_pat(Span { range, node: () }),
             tok => Err(ParseError {
                 expected: "pattern",
                 found: tok,
@@ -225,20 +228,20 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_obj_pat(&mut self, brace_l: Token) -> Result<Span<Pat>, ParseError> {
+    fn parse_obj_pat(&mut self, brace_l: Span<()>) -> Result<Span<Pattern>, ParseError> {
         let mut props = Vec::new();
         let mut needs_separator = false;
         let brace_r = loop {
             // Always break on closing brace
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::CurlyR) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on comma or fail
             if needs_separator {
                 let tok = self.tokens.next();
                 if let Some(tok) = &tok
-                    && tok.sigil == Sigil::Comma
+                    && tok.node == Token::Comma
                 {
                     needs_separator = false;
                     continue;
@@ -251,8 +254,8 @@ impl<'a> Parser<'a> {
 
             // Parse property name
             let key = match self.tokens.next() {
-                Some(Token {
-                    sigil: Sigil::Ident { name },
+                Some(Span {
+                    node: Token::Ident { name },
                     range,
                 }) => Span { range, node: name },
                 tok => {
@@ -264,38 +267,38 @@ impl<'a> Parser<'a> {
             };
 
             // Parse optional property value pattern
-            let mut pat = if self.tokens.next_if(|t| t.sigil == Sigil::Colon).is_some() {
+            let mut pat = if self.tokens.next_if(|t| t.node == Token::Colon).is_some() {
                 self.parse_pattern()?
             } else {
                 // No colon - Parse as object property shorthand.
                 Span {
-                    range: key.range,
-                    node: Pat::Ident {
+                    range: key.range.clone(),
+                    node: Pattern::Ident {
                         name: key.node.clone(),
                     },
                 }
             };
 
             // Check for default value after pattern
-            if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
+            if let Some(eq_tok) = self.tokens.next_if(|t| t.node == Token::Eq) {
                 let default = Box::new(self.parse_expr(0)?);
                 pat = Span {
                     range: pat.range.start..default.range.end,
-                    node: Pat::Default {
+                    node: Pattern::Default {
                         pat: Box::new(pat),
-                        eq_tok: eq_token,
+                        eq_tok: eq_tok.without_node(),
                         default,
                     },
                 };
             }
 
-            props.push((key.node.clone(), pat));
+            props.push((key, pat));
             needs_separator = true;
         };
 
         Ok(Span {
             range: brace_l.range.start..brace_r.range.end,
-            node: Pat::Obj {
+            node: Pattern::Obj {
                 brace_l,
                 props,
                 brace_r,
@@ -305,14 +308,14 @@ impl<'a> Parser<'a> {
 
     fn parse_func_decl(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'fn' keyword
-        let keyword = self.tokens.next().unwrap();
+        let keyword = self.tokens.next().unwrap().without_node();
 
         // Parse function name
         let name = match self.tokens.next() {
-            Some(Token {
-                sigil: Sigil::Ident { name },
-                ..
-            }) => name,
+            Some(Span {
+                node: Token::Ident { name },
+                range,
+            }) => Span { range, node: name },
             tok => {
                 return Err(ParseError {
                     expected: "function name identifier",
@@ -323,12 +326,10 @@ impl<'a> Parser<'a> {
 
         // Expect opening parenthesis
         let param_paren_l = match self.tokens.next() {
-            Some(
-                tok @ Token {
-                    sigil: Sigil::ParenL,
-                    ..
-                },
-            ) => tok,
+            Some(Span {
+                node: Token::ParenL,
+                range,
+            }) => Span { range, node: () },
             tok => {
                 return Err(ParseError {
                     expected: "opening parenthesis of function parameters",
@@ -342,15 +343,15 @@ impl<'a> Parser<'a> {
         let mut needs_separator = false;
         let param_paren_r = loop {
             // Always break on closing parenthesis
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::ParenR) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::ParenR) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on comma or fail
             if needs_separator {
                 let tok = self.tokens.next();
                 if let Some(tok) = &tok
-                    && tok.sigil == Sigil::Comma
+                    && tok.node == Token::Comma
                 {
                     needs_separator = false;
                     continue;
@@ -363,10 +364,10 @@ impl<'a> Parser<'a> {
 
             // Parse parameter name
             match self.tokens.next() {
-                Some(Token {
-                    sigil: Sigil::Ident { name },
-                    ..
-                }) => params.push(name),
+                Some(Span {
+                    node: Token::Ident { name },
+                    range,
+                }) => params.push(Span { range, node: name }),
                 tok => {
                     return Err(ParseError {
                         expected: "parameter name identifier",
@@ -379,8 +380,8 @@ impl<'a> Parser<'a> {
 
         // Parse function body (must be a block statement)
         let body = match self.tokens.peek() {
-            Some(Token {
-                sigil: Sigil::CurlyL,
+            Some(Span {
+                node: Token::CurlyL,
                 ..
             }) => self.parse_block_stmt()?,
             t => {
@@ -413,7 +414,10 @@ impl<'a> Parser<'a> {
 
         Ok(Span {
             range: keyword.range.start..expr.range.end,
-            node: Stmt::Print { keyword, expr },
+            node: Stmt::Print {
+                keyword: keyword.without_node(),
+                expr,
+            },
         })
     }
 
@@ -423,14 +427,14 @@ impl<'a> Parser<'a> {
 
         // Parse optional expression
         match self.tokens.peek() {
-            Some(Token {
-                sigil: Sigil::Semi | Sigil::CurlyR,
+            Some(Span {
+                node: Token::Semi | Token::CurlyR,
                 ..
             })
             | None => Ok(Span {
                 range: keyword.range.clone(),
                 node: Stmt::Return {
-                    keyword,
+                    keyword: keyword.without_node(),
                     expr: None,
                 },
             }),
@@ -439,7 +443,7 @@ impl<'a> Parser<'a> {
                 Ok(Span {
                     range: keyword.range.start..expr.range.end,
                     node: Stmt::Return {
-                        keyword,
+                        keyword: keyword.without_node(),
                         expr: Some(expr),
                     },
                 })
@@ -449,19 +453,17 @@ impl<'a> Parser<'a> {
 
     fn parse_if_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'if' keyword
-        let keyword = self.tokens.next().unwrap();
+        let keyword = self.tokens.next().unwrap().without_node();
 
         // Parse condition
         let condition = Box::new(self.parse_expr(0)?);
 
         // Expect 'then'
         let then_keyword = match self.tokens.next() {
-            Some(
-                tok @ Token {
-                    sigil: Sigil::Keyword(Keyword::Then),
-                    ..
-                },
-            ) => tok,
+            Some(Span {
+                node: Token::Keyword(Keyword::Then),
+                range,
+            }) => Span { range, node: () },
             tok => {
                 return Err(ParseError {
                     expected: "then keyword of if statement",
@@ -476,9 +478,9 @@ impl<'a> Parser<'a> {
         // Parse optional alternate branch
         let (else_keyword, alt_branch) = match self
             .tokens
-            .next_if(|t| t.sigil == Sigil::Keyword(Keyword::Else))
+            .next_if(|t| t.node == Token::Keyword(Keyword::Else))
         {
-            Some(tok) => (Some(tok), Some(Box::new(self.parse_stmt()?))),
+            Some(tok) => (Some(tok.without_node()), Some(Box::new(self.parse_stmt()?))),
             None => (None, None),
         };
 
@@ -499,19 +501,17 @@ impl<'a> Parser<'a> {
 
     fn parse_while_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'while' keyword
-        let keyword = self.tokens.next().unwrap();
+        let keyword = self.tokens.next().unwrap().without_node();
 
         // Parse condition
         let condition = Box::new(self.parse_expr(0)?);
 
         // Expect 'do' keyword
         let do_keyword = match self.tokens.next() {
-            Some(
-                tok @ Token {
-                    sigil: Sigil::Keyword(Keyword::Do),
-                    ..
-                },
-            ) => tok,
+            Some(Span {
+                node: Token::Keyword(Keyword::Do),
+                range,
+            }) => Span { range, node: () },
             tok => {
                 return Err(ParseError {
                     expected: "'do' keyword after while condition",
@@ -541,11 +541,11 @@ impl<'a> Parser<'a> {
         // Handle property access and function calls (highest precedence)
         loop {
             left = match self.tokens.peek() {
-                Some(Token {
-                    sigil: Sigil::Dot, ..
+                Some(Span {
+                    node: Token::Dot, ..
                 }) => self.parse_prop_access(left)?,
-                Some(Token {
-                    sigil: Sigil::ParenL,
+                Some(Span {
+                    node: Token::ParenL,
                     ..
                 }) => self.parse_func_call(left)?,
                 _ => break,
@@ -553,13 +553,13 @@ impl<'a> Parser<'a> {
         }
 
         // Handle assignment expression (right associative)
-        if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
+        if let Some(eq_tok) = self.tokens.next_if(|t| t.node == Token::Eq) {
             let expr = self.parse_expr(0)?;
             left = Span {
                 range: left.range.start..expr.range.end,
                 node: Expr::Assign {
                     place: Box::new(left),
-                    eq_tok: eq_token,
+                    eq_tok: eq_tok.without_node(),
                     expr: Box::new(expr),
                 },
             };
@@ -572,13 +572,13 @@ impl<'a> Parser<'a> {
             };
 
             if let Some(op) = CompareOp::try_from_token(op_token) {
-                let next_prec = op.get_precedence();
+                let next_prec = CompareOp::get_precedence();
                 if next_prec <= precedence {
                     break;
                 }
 
                 let op_tok = self.tokens.next().unwrap();
-                let mut comparators = vec![(op, op_tok, self.parse_expr(next_prec)?)];
+                let mut comparators = vec![(op_tok.with_node(op), self.parse_expr(next_prec)?)];
 
                 while let Some(op_token) = self.tokens.peek() {
                     let Some(op) = CompareOp::try_from_token(op_token) else {
@@ -587,13 +587,13 @@ impl<'a> Parser<'a> {
                     // All comparison operators have the same precedence
                     let op_tok = self.tokens.next().unwrap();
                     let right = self.parse_expr(next_prec)?;
-                    comparators.push((op, op_tok, right));
+                    comparators.push((op_tok.with_node(op), right));
                 }
 
-                let end = comparators.last().unwrap().2.range.end;
+                let end = comparators.last().unwrap().1.range.end;
                 left = Span {
                     range: left.range.start..end,
-                    node: Expr::Compare {
+                    node: Expr::CompareChain {
                         left: Box::new(left),
                         comparators,
                     },
@@ -616,8 +616,7 @@ impl<'a> Parser<'a> {
                 range: left.range.start..right.range.end,
                 node: Expr::BinOp {
                     left: Box::new(left),
-                    op,
-                    op_tok,
+                    op: op_tok.with_node(op),
                     right: Box::new(right),
                 },
             };
@@ -631,16 +630,16 @@ impl<'a> Parser<'a> {
 
         if let Some(tok) = &tok {
             // Handle single token expressions
-            let expr = match &tok.sigil {
-                Sigil::Keyword(keyword) => match keyword {
+            let expr = match &tok.node {
+                Token::Keyword(keyword) => match keyword {
                     Keyword::Nil => Some(Expr::Nil),
                     Keyword::True => Some(Expr::Bool { val: true }),
                     Keyword::False => Some(Expr::Bool { val: false }),
                     _ => None,
                 },
-                Sigil::Num { val } => Some(Expr::Num { val: *val }),
-                Sigil::Str { val } => Some(Expr::Str { val: val.clone() }),
-                Sigil::Ident { name } => Some(Expr::Var { name: name.clone() }),
+                Token::Num { val } => Some(Expr::Num { val: *val }),
+                Token::Str { val } => Some(Expr::Str { val: val.clone() }),
+                Token::Ident { name } => Some(Expr::Var { name: name.clone() }),
                 _ => None,
             };
             if let Some(expr) = expr {
@@ -651,18 +650,18 @@ impl<'a> Parser<'a> {
             }
 
             // Handle lambda expression
-            if tok.sigil == Sigil::Pipe {
-                return self.parse_lambda_expr(tok);
+            if tok.node == Token::Pipe {
+                return self.parse_lambda(tok.without_node());
             }
 
             // Handle parenthesized expression
-            if tok.sigil == Sigil::ParenL {
-                return self.parse_paren_expr(tok);
+            if tok.node == Token::ParenL {
+                return self.parse_paren_expr(&tok.without_node());
             }
 
             // Handle object literal
-            if tok.sigil == Sigil::CurlyL {
-                return self.parse_obj(tok);
+            if tok.node == Token::CurlyL {
+                return self.parse_obj(tok.without_node());
             }
 
             // Handle unary operator
@@ -671,8 +670,7 @@ impl<'a> Parser<'a> {
                 return Ok(Span {
                     range: tok.range.start..expr.range.end,
                     node: Expr::UnaryOp {
-                        op,
-                        op_tok: tok.clone(),
+                        op: tok.with_node(op),
                         expr,
                     },
                 });
@@ -685,12 +683,12 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_paren_expr(&mut self, paren_l: &Token) -> Result<Span<Expr>, ParseError> {
+    fn parse_paren_expr(&mut self, paren_l: &Span<()>) -> Result<Span<Expr>, ParseError> {
         let expr = self.parse_expr(0)?;
 
         let tok = self.tokens.next();
         if let Some(paren_r) = &tok
-            && paren_r.sigil == Sigil::ParenR
+            && paren_r.node == Token::ParenR
         {
             return Ok(Span {
                 range: paren_l.range.start..paren_r.range.end,
@@ -706,12 +704,12 @@ impl<'a> Parser<'a> {
 
     fn parse_prop_access(&mut self, obj: Span<Expr>) -> Result<Span<Expr>, ParseError> {
         // Consume dot token
-        let dot_tok = self.tokens.next().unwrap();
+        let dot_tok = self.tokens.next().unwrap().without_node();
 
         // Parse property name
         let prop = match self.tokens.next() {
-            Some(Token {
-                sigil: Sigil::Ident { name },
+            Some(Span {
+                node: Token::Ident { name },
                 range,
             }) => Span { range, node: name },
             tok => {
@@ -727,30 +725,29 @@ impl<'a> Parser<'a> {
             node: Expr::PropAccess {
                 obj: Box::new(obj),
                 dot_tok,
-                prop: prop.node,
+                prop,
             },
         })
     }
 
     fn parse_func_call(&mut self, callee: Span<Expr>) -> Result<Span<Expr>, ParseError> {
         // Consume opening parenthesis
-        let paren_l = self.tokens.next().unwrap();
+        let paren_l = self.tokens.next().unwrap().without_node();
 
         // Parse arguments
         let mut args = Vec::new();
         let mut needs_separator = false;
         let paren_r = loop {
             // Always break on closing parenthesis
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::ParenR) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::ParenR) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on comma or fail
             if needs_separator {
                 match self.tokens.next() {
-                    Some(Token {
-                        sigil: Sigil::Comma,
-                        ..
+                    Some(Span {
+                        node: Token::Comma, ..
                     }) => {
                         needs_separator = false;
                         continue;
@@ -780,22 +777,21 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_obj(&mut self, brace_l: &Token) -> Result<Span<Expr>, ParseError> {
+    fn parse_obj(&mut self, brace_l: Span<()>) -> Result<Span<Expr>, ParseError> {
         let mut props = Vec::new();
 
         let mut needs_separator = false;
         let brace_r = loop {
             // Always break on closing brace
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::CurlyR) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::CurlyR) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on comma or fail
             if needs_separator {
                 match self.tokens.next() {
-                    Some(Token {
-                        sigil: Sigil::Comma,
-                        ..
+                    Some(Span {
+                        node: Token::Comma, ..
                     }) => {
                         needs_separator = false;
                         continue;
@@ -811,14 +807,14 @@ impl<'a> Parser<'a> {
 
             // Parse property key (identifier or string literal)
             let key = match self.tokens.next() {
-                Some(Token {
-                    sigil: Sigil::Ident { name },
-                    ..
-                }) => name,
-                Some(Token {
-                    sigil: Sigil::Str { val },
-                    ..
-                }) => val,
+                Some(Span {
+                    node: Token::Ident { name },
+                    range,
+                }) => Span { range, node: name },
+                Some(Span {
+                    node: Token::Str { val },
+                    range,
+                }) => Span { range, node: val },
                 tok => {
                     return Err(ParseError {
                         expected: "property key of object literal",
@@ -829,9 +825,8 @@ impl<'a> Parser<'a> {
 
             // Expect colon
             match self.tokens.next() {
-                Some(Token {
-                    sigil: Sigil::Colon,
-                    ..
+                Some(Span {
+                    node: Token::Colon, ..
                 }) => {}
                 tok => {
                     return Err(ParseError {
@@ -850,28 +845,28 @@ impl<'a> Parser<'a> {
         Ok(Span {
             range: brace_l.range.start..brace_r.range.end,
             node: Expr::Obj {
-                brace_l: brace_l.clone(),
+                brace_l,
                 props,
-                brace_r: brace_r.clone(),
+                brace_r,
             },
         })
     }
 
-    fn parse_lambda_expr(&mut self, pipe_l: &Token) -> Result<Span<Expr>, ParseError> {
+    fn parse_lambda(&mut self, pipe_l: Span<()>) -> Result<Span<Expr>, ParseError> {
         // Parse parameters
         let mut params = Vec::new();
         let mut needs_separator = false;
         let pipe_r = loop {
             // Always break on closing pipe
-            if let Some(tok) = self.tokens.next_if(|t| t.sigil == Sigil::Pipe) {
-                break tok;
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::Pipe) {
+                break tok.without_node();
             }
 
             // If needs separator - repeat on comma or fail
             if needs_separator {
                 let tok = self.tokens.next();
                 if let Some(tok) = &tok
-                    && tok.sigil == Sigil::Comma
+                    && tok.node == Token::Comma
                 {
                     needs_separator = false;
                     continue;
@@ -884,10 +879,10 @@ impl<'a> Parser<'a> {
 
             // Parse parameter name
             match self.tokens.next() {
-                Some(Token {
-                    sigil: Sigil::Ident { name },
-                    ..
-                }) => params.push(name),
+                Some(Span {
+                    node: Token::Ident { name },
+                    range,
+                }) => params.push(Span { range, node: name }),
                 tok => {
                     return Err(ParseError {
                         expected: "parameter name identifier",
@@ -898,31 +893,13 @@ impl<'a> Parser<'a> {
             needs_separator = true;
         };
 
-        // Parse lambda body. It can be a block statement or an expression.
-        let body = if let Some(tok) = self.tokens.peek() {
-            match tok.sigil {
-                Sigil::CurlyL => self.parse_block_stmt()?,
-                _ => {
-                    let expr = self.parse_expr(0)?;
-                    Span {
-                        range: expr.range.clone(),
-                        node: Stmt::Expr {
-                            expr: Box::new(expr),
-                        },
-                    }
-                }
-            }
-        } else {
-            return Err(ParseError {
-                expected: "lambda body",
-                found: None,
-            });
-        };
+        // Parse lambda body
+        let body = self.parse_stmt()?;
 
         Ok(Span {
             range: pipe_l.range.start..body.range.end,
             node: Expr::Lambda {
-                pipe_l: pipe_l.clone(),
+                pipe_l,
                 params,
                 pipe_r,
                 body: Box::new(body),

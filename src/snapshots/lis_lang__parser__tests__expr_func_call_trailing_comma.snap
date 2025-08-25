@@ -28,8 +28,7 @@ Ok(
                     name: "func",
                 },
             },
-            paren_l: Token {
-                sigil: ParenL,
+            paren_l: Span {
                 range: Pos {
                     offset: 4,
                     line: 0,
@@ -39,6 +38,7 @@ Ok(
                     line: 0,
                     col: 5,
                 },
+                node: (),
             },
             args: [
                 Span {
@@ -56,8 +56,7 @@ Ok(
                     },
                 },
             ],
-            paren_r: Token {
-                sigil: ParenR,
+            paren_r: Span {
                 range: Pos {
                     offset: 8,
                     line: 0,
@@ -67,6 +66,7 @@ Ok(
                     line: 0,
                     col: 9,
                 },
+                node: (),
             },
         },
     },

@@ -6,10 +6,7 @@ Err(
     ParseError {
         expected: "comma or closing pipe of lambda parameters",
         found: Some(
-            Token {
-                sigil: Ident {
-                    name: "y",
-                },
+            Span {
                 range: Pos {
                     offset: 3,
                     line: 0,
@@ -18,6 +15,9 @@ Err(
                     offset: 4,
                     line: 0,
                     col: 4,
+                },
+                node: Ident {
+                    name: "y",
                 },
             },
         ),
