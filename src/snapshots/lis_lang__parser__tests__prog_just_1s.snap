@@ -10,11 +10,12 @@ Err(
                 sigil: Num {
                     val: 1.0,
                 },
-                offset: 2..3,
-                pos: Pos {
+                range: Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 }..Pos {
+                    offset: 3,
                     line: 0,
                     col: 3,
                 },

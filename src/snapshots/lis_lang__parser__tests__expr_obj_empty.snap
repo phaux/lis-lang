@@ -4,22 +4,24 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..2,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 2,
             line: 0,
             col: 2,
         },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },
@@ -27,11 +29,12 @@ Ok(
             props: [],
             brace_r: Token {
                 sigil: CurlyR,
-                offset: 1..2,
-                pos: Pos {
+                range: Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 }..Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 },

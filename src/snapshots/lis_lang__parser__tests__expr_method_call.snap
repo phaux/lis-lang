@@ -4,31 +4,34 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..12,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 12,
             line: 0,
             col: 12,
         },
         node: FuncCall {
             callee: Span {
-                offset: 0..10,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 },
                 node: PropAccess {
                     obj: Span {
-                        offset: 0..3,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 0,
                             line: 0,
                             col: 0,
                         }..Pos {
+                            offset: 3,
                             line: 0,
                             col: 3,
                         },
@@ -38,11 +41,12 @@ Ok(
                     },
                     dot_tok: Token {
                         sigil: Dot,
-                        offset: 3..4,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 3,
                             line: 0,
                             col: 3,
                         }..Pos {
+                            offset: 4,
                             line: 0,
                             col: 4,
                         },
@@ -52,11 +56,12 @@ Ok(
             },
             paren_l: Token {
                 sigil: ParenL,
-                offset: 10..11,
-                pos: Pos {
+                range: Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 }..Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 },
@@ -64,11 +69,12 @@ Ok(
             args: [],
             paren_r: Token {
                 sigil: ParenR,
-                offset: 11..12,
-                pos: Pos {
+                range: Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 }..Pos {
+                    offset: 12,
                     line: 0,
                     col: 12,
                 },

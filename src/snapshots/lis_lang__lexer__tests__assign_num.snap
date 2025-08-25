@@ -7,22 +7,24 @@ expression: tokens
         sigil: Ident {
             name: "x",
         },
-        offset: 1..2,
-        pos: Pos {
+        range: Pos {
+            offset: 1,
             line: 0,
             col: 1,
         }..Pos {
+            offset: 2,
             line: 0,
             col: 2,
         },
     },
     Token {
         sigil: Eq,
-        offset: 3..4,
-        pos: Pos {
+        range: Pos {
+            offset: 3,
             line: 0,
             col: 3,
         }..Pos {
+            offset: 4,
             line: 0,
             col: 4,
         },
@@ -31,11 +33,12 @@ expression: tokens
         sigil: Num {
             val: 5.5,
         },
-        offset: 5..8,
-        pos: Pos {
+        range: Pos {
+            offset: 5,
             line: 0,
             col: 5,
         }..Pos {
+            offset: 8,
             line: 0,
             col: 8,
         },

@@ -4,22 +4,24 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..35,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 35,
             line: 0,
             col: 35,
         },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },
@@ -28,22 +30,24 @@ Ok(
                 (
                     "user",
                     Span {
-                        offset: 8..33,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 8,
                             line: 0,
                             col: 8,
                         }..Pos {
+                            offset: 33,
                             line: 0,
                             col: 33,
                         },
                         node: Obj {
                             brace_l: Token {
                                 sigil: CurlyL,
-                                offset: 8..9,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 8,
                                     line: 0,
                                     col: 8,
                                 }..Pos {
+                                    offset: 9,
                                     line: 0,
                                     col: 9,
                                 },
@@ -52,11 +56,12 @@ Ok(
                                 (
                                     "name",
                                     Span {
-                                        offset: 16..22,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 16,
                                             line: 0,
                                             col: 16,
                                         }..Pos {
+                                            offset: 22,
                                             line: 0,
                                             col: 22,
                                         },
@@ -68,11 +73,12 @@ Ok(
                                 (
                                     "age",
                                     Span {
-                                        offset: 29..31,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 29,
                                             line: 0,
                                             col: 29,
                                         }..Pos {
+                                            offset: 31,
                                             line: 0,
                                             col: 31,
                                         },
@@ -84,11 +90,12 @@ Ok(
                             ],
                             brace_r: Token {
                                 sigil: CurlyR,
-                                offset: 32..33,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 32,
                                     line: 0,
                                     col: 32,
                                 }..Pos {
+                                    offset: 33,
                                     line: 0,
                                     col: 33,
                                 },
@@ -99,11 +106,12 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                offset: 34..35,
-                pos: Pos {
+                range: Pos {
+                    offset: 34,
                     line: 0,
                     col: 34,
                 }..Pos {
+                    offset: 35,
                     line: 0,
                     col: 35,
                 },

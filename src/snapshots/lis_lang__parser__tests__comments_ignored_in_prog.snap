@@ -6,11 +6,12 @@ Ok(
     Prog {
         stmts: [
             Span {
-                offset: 27..36,
-                pos: Pos {
+                range: Pos {
+                    offset: 27,
                     line: 2,
                     col: 8,
                 }..Pos {
+                    offset: 36,
                     line: 2,
                     col: 17,
                 },
@@ -19,21 +20,23 @@ Ok(
                         sigil: Keyword(
                             Let,
                         ),
-                        offset: 27..30,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 27,
                             line: 2,
                             col: 8,
                         }..Pos {
+                            offset: 30,
                             line: 2,
                             col: 11,
                         },
                     },
                     pat: Span {
-                        offset: 31..32,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 31,
                             line: 2,
                             col: 12,
                         }..Pos {
+                            offset: 32,
                             line: 2,
                             col: 13,
                         },
@@ -43,21 +46,23 @@ Ok(
                     },
                     eq_tok: Token {
                         sigil: Eq,
-                        offset: 33..34,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 33,
                             line: 2,
                             col: 14,
                         }..Pos {
+                            offset: 34,
                             line: 2,
                             col: 15,
                         },
                     },
                     init: Span {
-                        offset: 35..36,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 35,
                             line: 2,
                             col: 16,
                         }..Pos {
+                            offset: 36,
                             line: 2,
                             col: 17,
                         },
@@ -68,11 +73,12 @@ Ok(
                 },
             },
             Span {
-                offset: 48..57,
-                pos: Pos {
+                range: Pos {
+                    offset: 48,
                     line: 2,
                     col: 29,
                 }..Pos {
+                    offset: 57,
                     line: 2,
                     col: 38,
                 },
@@ -81,21 +87,23 @@ Ok(
                         sigil: Keyword(
                             Let,
                         ),
-                        offset: 48..51,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 48,
                             line: 2,
                             col: 29,
                         }..Pos {
+                            offset: 51,
                             line: 2,
                             col: 32,
                         },
                     },
                     pat: Span {
-                        offset: 52..53,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 52,
                             line: 2,
                             col: 33,
                         }..Pos {
+                            offset: 53,
                             line: 2,
                             col: 34,
                         },
@@ -105,21 +113,23 @@ Ok(
                     },
                     eq_tok: Token {
                         sigil: Eq,
-                        offset: 54..55,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 54,
                             line: 2,
                             col: 35,
                         }..Pos {
+                            offset: 55,
                             line: 2,
                             col: 36,
                         },
                     },
                     init: Span {
-                        offset: 56..57,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 56,
                             line: 2,
                             col: 37,
                         }..Pos {
+                            offset: 57,
                             line: 2,
                             col: 38,
                         },
@@ -130,11 +140,12 @@ Ok(
                 },
             },
             Span {
-                offset: 67..74,
-                pos: Pos {
+                range: Pos {
+                    offset: 67,
                     line: 3,
                     col: 8,
                 }..Pos {
+                    offset: 74,
                     line: 3,
                     col: 15,
                 },
@@ -143,21 +154,23 @@ Ok(
                         sigil: Keyword(
                             Print,
                         ),
-                        offset: 67..72,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 67,
                             line: 3,
                             col: 8,
                         }..Pos {
+                            offset: 72,
                             line: 3,
                             col: 13,
                         },
                     },
                     expr: Span {
-                        offset: 73..74,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 73,
                             line: 3,
                             col: 14,
                         }..Pos {
+                            offset: 74,
                             line: 3,
                             col: 15,
                         },

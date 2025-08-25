@@ -3,15 +3,12 @@
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub sigil: Sigil,
-    /// Byte offset of the token in the input string.
-    pub offset: std::ops::Range<usize>,
-    /// Position of the token in the input string.
-    pub pos: std::ops::Range<Pos>,
+    pub range: std::ops::Range<Pos>,
 }
 
 impl std::fmt::Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "`{}` at {}", self.sigil, self.pos.start)
+        write!(f, "`{}` at {}", self.sigil, self.range.start)
     }
 }
 
@@ -152,9 +149,11 @@ impl std::fmt::Display for Keyword {
     }
 }
 
-/// Line and column.
+/// Position in the input string.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Default, Clone, Copy)]
 pub struct Pos {
+    /// Byte offset.
+    pub offset: usize,
     /// 0-based line number.
     pub line: usize,
     /// 0-based column number.

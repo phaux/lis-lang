@@ -4,22 +4,24 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..29,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 29,
             line: 0,
             col: 29,
         },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },
@@ -28,11 +30,12 @@ Ok(
                 (
                     "name",
                     Span {
-                        offset: 10..16,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         }..Pos {
+                            offset: 16,
                             line: 0,
                             col: 16,
                         },
@@ -44,11 +47,12 @@ Ok(
                 (
                     "age",
                     Span {
-                        offset: 25..27,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 25,
                             line: 0,
                             col: 25,
                         }..Pos {
+                            offset: 27,
                             line: 0,
                             col: 27,
                         },
@@ -60,11 +64,12 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                offset: 28..29,
-                pos: Pos {
+                range: Pos {
+                    offset: 28,
                     line: 0,
                     col: 28,
                 }..Pos {
+                    offset: 29,
                     line: 0,
                     col: 29,
                 },

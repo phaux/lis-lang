@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..16,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 16,
             line: 0,
             col: 16,
         },
@@ -17,32 +18,35 @@ Ok(
                 sigil: Keyword(
                     Let,
                 ),
-                offset: 0..3,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 3,
                     line: 0,
                     col: 3,
                 },
             },
             pat: Span {
-                offset: 4..10,
-                pos: Pos {
+                range: Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 }..Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 },
                 node: Obj {
                     brace_l: Token {
                         sigil: CurlyL,
-                        offset: 4..5,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 4,
                             line: 0,
                             col: 4,
                         }..Pos {
+                            offset: 5,
                             line: 0,
                             col: 5,
                         },
@@ -51,11 +55,12 @@ Ok(
                         (
                             "x",
                             Span {
-                                offset: 8..9,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 8,
                                     line: 0,
                                     col: 8,
                                 }..Pos {
+                                    offset: 9,
                                     line: 0,
                                     col: 9,
                                 },
@@ -67,11 +72,12 @@ Ok(
                     ],
                     brace_r: Token {
                         sigil: CurlyR,
-                        offset: 9..10,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 9,
                             line: 0,
                             col: 9,
                         }..Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         },
@@ -80,21 +86,23 @@ Ok(
             },
             eq_tok: Token {
                 sigil: Eq,
-                offset: 11..12,
-                pos: Pos {
+                range: Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 }..Pos {
+                    offset: 12,
                     line: 0,
                     col: 12,
                 },
             },
             init: Span {
-                offset: 13..16,
-                pos: Pos {
+                range: Pos {
+                    offset: 13,
                     line: 0,
                     col: 13,
                 }..Pos {
+                    offset: 16,
                     line: 0,
                     col: 16,
                 },

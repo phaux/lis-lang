@@ -4,22 +4,24 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..14,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 14,
             line: 0,
             col: 14,
         },
         node: Obj {
             brace_l: Token {
                 sigil: CurlyL,
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },
@@ -28,11 +30,12 @@ Ok(
                 (
                     "a",
                     Span {
-                        offset: 5..6,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 5,
                             line: 0,
                             col: 5,
                         }..Pos {
+                            offset: 6,
                             line: 0,
                             col: 6,
                         },
@@ -44,11 +47,12 @@ Ok(
                 (
                     "b",
                     Span {
-                        offset: 11..12,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 11,
                             line: 0,
                             col: 11,
                         }..Pos {
+                            offset: 12,
                             line: 0,
                             col: 12,
                         },
@@ -60,11 +64,12 @@ Ok(
             ],
             brace_r: Token {
                 sigil: CurlyR,
-                offset: 13..14,
-                pos: Pos {
+                range: Pos {
+                    offset: 13,
                     line: 0,
                     col: 13,
                 }..Pos {
+                    offset: 14,
                     line: 0,
                     col: 14,
                 },

@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 9..78,
-        pos: Pos {
+        range: Pos {
+            offset: 9,
             line: 1,
             col: 8,
         }..Pos {
+            offset: 78,
             line: 3,
             col: 20,
         },
@@ -17,21 +18,23 @@ Ok(
                 sigil: Keyword(
                     If,
                 ),
-                offset: 9..11,
-                pos: Pos {
+                range: Pos {
+                    offset: 9,
                     line: 1,
                     col: 8,
                 }..Pos {
+                    offset: 11,
                     line: 1,
                     col: 10,
                 },
             },
             condition: Span {
-                offset: 12..13,
-                pos: Pos {
+                range: Pos {
+                    offset: 12,
                     line: 1,
                     col: 11,
                 }..Pos {
+                    offset: 13,
                     line: 1,
                     col: 12,
                 },
@@ -43,21 +46,23 @@ Ok(
                 sigil: Keyword(
                     Then,
                 ),
-                offset: 14..18,
-                pos: Pos {
+                range: Pos {
+                    offset: 14,
                     line: 1,
                     col: 13,
                 }..Pos {
+                    offset: 18,
                     line: 1,
                     col: 17,
                 },
             },
             cons_branch: Span {
-                offset: 19..26,
-                pos: Pos {
+                range: Pos {
+                    offset: 19,
                     line: 1,
                     col: 18,
                 }..Pos {
+                    offset: 26,
                     line: 1,
                     col: 25,
                 },
@@ -66,21 +71,23 @@ Ok(
                         sigil: Keyword(
                             Print,
                         ),
-                        offset: 19..24,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 19,
                             line: 1,
                             col: 18,
                         }..Pos {
+                            offset: 24,
                             line: 1,
                             col: 23,
                         },
                     },
                     expr: Span {
-                        offset: 25..26,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 25,
                             line: 1,
                             col: 24,
                         }..Pos {
+                            offset: 26,
                             line: 1,
                             col: 25,
                         },
@@ -95,11 +102,12 @@ Ok(
                     sigil: Keyword(
                         Else,
                     ),
-                    offset: 35..39,
-                    pos: Pos {
+                    range: Pos {
+                        offset: 35,
                         line: 2,
                         col: 8,
                     }..Pos {
+                        offset: 39,
                         line: 2,
                         col: 12,
                     },
@@ -107,11 +115,12 @@ Ok(
             ),
             alt_branch: Some(
                 Span {
-                    offset: 40..78,
-                    pos: Pos {
+                    range: Pos {
+                        offset: 40,
                         line: 2,
                         col: 13,
                     }..Pos {
+                        offset: 78,
                         line: 3,
                         col: 20,
                     },
@@ -120,21 +129,23 @@ Ok(
                             sigil: Keyword(
                                 If,
                             ),
-                            offset: 40..42,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 40,
                                 line: 2,
                                 col: 13,
                             }..Pos {
+                                offset: 42,
                                 line: 2,
                                 col: 15,
                             },
                         },
                         condition: Span {
-                            offset: 43..44,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 43,
                                 line: 2,
                                 col: 16,
                             }..Pos {
+                                offset: 44,
                                 line: 2,
                                 col: 17,
                             },
@@ -146,21 +157,23 @@ Ok(
                             sigil: Keyword(
                                 Then,
                             ),
-                            offset: 45..49,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 45,
                                 line: 2,
                                 col: 18,
                             }..Pos {
+                                offset: 49,
                                 line: 2,
                                 col: 22,
                             },
                         },
                         cons_branch: Span {
-                            offset: 50..57,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 50,
                                 line: 2,
                                 col: 23,
                             }..Pos {
+                                offset: 57,
                                 line: 2,
                                 col: 30,
                             },
@@ -169,21 +182,23 @@ Ok(
                                     sigil: Keyword(
                                         Print,
                                     ),
-                                    offset: 50..55,
-                                    pos: Pos {
+                                    range: Pos {
+                                        offset: 50,
                                         line: 2,
                                         col: 23,
                                     }..Pos {
+                                        offset: 55,
                                         line: 2,
                                         col: 28,
                                     },
                                 },
                                 expr: Span {
-                                    offset: 56..57,
-                                    pos: Pos {
+                                    range: Pos {
+                                        offset: 56,
                                         line: 2,
                                         col: 29,
                                     }..Pos {
+                                        offset: 57,
                                         line: 2,
                                         col: 30,
                                     },
@@ -198,11 +213,12 @@ Ok(
                                 sigil: Keyword(
                                     Else,
                                 ),
-                                offset: 66..70,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 66,
                                     line: 3,
                                     col: 8,
                                 }..Pos {
+                                    offset: 70,
                                     line: 3,
                                     col: 12,
                                 },
@@ -210,11 +226,12 @@ Ok(
                         ),
                         alt_branch: Some(
                             Span {
-                                offset: 71..78,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 71,
                                     line: 3,
                                     col: 13,
                                 }..Pos {
+                                    offset: 78,
                                     line: 3,
                                     col: 20,
                                 },
@@ -223,21 +240,23 @@ Ok(
                                         sigil: Keyword(
                                             Print,
                                         ),
-                                        offset: 71..76,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 71,
                                             line: 3,
                                             col: 13,
                                         }..Pos {
+                                            offset: 76,
                                             line: 3,
                                             col: 18,
                                         },
                                     },
                                     expr: Span {
-                                        offset: 77..78,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 77,
                                             line: 3,
                                             col: 19,
                                         }..Pos {
+                                            offset: 78,
                                             line: 3,
                                             col: 20,
                                         },

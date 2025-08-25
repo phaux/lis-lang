@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..39,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 39,
             line: 0,
             col: 39,
         },
@@ -17,21 +18,23 @@ Ok(
                 sigil: Keyword(
                     If,
                 ),
-                offset: 0..2,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 },
             },
             condition: Span {
-                offset: 3..4,
-                pos: Pos {
+                range: Pos {
+                    offset: 3,
                     line: 0,
                     col: 3,
                 }..Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 },
@@ -43,43 +46,47 @@ Ok(
                 sigil: Keyword(
                     Then,
                 ),
-                offset: 5..9,
-                pos: Pos {
+                range: Pos {
+                    offset: 5,
                     line: 0,
                     col: 5,
                 }..Pos {
+                    offset: 9,
                     line: 0,
                     col: 9,
                 },
             },
             cons_branch: Span {
-                offset: 10..21,
-                pos: Pos {
+                range: Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 }..Pos {
+                    offset: 21,
                     line: 0,
                     col: 21,
                 },
                 node: Block {
                     brace_l: Token {
                         sigil: CurlyL,
-                        offset: 10..11,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         }..Pos {
+                            offset: 11,
                             line: 0,
                             col: 11,
                         },
                     },
                     stmts: [
                         Span {
-                            offset: 12..19,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 12,
                                 line: 0,
                                 col: 12,
                             }..Pos {
+                                offset: 19,
                                 line: 0,
                                 col: 19,
                             },
@@ -88,21 +95,23 @@ Ok(
                                     sigil: Keyword(
                                         Print,
                                     ),
-                                    offset: 12..17,
-                                    pos: Pos {
+                                    range: Pos {
+                                        offset: 12,
                                         line: 0,
                                         col: 12,
                                     }..Pos {
+                                        offset: 17,
                                         line: 0,
                                         col: 17,
                                     },
                                 },
                                 expr: Span {
-                                    offset: 18..19,
-                                    pos: Pos {
+                                    range: Pos {
+                                        offset: 18,
                                         line: 0,
                                         col: 18,
                                     }..Pos {
+                                        offset: 19,
                                         line: 0,
                                         col: 19,
                                     },
@@ -115,11 +124,12 @@ Ok(
                     ],
                     brace_r: Token {
                         sigil: CurlyR,
-                        offset: 20..21,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 20,
                             line: 0,
                             col: 20,
                         }..Pos {
+                            offset: 21,
                             line: 0,
                             col: 21,
                         },
@@ -131,11 +141,12 @@ Ok(
                     sigil: Keyword(
                         Else,
                     ),
-                    offset: 22..26,
-                    pos: Pos {
+                    range: Pos {
+                        offset: 22,
                         line: 0,
                         col: 22,
                     }..Pos {
+                        offset: 26,
                         line: 0,
                         col: 26,
                     },
@@ -143,33 +154,36 @@ Ok(
             ),
             alt_branch: Some(
                 Span {
-                    offset: 27..39,
-                    pos: Pos {
+                    range: Pos {
+                        offset: 27,
                         line: 0,
                         col: 27,
                     }..Pos {
+                        offset: 39,
                         line: 0,
                         col: 39,
                     },
                     node: Block {
                         brace_l: Token {
                             sigil: CurlyL,
-                            offset: 27..28,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 27,
                                 line: 0,
                                 col: 27,
                             }..Pos {
+                                offset: 28,
                                 line: 0,
                                 col: 28,
                             },
                         },
                         stmts: [
                             Span {
-                                offset: 29..36,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 29,
                                     line: 0,
                                     col: 29,
                                 }..Pos {
+                                    offset: 36,
                                     line: 0,
                                     col: 36,
                                 },
@@ -178,21 +192,23 @@ Ok(
                                         sigil: Keyword(
                                             Print,
                                         ),
-                                        offset: 29..34,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 29,
                                             line: 0,
                                             col: 29,
                                         }..Pos {
+                                            offset: 34,
                                             line: 0,
                                             col: 34,
                                         },
                                     },
                                     expr: Span {
-                                        offset: 35..36,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 35,
                                             line: 0,
                                             col: 35,
                                         }..Pos {
+                                            offset: 36,
                                             line: 0,
                                             col: 36,
                                         },
@@ -205,11 +221,12 @@ Ok(
                         ],
                         brace_r: Token {
                             sigil: CurlyR,
-                            offset: 38..39,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 38,
                                 line: 0,
                                 col: 38,
                             }..Pos {
+                                offset: 39,
                                 line: 0,
                                 col: 39,
                             },

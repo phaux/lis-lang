@@ -63,8 +63,11 @@ fn if_non_bool_cond() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 3 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 3,
+                offset: 3,
+            },
             kind: ExecErrorKind::InvalidCondition { cond_ty: Type::Num },
         })
     ));
@@ -97,8 +100,11 @@ fn assign_non_literal() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::InvalidAssign,
         })
     ));
@@ -110,8 +116,11 @@ fn assign_undef() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::UndefVar { name },
         }) if name == "foo"
     ));
@@ -214,8 +223,11 @@ fn obj_pat_non_obj() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 4 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 4,
+                offset: 4,
+            },
             kind: ExecErrorKind::InvalidMatchObj {
                 matched_ty: Type::Num
             },
@@ -242,8 +254,11 @@ fn op_unary_non_num() {
     assert!(matches!(
         eval_str(&scope, "-true"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::InvalidUnaryOp {
                 op: UnaryOp::Neg,
                 val_ty: Type::Bool,
@@ -329,8 +344,11 @@ fn op_comparison_operators() {
     assert!(matches!(
         eval_str(&scope, "true < false"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 5 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 5,
+                offset: 5,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Less,
                 l_ty: Type::Bool,
@@ -343,8 +361,11 @@ fn op_comparison_operators() {
     assert!(matches!(
         eval_str(&scope, "\"apple\" < 1"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 8 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 8,
+                offset: 8,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Less,
                 l_ty: Type::Str,
@@ -355,8 +376,11 @@ fn op_comparison_operators() {
     assert!(matches!(
         eval_str(&scope, "1 < \"apple\""),
         Err(ExecError {
-            pos: Pos { line: 0, col: 2 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 2,
+                offset: 2,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Less,
                 l_ty: Type::Num,
@@ -369,8 +393,11 @@ fn op_comparison_operators() {
     assert!(matches!(
         eval_str(&scope, "1 < 2 <= 2 < 3"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 6 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 6,
+                offset: 6,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::LessEq,
                 l_ty: Type::Bool,
@@ -381,8 +408,11 @@ fn op_comparison_operators() {
     assert!(matches!(
         eval_str(&scope, "\"a\" < \"b\" < \"c\""),
         Err(ExecError {
-            pos: Pos { line: 0, col: 10 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 10,
+                offset: 10,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Less,
                 l_ty: Type::Bool,
@@ -412,8 +442,11 @@ fn op_logical_non_bool() {
     assert!(matches!(
         eval_str(&scope, "1 and true"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 2 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 2,
+                offset: 2,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::And,
                 l_ty: Type::Num,
@@ -424,8 +457,11 @@ fn op_logical_non_bool() {
     assert!(matches!(
         eval_str(&scope, r#""string" or false"#),
         Err(ExecError {
-            pos: Pos { line: 0, col: 9 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 9,
+                offset: 9,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Or,
                 l_ty: Type::Str,
@@ -454,8 +490,11 @@ fn op_concat_non_string() {
     assert!(matches!(
         eval_str(&scope, "1 ++ 2"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 2 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 2,
+                offset: 2,
+            },
             kind: ExecErrorKind::InvalidBinOp {
                 op: BinOp::Concat,
                 l_ty: Type::Num,
@@ -496,8 +535,11 @@ fn prop_access_nested() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 16 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 16,
+                offset: 16,
+            },
             kind: ExecErrorKind::InvalidPropAccess { obj_ty: Type::Nil },
         })
     ));
@@ -543,8 +585,11 @@ fn func_call_non_func() {
     assert!(matches!(
         exec_str(&scope, "x()"),
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::InvalidCall {
                 called_ty: Type::Num,
             },
@@ -729,8 +774,11 @@ fn break_outside_loop() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::InvalidControlFlow,
         })
     ));
@@ -743,8 +791,11 @@ fn continue_outside_loop() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 0, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
             kind: ExecErrorKind::InvalidControlFlow,
         })
     ));
@@ -757,8 +808,11 @@ fn break_in_func() {
     assert!(matches!(
         result,
         Err(ExecError {
-            pos: Pos { line: 1, col: 0 },
-            scope: _,
+            pos: Pos {
+                line: 1,
+                col: 0,
+                offset: 20,
+            },
             kind: ExecErrorKind::InvalidControlFlow,
         })
     ));

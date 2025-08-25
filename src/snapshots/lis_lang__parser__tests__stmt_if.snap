@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..17,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 17,
             line: 0,
             col: 17,
         },
@@ -17,21 +18,23 @@ Ok(
                 sigil: Keyword(
                     If,
                 ),
-                offset: 0..2,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 },
             },
             condition: Span {
-                offset: 3..4,
-                pos: Pos {
+                range: Pos {
+                    offset: 3,
                     line: 0,
                     col: 3,
                 }..Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 },
@@ -43,21 +46,23 @@ Ok(
                 sigil: Keyword(
                     Then,
                 ),
-                offset: 5..9,
-                pos: Pos {
+                range: Pos {
+                    offset: 5,
                     line: 0,
                     col: 5,
                 }..Pos {
+                    offset: 9,
                     line: 0,
                     col: 9,
                 },
             },
             cons_branch: Span {
-                offset: 10..17,
-                pos: Pos {
+                range: Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 }..Pos {
+                    offset: 17,
                     line: 0,
                     col: 17,
                 },
@@ -66,21 +71,23 @@ Ok(
                         sigil: Keyword(
                             Print,
                         ),
-                        offset: 10..15,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         }..Pos {
+                            offset: 15,
                             line: 0,
                             col: 15,
                         },
                     },
                     expr: Span {
-                        offset: 16..17,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 16,
                             line: 0,
                             col: 16,
                         }..Pos {
+                            offset: 17,
                             line: 0,
                             col: 17,
                         },

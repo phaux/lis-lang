@@ -4,21 +4,23 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..10,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 10,
             line: 0,
             col: 10,
         },
         node: BinOp {
             left: Span {
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },
@@ -29,31 +31,34 @@ Ok(
             op: Add,
             op_tok: Token {
                 sigil: Plus,
-                offset: 2..3,
-                pos: Pos {
+                range: Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 }..Pos {
+                    offset: 3,
                     line: 0,
                     col: 3,
                 },
             },
             right: Span {
-                offset: 4..10,
-                pos: Pos {
+                range: Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 }..Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 },
                 node: BinOp {
                     left: Span {
-                        offset: 4..6,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 4,
                             line: 0,
                             col: 4,
                         }..Pos {
+                            offset: 6,
                             line: 0,
                             col: 6,
                         },
@@ -61,21 +66,23 @@ Ok(
                             op: Neg,
                             op_tok: Token {
                                 sigil: Minus,
-                                offset: 4..5,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 4,
                                     line: 0,
                                     col: 4,
                                 }..Pos {
+                                    offset: 5,
                                     line: 0,
                                     col: 5,
                                 },
                             },
                             expr: Span {
-                                offset: 5..6,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 5,
                                     line: 0,
                                     col: 5,
                                 }..Pos {
+                                    offset: 6,
                                     line: 0,
                                     col: 6,
                                 },
@@ -88,21 +95,23 @@ Ok(
                     op: Mul,
                     op_tok: Token {
                         sigil: Star,
-                        offset: 7..8,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 7,
                             line: 0,
                             col: 7,
                         }..Pos {
+                            offset: 8,
                             line: 0,
                             col: 8,
                         },
                     },
                     right: Span {
-                        offset: 9..10,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 9,
                             line: 0,
                             col: 9,
                         }..Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         },

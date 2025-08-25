@@ -4,21 +4,23 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..18,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 18,
             line: 0,
             col: 18,
         },
         node: BinOp {
             left: Span {
-                offset: 0..7,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 7,
                     line: 0,
                     col: 7,
                 },
@@ -29,21 +31,23 @@ Ok(
             op: Concat,
             op_tok: Token {
                 sigil: PlusPlus,
-                offset: 8..10,
-                pos: Pos {
+                range: Pos {
+                    offset: 8,
                     line: 0,
                     col: 8,
                 }..Pos {
+                    offset: 10,
                     line: 0,
                     col: 10,
                 },
             },
             right: Span {
-                offset: 11..18,
-                pos: Pos {
+                range: Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 }..Pos {
+                    offset: 18,
                     line: 0,
                     col: 18,
                 },

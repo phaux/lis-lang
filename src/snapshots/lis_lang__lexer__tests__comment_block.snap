@@ -7,11 +7,12 @@ expression: tokens
         sigil: Keyword(
             Let,
         ),
-        offset: 0..3,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 3,
             line: 0,
             col: 3,
         },
@@ -20,22 +21,24 @@ expression: tokens
         sigil: Ident {
             name: "x",
         },
-        offset: 4..5,
-        pos: Pos {
+        range: Pos {
+            offset: 4,
             line: 0,
             col: 4,
         }..Pos {
+            offset: 5,
             line: 0,
             col: 5,
         },
     },
     Token {
         sigil: Eq,
-        offset: 6..7,
-        pos: Pos {
+        range: Pos {
+            offset: 6,
             line: 0,
             col: 6,
         }..Pos {
+            offset: 7,
             line: 0,
             col: 7,
         },
@@ -44,11 +47,12 @@ expression: tokens
         sigil: Comment {
             body: " block comment ",
         },
-        offset: 8..27,
-        pos: Pos {
+        range: Pos {
+            offset: 8,
             line: 0,
             col: 8,
         }..Pos {
+            offset: 27,
             line: 0,
             col: 27,
         },
@@ -57,22 +61,24 @@ expression: tokens
         sigil: Num {
             val: 1.0,
         },
-        offset: 28..29,
-        pos: Pos {
+        range: Pos {
+            offset: 28,
             line: 0,
             col: 28,
         }..Pos {
+            offset: 29,
             line: 0,
             col: 29,
         },
     },
     Token {
         sigil: Semi,
-        offset: 29..30,
-        pos: Pos {
+        range: Pos {
+            offset: 29,
             line: 0,
             col: 29,
         }..Pos {
+            offset: 30,
             line: 0,
             col: 30,
         },

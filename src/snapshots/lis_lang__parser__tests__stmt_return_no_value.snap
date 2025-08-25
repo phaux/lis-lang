@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..6,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 6,
             line: 0,
             col: 6,
         },
@@ -17,11 +18,12 @@ Ok(
                 sigil: Keyword(
                     Return,
                 ),
-                offset: 0..6,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 6,
                     line: 0,
                     col: 6,
                 },

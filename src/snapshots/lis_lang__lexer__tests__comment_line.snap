@@ -7,11 +7,12 @@ expression: tokens
         sigil: Keyword(
             Let,
         ),
-        offset: 0..3,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 3,
             line: 0,
             col: 3,
         },
@@ -20,22 +21,24 @@ expression: tokens
         sigil: Ident {
             name: "x",
         },
-        offset: 4..5,
-        pos: Pos {
+        range: Pos {
+            offset: 4,
             line: 0,
             col: 4,
         }..Pos {
+            offset: 5,
             line: 0,
             col: 5,
         },
     },
     Token {
         sigil: Eq,
-        offset: 6..7,
-        pos: Pos {
+        range: Pos {
+            offset: 6,
             line: 0,
             col: 6,
         }..Pos {
+            offset: 7,
             line: 0,
             col: 7,
         },
@@ -44,22 +47,24 @@ expression: tokens
         sigil: Num {
             val: 1.0,
         },
-        offset: 8..9,
-        pos: Pos {
+        range: Pos {
+            offset: 8,
             line: 0,
             col: 8,
         }..Pos {
+            offset: 9,
             line: 0,
             col: 9,
         },
     },
     Token {
         sigil: Semi,
-        offset: 9..10,
-        pos: Pos {
+        range: Pos {
+            offset: 9,
             line: 0,
             col: 9,
         }..Pos {
+            offset: 10,
             line: 0,
             col: 10,
         },
@@ -68,11 +73,12 @@ expression: tokens
         sigil: Comment {
             body: " this is a comment",
         },
-        offset: 11..31,
-        pos: Pos {
+        range: Pos {
+            offset: 11,
             line: 0,
             col: 11,
         }..Pos {
+            offset: 31,
             line: 0,
             col: 31,
         },
@@ -81,11 +87,12 @@ expression: tokens
         sigil: Keyword(
             Print,
         ),
-        offset: 32..37,
-        pos: Pos {
+        range: Pos {
+            offset: 32,
             line: 1,
             col: 0,
         }..Pos {
+            offset: 37,
             line: 1,
             col: 5,
         },
@@ -94,11 +101,12 @@ expression: tokens
         sigil: Ident {
             name: "x",
         },
-        offset: 38..39,
-        pos: Pos {
+        range: Pos {
+            offset: 38,
             line: 1,
             col: 6,
         }..Pos {
+            offset: 39,
             line: 1,
             col: 7,
         },

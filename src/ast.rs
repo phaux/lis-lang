@@ -14,8 +14,7 @@ pub struct Prog {
 /// A wrapper type which adds information about node's position in source code.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Span<T> {
-    pub offset: Range<usize>,
-    pub pos: Range<Pos>,
+    pub range: Range<Pos>,
     pub node: T,
 }
 
@@ -240,7 +239,7 @@ impl Stmt {
                     cons_branch.node.needs_separator()
                 }
             }
-            
+
             Stmt::While { body, .. } => body.node.needs_separator(),
         }
     }

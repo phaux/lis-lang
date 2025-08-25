@@ -4,11 +4,12 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..23,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 23,
             line: 0,
             col: 23,
         },
@@ -17,11 +18,12 @@ Ok(
                 sigil: Keyword(
                     Fn,
                 ),
-                offset: 0..2,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 2,
                     line: 0,
                     col: 2,
                 },
@@ -29,11 +31,12 @@ Ok(
             name: "add",
             param_paren_l: Token {
                 sigil: ParenL,
-                offset: 6..7,
-                pos: Pos {
+                range: Pos {
+                    offset: 6,
                     line: 0,
                     col: 6,
                 }..Pos {
+                    offset: 7,
                     line: 0,
                     col: 7,
                 },
@@ -44,43 +47,47 @@ Ok(
             ],
             param_paren_r: Token {
                 sigil: ParenR,
-                offset: 11..12,
-                pos: Pos {
+                range: Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 }..Pos {
+                    offset: 12,
                     line: 0,
                     col: 12,
                 },
             },
             body: Span {
-                offset: 13..23,
-                pos: Pos {
+                range: Pos {
+                    offset: 13,
                     line: 0,
                     col: 13,
                 }..Pos {
+                    offset: 23,
                     line: 0,
                     col: 23,
                 },
                 node: Block {
                     brace_l: Token {
                         sigil: CurlyL,
-                        offset: 13..14,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 13,
                             line: 0,
                             col: 13,
                         }..Pos {
+                            offset: 14,
                             line: 0,
                             col: 14,
                         },
                     },
                     stmts: [
                         Span {
-                            offset: 15..21,
-                            pos: Pos {
+                            range: Pos {
+                                offset: 15,
                                 line: 0,
                                 col: 15,
                             }..Pos {
+                                offset: 21,
                                 line: 0,
                                 col: 21,
                             },
@@ -89,11 +96,12 @@ Ok(
                                     sigil: Keyword(
                                         Return,
                                     ),
-                                    offset: 15..21,
-                                    pos: Pos {
+                                    range: Pos {
+                                        offset: 15,
                                         line: 0,
                                         col: 15,
                                     }..Pos {
+                                        offset: 21,
                                         line: 0,
                                         col: 21,
                                     },
@@ -104,11 +112,12 @@ Ok(
                     ],
                     brace_r: Token {
                         sigil: CurlyR,
-                        offset: 22..23,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 22,
                             line: 0,
                             col: 22,
                         }..Pos {
+                            offset: 23,
                             line: 0,
                             col: 23,
                         },

@@ -7,22 +7,24 @@ expression: tokens
         sigil: Ident {
             name: "a",
         },
-        offset: 0..1,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 1,
             line: 0,
             col: 1,
         },
     },
     Token {
         sigil: Less,
-        offset: 2..3,
-        pos: Pos {
+        range: Pos {
+            offset: 2,
             line: 0,
             col: 2,
         }..Pos {
+            offset: 3,
             line: 0,
             col: 3,
         },
@@ -31,22 +33,24 @@ expression: tokens
         sigil: Ident {
             name: "b",
         },
-        offset: 4..5,
-        pos: Pos {
+        range: Pos {
+            offset: 4,
             line: 0,
             col: 4,
         }..Pos {
+            offset: 5,
             line: 0,
             col: 5,
         },
     },
     Token {
         sigil: LessEq,
-        offset: 6..8,
-        pos: Pos {
+        range: Pos {
+            offset: 6,
             line: 0,
             col: 6,
         }..Pos {
+            offset: 8,
             line: 0,
             col: 8,
         },
@@ -55,22 +59,24 @@ expression: tokens
         sigil: Ident {
             name: "c",
         },
-        offset: 9..10,
-        pos: Pos {
+        range: Pos {
+            offset: 9,
             line: 0,
             col: 9,
         }..Pos {
+            offset: 10,
             line: 0,
             col: 10,
         },
     },
     Token {
         sigil: Greater,
-        offset: 11..12,
-        pos: Pos {
+        range: Pos {
+            offset: 11,
             line: 0,
             col: 11,
         }..Pos {
+            offset: 12,
             line: 0,
             col: 12,
         },
@@ -79,22 +85,24 @@ expression: tokens
         sigil: Ident {
             name: "d",
         },
-        offset: 13..14,
-        pos: Pos {
+        range: Pos {
+            offset: 13,
             line: 0,
             col: 13,
         }..Pos {
+            offset: 14,
             line: 0,
             col: 14,
         },
     },
     Token {
         sigil: GreaterEq,
-        offset: 15..17,
-        pos: Pos {
+        range: Pos {
+            offset: 15,
             line: 0,
             col: 15,
         }..Pos {
+            offset: 17,
             line: 0,
             col: 17,
         },
@@ -103,11 +111,12 @@ expression: tokens
         sigil: Ident {
             name: "e",
         },
-        offset: 18..19,
-        pos: Pos {
+        range: Pos {
+            offset: 18,
             line: 0,
             col: 18,
         }..Pos {
+            offset: 19,
             line: 0,
             col: 19,
         },

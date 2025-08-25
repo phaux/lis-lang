@@ -4,41 +4,45 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..19,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 19,
             line: 0,
             col: 19,
         },
         node: Assign {
             place: Span {
-                offset: 0..11,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 11,
                     line: 0,
                     col: 11,
                 },
                 node: PropAccess {
                     obj: Span {
-                        offset: 0..6,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 0,
                             line: 0,
                             col: 0,
                         }..Pos {
+                            offset: 6,
                             line: 0,
                             col: 6,
                         },
                         node: FuncCall {
                             callee: Span {
-                                offset: 0..4,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 0,
                                     line: 0,
                                     col: 0,
                                 }..Pos {
+                                    offset: 4,
                                     line: 0,
                                     col: 4,
                                 },
@@ -48,11 +52,12 @@ Ok(
                             },
                             paren_l: Token {
                                 sigil: ParenL,
-                                offset: 4..5,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 4,
                                     line: 0,
                                     col: 4,
                                 }..Pos {
+                                    offset: 5,
                                     line: 0,
                                     col: 5,
                                 },
@@ -60,11 +65,12 @@ Ok(
                             args: [],
                             paren_r: Token {
                                 sigil: ParenR,
-                                offset: 5..6,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 5,
                                     line: 0,
                                     col: 5,
                                 }..Pos {
+                                    offset: 6,
                                     line: 0,
                                     col: 6,
                                 },
@@ -73,11 +79,12 @@ Ok(
                     },
                     dot_tok: Token {
                         sigil: Dot,
-                        offset: 6..7,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 6,
                             line: 0,
                             col: 6,
                         }..Pos {
+                            offset: 7,
                             line: 0,
                             col: 7,
                         },
@@ -87,31 +94,34 @@ Ok(
             },
             eq_tok: Token {
                 sigil: Eq,
-                offset: 12..13,
-                pos: Pos {
+                range: Pos {
+                    offset: 12,
                     line: 0,
                     col: 12,
                 }..Pos {
+                    offset: 13,
                     line: 0,
                     col: 13,
                 },
             },
             expr: Span {
-                offset: 14..19,
-                pos: Pos {
+                range: Pos {
+                    offset: 14,
                     line: 0,
                     col: 14,
                 }..Pos {
+                    offset: 19,
                     line: 0,
                     col: 19,
                 },
                 node: BinOp {
                     left: Span {
-                        offset: 14..15,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 14,
                             line: 0,
                             col: 14,
                         }..Pos {
+                            offset: 15,
                             line: 0,
                             col: 15,
                         },
@@ -122,21 +132,23 @@ Ok(
                     op: Add,
                     op_tok: Token {
                         sigil: Plus,
-                        offset: 16..17,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 16,
                             line: 0,
                             col: 16,
                         }..Pos {
+                            offset: 17,
                             line: 0,
                             col: 17,
                         },
                     },
                     right: Span {
-                        offset: 18..19,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 18,
                             line: 0,
                             col: 18,
                         }..Pos {
+                            offset: 19,
                             line: 0,
                             col: 19,
                         },

@@ -4,51 +4,56 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..19,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 19,
             line: 0,
             col: 19,
         },
         node: BinOp {
             left: Span {
-                offset: 0..14,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 14,
                     line: 0,
                     col: 14,
                 },
                 node: BinOp {
                     left: Span {
-                        offset: 0..10,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 0,
                             line: 0,
                             col: 0,
                         }..Pos {
+                            offset: 10,
                             line: 0,
                             col: 10,
                         },
                         node: BinOp {
                             left: Span {
-                                offset: 0..5,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 0,
                                     line: 0,
                                     col: 0,
                                 }..Pos {
+                                    offset: 5,
                                     line: 0,
                                     col: 5,
                                 },
                                 node: BinOp {
                                     left: Span {
-                                        offset: 0..1,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 0,
                                             line: 0,
                                             col: 0,
                                         }..Pos {
+                                            offset: 1,
                                             line: 0,
                                             col: 1,
                                         },
@@ -59,21 +64,23 @@ Ok(
                                     op: Less,
                                     op_tok: Token {
                                         sigil: Less,
-                                        offset: 2..3,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 2,
                                             line: 0,
                                             col: 2,
                                         }..Pos {
+                                            offset: 3,
                                             line: 0,
                                             col: 3,
                                         },
                                     },
                                     right: Span {
-                                        offset: 4..5,
-                                        pos: Pos {
+                                        range: Pos {
+                                            offset: 4,
                                             line: 0,
                                             col: 4,
                                         }..Pos {
+                                            offset: 5,
                                             line: 0,
                                             col: 5,
                                         },
@@ -86,21 +93,23 @@ Ok(
                             op: LessEq,
                             op_tok: Token {
                                 sigil: LessEq,
-                                offset: 6..8,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 6,
                                     line: 0,
                                     col: 6,
                                 }..Pos {
+                                    offset: 8,
                                     line: 0,
                                     col: 8,
                                 },
                             },
                             right: Span {
-                                offset: 9..10,
-                                pos: Pos {
+                                range: Pos {
+                                    offset: 9,
                                     line: 0,
                                     col: 9,
                                 }..Pos {
+                                    offset: 10,
                                     line: 0,
                                     col: 10,
                                 },
@@ -113,21 +122,23 @@ Ok(
                     op: Greater,
                     op_tok: Token {
                         sigil: Greater,
-                        offset: 11..12,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 11,
                             line: 0,
                             col: 11,
                         }..Pos {
+                            offset: 12,
                             line: 0,
                             col: 12,
                         },
                     },
                     right: Span {
-                        offset: 13..14,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 13,
                             line: 0,
                             col: 13,
                         }..Pos {
+                            offset: 14,
                             line: 0,
                             col: 14,
                         },
@@ -140,21 +151,23 @@ Ok(
             op: GreaterEq,
             op_tok: Token {
                 sigil: GreaterEq,
-                offset: 15..17,
-                pos: Pos {
+                range: Pos {
+                    offset: 15,
                     line: 0,
                     col: 15,
                 }..Pos {
+                    offset: 17,
                     line: 0,
                     col: 17,
                 },
             },
             right: Span {
-                offset: 18..19,
-                pos: Pos {
+                range: Pos {
+                    offset: 18,
                     line: 0,
                     col: 18,
                 }..Pos {
+                    offset: 19,
                     line: 0,
                     col: 19,
                 },

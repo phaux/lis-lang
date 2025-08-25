@@ -38,8 +38,7 @@ pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError
             ExecResult::Break | ExecResult::Continue => {
                 // Break or continue used outside of a loop.
                 return Err(ExecError {
-                    pos: stmt.pos.start,
-                    scope: Rc::clone(&prog_scope),
+                    pos: stmt.range.start,
                     kind: ExecErrorKind::InvalidControlFlow,
                 });
             }
@@ -54,9 +53,7 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
             eval_expr(scope, expr)?;
             Ok(ExecResult::Void)
         }
-        Stmt::Block { stmts, .. } => {
-            exec_block(scope, stmts)
-        }
+        Stmt::Block { stmts, .. } => exec_block(scope, stmts),
         Stmt::Let { pat, init, .. } => {
             let val = eval_expr(scope, init)?;
             match_pattern(scope, pat, val)?;
@@ -126,8 +123,7 @@ fn exec_if_stmt(
     let Val::Bool(cond_val) = cond_val else {
         // Condition value must be a boolean.
         return Err(ExecError {
-            pos: condition.pos.start,
-            scope: Rc::clone(scope),
+            pos: condition.range.start,
             kind: ExecErrorKind::InvalidCondition {
                 cond_ty: cond_val.type_of(),
             },
@@ -153,8 +149,7 @@ fn exec_while_stmt(
         let Val::Bool(cond_val) = cond_val else {
             // Condition value must be a boolean.
             return Err(ExecError {
-                pos: condition.pos.start,
-                scope: Rc::clone(scope),
+                pos: condition.range.start,
                 kind: ExecErrorKind::InvalidCondition {
                     cond_ty: cond_val.type_of(),
                 },
@@ -208,8 +203,7 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
                 None => Ok(Val::Nil),
             },
             v => Err(ExecError {
-                pos: dot_tok.pos.start,
-                scope: Rc::clone(scope),
+                pos: dot_tok.range.start,
                 kind: ExecErrorKind::InvalidPropAccess {
                     obj_ty: v.type_of(),
                 },
@@ -228,8 +222,7 @@ fn eval_func_call(
     let callee_val = eval_expr(scope, callee)?;
     let Val::Func(callee_val) = callee_val else {
         return Err(ExecError {
-            pos: callee.pos.start,
-            scope: Rc::clone(scope),
+            pos: callee.range.start,
             kind: ExecErrorKind::InvalidCall {
                 called_ty: callee_val.type_of(),
             },
@@ -258,8 +251,7 @@ fn eval_func_call(
         ExecResult::Break | ExecResult::Continue => {
             // Break or continue used inside a function
             Err(ExecError {
-                pos: callee.pos.start,
-                scope: Rc::clone(scope),
+                pos: callee.range.start,
                 kind: ExecErrorKind::InvalidControlFlow,
             })
         }
@@ -286,8 +278,7 @@ fn eval_bin_op(
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l || r)),
                 (l, r) => {
                     return Err(ExecError {
-                        pos: op_tok.pos.start,
-                        scope: Rc::clone(scope),
+                        pos: op_tok.range.start,
                         kind: ExecErrorKind::InvalidBinOp {
                             op,
                             l_ty: l.type_of(),
@@ -307,8 +298,7 @@ fn eval_bin_op(
                 (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l && r)),
                 (l, r) => {
                     return Err(ExecError {
-                        pos: op_tok.pos.start,
-                        scope: Rc::clone(scope),
+                        pos: op_tok.range.start,
                         kind: ExecErrorKind::InvalidBinOp {
                             op,
                             l_ty: l.type_of(),
@@ -342,8 +332,7 @@ fn eval_bin_op(
         (BinOp::GreaterEq, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l >= r)),
         (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
         (op, l, r) => Err(ExecError {
-            pos: op_tok.pos.start,
-            scope: Rc::clone(scope),
+            pos: op_tok.range.start,
             kind: ExecErrorKind::InvalidBinOp {
                 op,
                 l_ty: l.type_of(),
@@ -365,8 +354,7 @@ fn eval_unary_op(
         (UnaryOp::Neg, Val::Num(n)) => Ok(Val::Num(-n)),
         (UnaryOp::Not, Val::Bool(b)) => Ok(Val::Bool(!b)),
         (op, val) => Err(ExecError {
-            pos: op_tok.pos.start,
-            scope: Rc::clone(scope),
+            pos: op_tok.range.start,
             kind: ExecErrorKind::InvalidUnaryOp {
                 op,
                 val_ty: val.type_of(),
@@ -379,8 +367,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
     let Expr::Var { name } = &place.node else {
         // Only support variable assignment for now
         return Err(ExecError {
-            pos: place.pos.start,
-            scope: Rc::clone(scope),
+            pos: place.range.start,
             kind: ExecErrorKind::InvalidAssign,
         });
     };
@@ -389,8 +376,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
         // Variable must be defined anywhere in the scope chain.
         // This is unlike JS where it would create a variable in the global scope.
         return Err(ExecError {
-            pos: place.pos.start,
-            scope: Rc::clone(scope),
+            pos: place.range.start,
             kind: ExecErrorKind::UndefVar {
                 name: name.to_string(),
             },
@@ -416,8 +402,7 @@ pub fn match_pattern(
             // Object pattern recursively matches each property of the matched value
             let Val::Obj(matched_obj) = matched_val else {
                 return Err(ExecError {
-                    pos: pat.pos.start,
-                    scope: Rc::clone(scope),
+                    pos: pat.range.start,
                     kind: ExecErrorKind::InvalidMatchObj {
                         matched_ty: matched_val.type_of(),
                     },
@@ -447,11 +432,8 @@ pub fn match_pattern(
 /// Error which can happen during program execution.
 #[derive(Debug)]
 pub struct ExecError {
-    /// Byte offset in the source code where the error occurred.
+    /// Position in the source code where the error occurred.
     pub pos: Pos,
-    /// The scope where the error occurred, which can be used to show backtrace.
-    #[allow(dead_code, reason = "only used for displaying via debug for now")]
-    pub scope: Rc<Scope>,
     /// The kind of error.
     pub kind: ExecErrorKind,
 }

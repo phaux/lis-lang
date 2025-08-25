@@ -10,11 +10,12 @@ Err(
                 sigil: Keyword(
                     Else,
                 ),
-                offset: 15..19,
-                pos: Pos {
+                range: Pos {
+                    offset: 15,
                     line: 0,
                     col: 15,
                 }..Pos {
+                    offset: 19,
                     line: 0,
                     col: 19,
                 },

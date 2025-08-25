@@ -100,16 +100,14 @@ impl<'a> Parser<'a> {
                 Sigil::Keyword(Keyword::Break) => {
                     let keyword = self.tokens.next().unwrap();
                     return Ok(Span {
-                        offset: keyword.offset.clone(),
-                        pos: keyword.pos.clone(),
+                        range: keyword.range.clone(),
                         node: Stmt::Break { keyword },
                     });
                 }
                 Sigil::Keyword(Keyword::Continue) => {
                     let keyword = self.tokens.next().unwrap();
                     return Ok(Span {
-                        offset: keyword.offset.clone(),
-                        pos: keyword.pos.clone(),
+                        range: keyword.range.clone(),
                         node: Stmt::Continue { keyword },
                     });
                 }
@@ -120,8 +118,7 @@ impl<'a> Parser<'a> {
         // Parse expression statement
         let expr = Box::new(self.parse_expr(0)?);
         Ok(Span {
-            offset: expr.offset.clone(),
-            pos: expr.pos.clone(),
+            range: expr.range.clone(),
             node: Stmt::Expr { expr },
         })
     }
@@ -161,8 +158,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: brace_l.offset.start..brace_r.offset.end,
-            pos: brace_l.pos.start..brace_r.pos.end,
+            range: brace_l.range.start..brace_r.range.end,
             node: Stmt::Block {
                 brace_l,
                 stmts,
@@ -197,8 +193,7 @@ impl<'a> Parser<'a> {
         let init = Box::new(self.parse_expr(0)?);
 
         Ok(Span {
-            offset: keyword.offset.start..init.offset.end,
-            pos: keyword.pos.start..init.pos.end,
+            range: keyword.range.start..init.range.end,
             node: Stmt::Let {
                 keyword,
                 pat,
@@ -212,11 +207,9 @@ impl<'a> Parser<'a> {
         match self.tokens.next() {
             Some(Token {
                 sigil: Sigil::Ident { name },
-                offset,
-                pos,
+                range,
             }) => Ok(Span {
-                offset,
-                pos,
+                range,
                 node: Pat::Ident { name },
             }),
             Some(
@@ -260,13 +253,8 @@ impl<'a> Parser<'a> {
             let key = match self.tokens.next() {
                 Some(Token {
                     sigil: Sigil::Ident { name },
-                    offset,
-                    pos,
-                }) => Span {
-                    offset,
-                    pos,
-                    node: name,
-                },
+                    range,
+                }) => Span { range, node: name },
                 tok => {
                     return Err(ParseError {
                         expected: "key identifier of object pattern",
@@ -281,8 +269,7 @@ impl<'a> Parser<'a> {
             } else {
                 // No colon - Parse as object property shorthand.
                 Span {
-                    offset: key.offset.clone(),
-                    pos: key.pos.clone(),
+                    range: key.range,
                     node: Pat::Ident {
                         name: key.node.clone(),
                     },
@@ -293,8 +280,7 @@ impl<'a> Parser<'a> {
             if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
                 let default = Box::new(self.parse_expr(0)?);
                 pat = Span {
-                    offset: pat.offset.start..default.offset.end,
-                    pos: pat.pos.start..default.pos.end,
+                    range: pat.range.start..default.range.end,
                     node: Pat::Default {
                         pat: Box::new(pat),
                         eq_tok: eq_token,
@@ -308,8 +294,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: brace_l.offset.start..brace_r.offset.end,
-            pos: brace_l.pos.start..brace_r.pos.end,
+            range: brace_l.range.start..brace_r.range.end,
             node: Pat::Obj {
                 brace_l,
                 props,
@@ -407,8 +392,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: keyword.offset.start..body.offset.end,
-            pos: keyword.pos.start..body.pos.end,
+            range: keyword.range.start..body.range.end,
             node: Stmt::FuncDecl {
                 keyword,
                 name,
@@ -428,8 +412,7 @@ impl<'a> Parser<'a> {
         let expr = Box::new(self.parse_expr(0)?);
 
         Ok(Span {
-            offset: keyword.offset.start..expr.offset.end,
-            pos: keyword.pos.start..expr.pos.end,
+            range: keyword.range.start..expr.range.end,
             node: Stmt::Print { keyword, expr },
         })
     }
@@ -445,8 +428,7 @@ impl<'a> Parser<'a> {
                 ..
             })
             | None => Ok(Span {
-                offset: keyword.offset.clone(),
-                pos: keyword.pos.clone(),
+                range: keyword.range.clone(),
                 node: Stmt::Return {
                     keyword,
                     expr: None,
@@ -455,8 +437,7 @@ impl<'a> Parser<'a> {
             _ => {
                 let expr = Box::new(self.parse_expr(0)?);
                 Ok(Span {
-                    offset: keyword.offset.start..expr.offset.end,
-                    pos: keyword.pos.start..expr.pos.end,
+                    range: keyword.range.start..expr.range.end,
                     node: Stmt::Return {
                         keyword,
                         expr: Some(expr),
@@ -504,8 +485,7 @@ impl<'a> Parser<'a> {
         let end_node = alt_branch.as_ref().unwrap_or(&cons_branch);
 
         Ok(Span {
-            offset: keyword.offset.start..end_node.offset.end,
-            pos: keyword.pos.start..end_node.pos.end,
+            range: keyword.range.start..end_node.range.end,
             node: Stmt::If {
                 keyword,
                 condition,
@@ -544,8 +524,7 @@ impl<'a> Parser<'a> {
         let body = Box::new(self.parse_stmt()?);
 
         Ok(Span {
-            offset: keyword.offset.start..body.offset.end,
-            pos: keyword.pos.start..body.pos.end,
+            range: keyword.range.start..body.range.end,
             node: Stmt::While {
                 keyword,
                 condition,
@@ -577,8 +556,7 @@ impl<'a> Parser<'a> {
         if let Some(eq_token) = self.tokens.next_if(|t| t.sigil == Sigil::Eq) {
             let expr = self.parse_expr(0)?;
             left = Span {
-                offset: left.offset.start..expr.offset.end,
-                pos: left.pos.start..expr.pos.end,
+                range: left.range.start..expr.range.end,
                 node: Expr::Assign {
                     place: Box::new(left),
                     eq_tok: eq_token,
@@ -602,8 +580,7 @@ impl<'a> Parser<'a> {
             let op_tok = self.tokens.next().unwrap(); // Consume operator
             let right = self.parse_expr(next_prec)?;
             left = Span {
-                offset: left.offset.start..right.offset.end,
-                pos: left.pos.start..right.pos.end,
+                range: left.range.start..right.range.end,
                 node: Expr::BinOp {
                     left: Box::new(left),
                     op,
@@ -635,8 +612,7 @@ impl<'a> Parser<'a> {
             };
             if let Some(expr) = expr {
                 return Ok(Span {
-                    offset: tok.offset.clone(),
-                    pos: tok.pos.clone(),
+                    range: tok.range.clone(),
                     node: expr,
                 });
             }
@@ -655,8 +631,7 @@ impl<'a> Parser<'a> {
             if let Some(op) = UnaryOp::try_from_token(tok) {
                 let expr = Box::new(self.parse_operand()?);
                 return Ok(Span {
-                    offset: tok.offset.start..expr.offset.end,
-                    pos: tok.pos.start..expr.pos.end,
+                    range: tok.range.start..expr.range.end,
                     node: Expr::UnaryOp {
                         op,
                         op_tok: tok.clone(),
@@ -680,8 +655,7 @@ impl<'a> Parser<'a> {
             && paren_r.sigil == Sigil::ParenR
         {
             return Ok(Span {
-                offset: paren_l.offset.start..paren_r.offset.end,
-                pos: paren_l.pos.start..paren_r.pos.end,
+                range: paren_l.range.start..paren_r.range.end,
                 node: expr.node,
             });
         }
@@ -700,13 +674,8 @@ impl<'a> Parser<'a> {
         let prop = match self.tokens.next() {
             Some(Token {
                 sigil: Sigil::Ident { name },
-                offset,
-                pos,
-            }) => Span {
-                offset,
-                pos,
-                node: name,
-            },
+                range,
+            }) => Span { range, node: name },
             tok => {
                 return Err(ParseError {
                     expected: "property name identifier of property access",
@@ -716,8 +685,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: obj.offset.start..prop.offset.end,
-            pos: obj.pos.start..prop.pos.end,
+            range: obj.range.start..prop.range.end,
             node: Expr::PropAccess {
                 obj: Box::new(obj),
                 dot_tok,
@@ -764,8 +732,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: callee.offset.start..paren_r.offset.end,
-            pos: callee.pos.start..paren_r.pos.end,
+            range: callee.range.start..paren_r.range.end,
             node: Expr::FuncCall {
                 callee: Box::new(callee),
                 paren_l,
@@ -843,8 +810,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Span {
-            offset: brace_l.offset.start..brace_r.offset.end,
-            pos: brace_l.pos.start..brace_r.pos.end,
+            range: brace_l.range.start..brace_r.range.end,
             node: Expr::Obj {
                 brace_l: brace_l.clone(),
                 props,

@@ -8,11 +8,12 @@ Err(
         found: Some(
             Token {
                 sigil: Semi,
-                offset: 0..1,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 1,
                     line: 0,
                     col: 1,
                 },

@@ -4,21 +4,23 @@ expression: ast
 ---
 Ok(
     Span {
-        offset: 0..9,
-        pos: Pos {
+        range: Pos {
+            offset: 0,
             line: 0,
             col: 0,
         }..Pos {
+            offset: 9,
             line: 0,
             col: 9,
         },
         node: FuncCall {
             callee: Span {
-                offset: 0..4,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 },
@@ -28,22 +30,24 @@ Ok(
             },
             paren_l: Token {
                 sigil: ParenL,
-                offset: 4..5,
-                pos: Pos {
+                range: Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 }..Pos {
+                    offset: 5,
                     line: 0,
                     col: 5,
                 },
             },
             args: [
                 Span {
-                    offset: 5..6,
-                    pos: Pos {
+                    range: Pos {
+                        offset: 5,
                         line: 0,
                         col: 5,
                     }..Pos {
+                        offset: 6,
                         line: 0,
                         col: 6,
                     },
@@ -54,11 +58,12 @@ Ok(
             ],
             paren_r: Token {
                 sigil: ParenR,
-                offset: 8..9,
-                pos: Pos {
+                range: Pos {
+                    offset: 8,
                     line: 0,
                     col: 8,
                 }..Pos {
+                    offset: 9,
                     line: 0,
                     col: 9,
                 },

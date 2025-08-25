@@ -6,21 +6,23 @@ Ok(
     Prog {
         stmts: [
             Span {
-                offset: 0..4,
-                pos: Pos {
+                range: Pos {
+                    offset: 0,
                     line: 0,
                     col: 0,
                 }..Pos {
+                    offset: 4,
                     line: 0,
                     col: 4,
                 },
                 node: Expr {
                     expr: Span {
-                        offset: 0..4,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 0,
                             line: 0,
                             col: 0,
                         }..Pos {
+                            offset: 4,
                             line: 0,
                             col: 4,
                         },
@@ -31,21 +33,23 @@ Ok(
                 },
             },
             Span {
-                offset: 6..13,
-                pos: Pos {
+                range: Pos {
+                    offset: 6,
                     line: 0,
                     col: 6,
                 }..Pos {
+                    offset: 13,
                     line: 0,
                     col: 13,
                 },
                 node: Expr {
                     expr: Span {
-                        offset: 6..13,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 6,
                             line: 0,
                             col: 6,
                         }..Pos {
+                            offset: 13,
                             line: 0,
                             col: 13,
                         },
@@ -56,21 +60,23 @@ Ok(
                 },
             },
             Span {
-                offset: 15..19,
-                pos: Pos {
+                range: Pos {
+                    offset: 15,
                     line: 0,
                     col: 15,
                 }..Pos {
+                    offset: 19,
                     line: 0,
                     col: 19,
                 },
                 node: Expr {
                     expr: Span {
-                        offset: 15..19,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 15,
                             line: 0,
                             col: 15,
                         }..Pos {
+                            offset: 19,
                             line: 0,
                             col: 19,
                         },
@@ -81,21 +87,23 @@ Ok(
                 },
             },
             Span {
-                offset: 21..27,
-                pos: Pos {
+                range: Pos {
+                    offset: 21,
                     line: 0,
                     col: 21,
                 }..Pos {
+                    offset: 27,
                     line: 0,
                     col: 27,
                 },
                 node: Expr {
                     expr: Span {
-                        offset: 21..27,
-                        pos: Pos {
+                        range: Pos {
+                            offset: 21,
                             line: 0,
                             col: 21,
                         }..Pos {
+                            offset: 27,
                             line: 0,
                             col: 27,
                         },

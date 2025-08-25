@@ -8,11 +8,12 @@ Err(
         found: Some(
             Token {
                 sigil: CurlyL,
-                offset: 7..8,
-                pos: Pos {
+                range: Pos {
+                    offset: 7,
                     line: 0,
                     col: 7,
                 }..Pos {
+                    offset: 8,
                     line: 0,
                     col: 8,
                 },

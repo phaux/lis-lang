@@ -7,9 +7,7 @@ use crate::token::{Keyword, Pos, Sigil, Token};
 
 pub struct Lexer<'a> {
     input: &'a str,
-    /// Current byte offset in the input string.
-    offset: usize,
-    /// Current line and column.
+    /// Current position in the input string.
     pos: Pos,
 }
 
@@ -18,24 +16,23 @@ impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self {
             input,
-            offset: 0,
             pos: Pos::default(),
         }
     }
 
     fn peek_char(&self) -> Option<char> {
-        self.input[self.offset..].chars().next()
+        self.input[self.pos.offset..].chars().next()
     }
 
     fn next_char(&mut self) -> Option<char> {
-        let ch = self.input[self.offset..].chars().next()?;
+        let ch = self.input[self.pos.offset..].chars().next()?;
         if ch == '\n' {
             self.pos.line += 1;
             self.pos.col = 0;
         } else {
             self.pos.col += 1;
         }
-        self.offset += ch.len_utf8();
+        self.pos.offset += ch.len_utf8();
         Some(ch)
     }
 }
@@ -45,7 +42,6 @@ impl Iterator for Lexer<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let offset_start = self.offset;
             let pos_start = self.pos;
             let ch = self.next_char()?;
             let sigil = match ch {
@@ -108,8 +104,7 @@ impl Iterator for Lexer<'_> {
             };
             return Some(Token {
                 sigil,
-                offset: offset_start..self.offset,
-                pos: pos_start..self.pos,
+                range: pos_start..self.pos,
             });
         }
     }
