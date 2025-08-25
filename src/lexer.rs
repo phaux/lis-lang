@@ -83,6 +83,7 @@ impl Iterator for Lexer<'_> {
                 ')' => Sigil::ParenR,
                 '{' => Sigil::CurlyL,
                 '}' => Sigil::CurlyR,
+                '|' => Sigil::Pipe,
                 '<' => match self.peek_char() {
                     Some('=') => {
                         self.next_char();

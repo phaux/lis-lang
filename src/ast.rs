@@ -136,6 +136,12 @@ pub enum Expr {
         args: Vec<Span<Expr>>,
         paren_r: Token,
     },
+    Lambda {
+        pipe_l: Token,
+        params: Vec<String>,
+        pipe_r: Token,
+        body: Box<Span<Stmt>>,
+    },
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
