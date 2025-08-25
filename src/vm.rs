@@ -187,6 +187,46 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             right,
             ..
         } => eval_bin_op(scope, *op, op_tok, left, right),
+        Expr::Compare {
+            left,
+            ops,
+            op_toks,
+            comparators,
+        } => {
+            let mut prev_val = eval_expr(scope, left)?;
+            for ((op, op_tok), comparator) in ops.iter().zip(op_toks.iter()).zip(comparators.iter()) {
+                let current_val = eval_expr(scope, comparator)?;
+                let result = match (op, &prev_val, &current_val) {
+                    (BinOp::Eq, l, r) => l == r,
+                    (BinOp::NotEq, l, r) => l != r,
+                    (BinOp::Less, Val::Num(l), Val::Num(r)) => l < r,
+                    (BinOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
+                    (BinOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
+                    (BinOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
+                    (BinOp::Less, Val::Str(l), Val::Str(r)) => l < r,
+                    (BinOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
+                    (BinOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
+                    (BinOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
+                    _ => {
+                        return Err(ExecError {
+                            pos: op_tok.range.start,
+                            kind: ExecErrorKind::InvalidBinOp {
+                                op: *op,
+                                l_ty: prev_val.type_of(),
+                                r_ty: current_val.type_of(),
+                            },
+                        });
+                    }
+                };
+
+                if !result {
+                    return Ok(Val::Bool(false));
+                }
+
+                prev_val = current_val;
+            }
+            Ok(Val::Bool(true))
+        }
         Expr::Obj { props, .. } => {
             let mut obj = Obj {
                 props: HashMap::new(),

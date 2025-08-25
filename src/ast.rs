@@ -110,6 +110,12 @@ pub enum Expr {
         op_tok: Token,
         right: Box<Span<Expr>>,
     },
+    Compare {
+        left: Box<Span<Expr>>,
+        ops: Vec<BinOp>,
+        op_toks: Vec<Token>,
+        comparators: Vec<Span<Expr>>,
+    },
     UnaryOp {
         op: UnaryOp,
         op_tok: Token,

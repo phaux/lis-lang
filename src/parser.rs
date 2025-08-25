@@ -577,6 +577,42 @@ impl<'a> Parser<'a> {
             if next_prec <= precedence {
                 break;
             }
+
+            // Chained comparison expression
+            if next_prec == BinOp::Eq.get_precedence() {
+                let op_tok = self.tokens.next().unwrap();
+                let mut ops = vec![op];
+                let mut op_toks = vec![op_tok];
+                let mut comparators = vec![self.parse_expr(next_prec)?];
+
+                while let Some(op_token) = self.tokens.peek() {
+                    let Some(op) = BinOp::try_from_token(op_token) else {
+                        break;
+                    };
+                    if op.get_precedence() != next_prec {
+                        break;
+                    }
+                    let op_tok = self.tokens.next().unwrap();
+                    let right = self.parse_expr(next_prec)?;
+                    ops.push(op);
+                    op_toks.push(op_tok);
+                    comparators.push(right);
+                }
+
+                let end_range = comparators.last().unwrap().range.end;
+                left = Span {
+                    range: left.range.start..end_range,
+                    node: Expr::Compare {
+                        left: Box::new(left),
+                        ops,
+                        op_toks,
+                        comparators,
+                    },
+                };
+
+                continue;
+            }
+
             let op_tok = self.tokens.next().unwrap(); // Consume operator
             let right = self.parse_expr(next_prec)?;
             left = Span {

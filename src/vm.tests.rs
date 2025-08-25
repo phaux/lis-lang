@@ -434,37 +434,46 @@ fn op_comparison_operators() {
         })
     ));
 
-    // Chained comparisons are not supported
+}
+
+#[test]
+fn op_chained_comparison() {
+    let scope = Rc::new(Scope::root());
+    // True cases
+    assert_eq!(eval_str(&scope, "1 < 2 < 3").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "1 < 2 <= 2").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "3 > 2 > 1").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "3 >= 3 > 1").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "1 == 1 == 1").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "1 < 2 == 2 > 1").unwrap(), Val::Bool(true));
+
+    // False cases
+    assert_eq!(eval_str(&scope, "1 < 1 < 3").unwrap(), Val::Bool(false));
+    assert_eq!(eval_str(&scope, "1 > 2 < 3").unwrap(), Val::Bool(false));
+    assert_eq!(eval_str(&scope, "3 < 2 < 1").unwrap(), Val::Bool(false));
+    assert_eq!(eval_str(&scope, "1 == 2 == 1").unwrap(), Val::Bool(false));
+    assert_eq!(eval_str(&scope, "1 < 2 == 3 > 1").unwrap(), Val::Bool(false));
+
+    // String cases
+    assert_eq!(eval_str(&scope, "\"a\" < \"b\" < \"c\"").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "\"a\" <= \"b\" < \"c\"").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "\"c\" > \"b\" > \"a\"").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "\"c\" >= \"c\" > \"a\"").unwrap(), Val::Bool(true));
+    assert_eq!(eval_str(&scope, "\"a\" == \"a\" == \"a\"").unwrap(), Val::Bool(true));
+
+    // Type errors
     assert!(matches!(
-        eval_str(&scope, "1 < 2 <= 2 < 3"),
+        eval_str(&scope, "1 < 2 < \"c\""),
         Err(ExecError {
-            pos: Pos {
-                line: 0,
-                col: 6,
-                offset: 6,
-            },
-            kind: ExecErrorKind::InvalidBinOp {
-                op: BinOp::LessEq,
-                l_ty: Type::Bool,
-                r_ty: Type::Num,
-            },
+            kind: ExecErrorKind::InvalidBinOp { .. },
+            ..
         })
     ));
-    assert!(matches!(
-        eval_str(&scope, "\"a\" < \"b\" < \"c\""),
-        Err(ExecError {
-            pos: Pos {
-                line: 0,
-                col: 10,
-                offset: 10,
-            },
-            kind: ExecErrorKind::InvalidBinOp {
-                op: BinOp::Less,
-                l_ty: Type::Bool,
-                r_ty: Type::Str,
-            },
-        })
-    ));
+
+    // Short-circuiting test
+    scope.declare("side_effect", Val::Num(0.0));
+    eval_str(&scope, "1 > 2 and (side_effect = side_effect + 1.0) == 1.0").unwrap();
+    assert_eq!(scope.lookup("side_effect").unwrap(), Val::Num(0.0));
 }
 
 #[test]

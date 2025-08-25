@@ -310,7 +310,19 @@ fn comments_only_prog() {
 
 #[test]
 fn expr_comparison_operators() {
-    let ast = Parser::new("a < b <= c > d >= e").parse_expr(0);
+    let ast = Parser::new("a < b <= c > d >= e == f != g").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn expr_chained_comparison_simple() {
+    let ast = Parser::new("0 < x < 10").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn expr_chained_comparison_with_logical_op() {
+    let ast = Parser::new("0 < x < 10 and y == 20").parse_expr(0);
     insta::assert_debug_snapshot!(ast);
 }
 
