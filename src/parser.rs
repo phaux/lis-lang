@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     lexer::Lexer,
     token::{Keyword, Sigil, Token},
 };
@@ -570,28 +570,23 @@ impl<'a> Parser<'a> {
             let Some(op_token) = self.tokens.peek() else {
                 break;
             };
-            let Some(op) = BinOp::try_from_token(op_token) else {
-                break;
-            };
-            let next_prec = op.get_precedence();
-            if next_prec <= precedence {
-                break;
-            }
 
-            // Chained comparison expression
-            if next_prec == BinOp::Eq.get_precedence() {
+            if let Some(op) = CompareOp::try_from_token(op_token) {
+                let next_prec = op.get_precedence();
+                if next_prec <= precedence {
+                    break;
+                }
+
                 let op_tok = self.tokens.next().unwrap();
                 let mut ops = vec![op];
                 let mut op_toks = vec![op_tok];
                 let mut comparators = vec![self.parse_expr(next_prec)?];
 
                 while let Some(op_token) = self.tokens.peek() {
-                    let Some(op) = BinOp::try_from_token(op_token) else {
+                    let Some(op) = CompareOp::try_from_token(op_token) else {
                         break;
                     };
-                    if op.get_precedence() != next_prec {
-                        break;
-                    }
+                    // All comparison operators have the same precedence
                     let op_tok = self.tokens.next().unwrap();
                     let right = self.parse_expr(next_prec)?;
                     ops.push(op);
@@ -611,6 +606,14 @@ impl<'a> Parser<'a> {
                 };
 
                 continue;
+            }
+
+            let Some(op) = BinOp::try_from_token(op_token) else {
+                break;
+            };
+            let next_prec = op.get_precedence();
+            if next_prec <= precedence {
+                break;
             }
 
             let op_tok = self.tokens.next().unwrap(); // Consume operator

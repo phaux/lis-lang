@@ -394,8 +394,8 @@ fn op_comparison_operators() {
                 col: 5,
                 offset: 5,
             },
-            kind: ExecErrorKind::InvalidBinOp {
-                op: BinOp::Less,
+            kind: ExecErrorKind::InvalidCompareOp {
+                op: CompareOp::Less,
                 l_ty: Type::Bool,
                 r_ty: Type::Bool,
             },
@@ -411,8 +411,8 @@ fn op_comparison_operators() {
                 col: 8,
                 offset: 8,
             },
-            kind: ExecErrorKind::InvalidBinOp {
-                op: BinOp::Less,
+            kind: ExecErrorKind::InvalidCompareOp {
+                op: CompareOp::Less,
                 l_ty: Type::Str,
                 r_ty: Type::Num,
             },
@@ -426,8 +426,8 @@ fn op_comparison_operators() {
                 col: 2,
                 offset: 2,
             },
-            kind: ExecErrorKind::InvalidBinOp {
-                op: BinOp::Less,
+            kind: ExecErrorKind::InvalidCompareOp {
+                op: CompareOp::Less,
                 l_ty: Type::Num,
                 r_ty: Type::Str,
             },
@@ -465,7 +465,7 @@ fn op_chained_comparison() {
     assert!(matches!(
         eval_str(&scope, "1 < 2 < \"c\""),
         Err(ExecError {
-            kind: ExecErrorKind::InvalidBinOp { .. },
+            kind: ExecErrorKind::InvalidCompareOp { .. },
             ..
         })
     ));

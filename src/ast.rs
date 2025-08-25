@@ -112,7 +112,7 @@ pub enum Expr {
     },
     Compare {
         left: Box<Span<Expr>>,
-        ops: Vec<BinOp>,
+        ops: Vec<CompareOp>,
         op_toks: Vec<Token>,
         comparators: Vec<Span<Expr>>,
     },
@@ -158,13 +158,37 @@ pub enum BinOp {
     Sub,
     Mul,
     Div,
+    Concat,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum CompareOp {
     Eq,
     NotEq,
     Less,
     LessEq,
     Greater,
     GreaterEq,
-    Concat,
+}
+
+impl CompareOp {
+    #[must_use]
+    pub fn try_from_token(tok: &Token) -> Option<Self> {
+        match &tok.sigil {
+            Sigil::EqEq => Some(CompareOp::Eq),
+            Sigil::BangEq => Some(CompareOp::NotEq),
+            Sigil::Less => Some(CompareOp::Less),
+            Sigil::LessEq => Some(CompareOp::LessEq),
+            Sigil::Greater => Some(CompareOp::Greater),
+            Sigil::GreaterEq => Some(CompareOp::GreaterEq),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn get_precedence(self) -> u8 {
+        4
+    }
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -197,12 +221,6 @@ impl BinOp {
             Sigil::Minus => Some(BinOp::Sub),
             Sigil::Star => Some(BinOp::Mul),
             Sigil::Slash => Some(BinOp::Div),
-            Sigil::EqEq => Some(BinOp::Eq),
-            Sigil::BangEq => Some(BinOp::NotEq),
-            Sigil::Less => Some(BinOp::Less),
-            Sigil::LessEq => Some(BinOp::LessEq),
-            Sigil::Greater => Some(BinOp::Greater),
-            Sigil::GreaterEq => Some(BinOp::GreaterEq),
             _ => None,
         }
     }
@@ -212,12 +230,6 @@ impl BinOp {
         match self {
             BinOp::Or => 2,
             BinOp::And => 3,
-            BinOp::Eq
-            | BinOp::NotEq
-            | BinOp::Less
-            | BinOp::LessEq
-            | BinOp::Greater
-            | BinOp::GreaterEq => 4,
             BinOp::Concat => 5,
             BinOp::Add | BinOp::Sub => 6,
             BinOp::Mul | BinOp::Div => 7,

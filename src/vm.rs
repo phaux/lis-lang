@@ -9,7 +9,7 @@ use std::{collections::HashMap, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
-    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
     token::{Pos, Token},
 };
@@ -194,23 +194,24 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             comparators,
         } => {
             let mut prev_val = eval_expr(scope, left)?;
-            for ((op, op_tok), comparator) in ops.iter().zip(op_toks.iter()).zip(comparators.iter()) {
+            for ((op, op_tok), comparator) in ops.iter().zip(op_toks.iter()).zip(comparators.iter())
+            {
                 let current_val = eval_expr(scope, comparator)?;
                 let result = match (op, &prev_val, &current_val) {
-                    (BinOp::Eq, l, r) => l == r,
-                    (BinOp::NotEq, l, r) => l != r,
-                    (BinOp::Less, Val::Num(l), Val::Num(r)) => l < r,
-                    (BinOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
-                    (BinOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
-                    (BinOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
-                    (BinOp::Less, Val::Str(l), Val::Str(r)) => l < r,
-                    (BinOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
-                    (BinOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
-                    (BinOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
+                    (CompareOp::Eq, l, r) => l == r,
+                    (CompareOp::NotEq, l, r) => l != r,
+                    (CompareOp::Less, Val::Num(l), Val::Num(r)) => l < r,
+                    (CompareOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
+                    (CompareOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
+                    (CompareOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
+                    (CompareOp::Less, Val::Str(l), Val::Str(r)) => l < r,
+                    (CompareOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
+                    (CompareOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
+                    (CompareOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
                     _ => {
                         return Err(ExecError {
                             pos: op_tok.range.start,
-                            kind: ExecErrorKind::InvalidBinOp {
+                            kind: ExecErrorKind::InvalidCompareOp {
                                 op: *op,
                                 l_ty: prev_val.type_of(),
                                 r_ty: current_val.type_of(),
@@ -373,16 +374,6 @@ fn eval_bin_op(
         (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
         (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
         (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l / r)),
-        (BinOp::Eq, l, r) => Ok(Val::Bool(l == r)),
-        (BinOp::NotEq, l, r) => Ok(Val::Bool(l != r)),
-        (BinOp::Less, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l < r)),
-        (BinOp::LessEq, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l <= r)),
-        (BinOp::Greater, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l > r)),
-        (BinOp::GreaterEq, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l >= r)),
-        (BinOp::Less, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l < r)),
-        (BinOp::LessEq, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l <= r)),
-        (BinOp::Greater, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l > r)),
-        (BinOp::GreaterEq, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l >= r)),
         (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
         (op, l, r) => Err(ExecError {
             pos: op_tok.range.start,
@@ -498,6 +489,7 @@ pub enum ExecErrorKind {
     InvalidCondition { cond_ty: Type },
     InvalidUnaryOp { op: UnaryOp, val_ty: Type },
     InvalidBinOp { op: BinOp, l_ty: Type, r_ty: Type },
+    InvalidCompareOp { op: CompareOp, l_ty: Type, r_ty: Type },
     InvalidPropAccess { obj_ty: Type },
     UndefVar { name: String },
     InvalidAssign,
@@ -522,6 +514,16 @@ impl std::fmt::Display for ExecErrorKind {
                 write!(f, "invalid {op:?} on {val_ty:?} value")
             }
             ExecErrorKind::InvalidBinOp {
+                op,
+                l_ty: left_ty,
+                r_ty: right_ty,
+            } => {
+                write!(
+                    f,
+                    "invalid {op:?} between {left_ty:?} and {right_ty:?} values"
+                )
+            }
+            ExecErrorKind::InvalidCompareOp {
                 op,
                 l_ty: left_ty,
                 r_ty: right_ty,
