@@ -9,7 +9,7 @@ use std::{collections::HashMap, rc::Rc};
 use uuid::Uuid;
 
 use crate::{
-    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     state::{Func, Obj, Scope, Type, Val},
     token::{Pos, Token},
 };
@@ -187,6 +187,41 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             right,
             ..
         } => eval_bin_op(scope, *op, op_tok, left, right),
+        Expr::Compare { left, comparators } => {
+            let mut prev_val = eval_expr(scope, left)?;
+            for (op, op_tok, comparator) in comparators {
+                let current_val = eval_expr(scope, comparator)?;
+                let result = match (op, &prev_val, &current_val) {
+                    (CompareOp::Eq, l, r) => l == r,
+                    (CompareOp::NotEq, l, r) => l != r,
+                    (CompareOp::Less, Val::Num(l), Val::Num(r)) => l < r,
+                    (CompareOp::LessEq, Val::Num(l), Val::Num(r)) => l <= r,
+                    (CompareOp::Greater, Val::Num(l), Val::Num(r)) => l > r,
+                    (CompareOp::GreaterEq, Val::Num(l), Val::Num(r)) => l >= r,
+                    (CompareOp::Less, Val::Str(l), Val::Str(r)) => l < r,
+                    (CompareOp::LessEq, Val::Str(l), Val::Str(r)) => l <= r,
+                    (CompareOp::Greater, Val::Str(l), Val::Str(r)) => l > r,
+                    (CompareOp::GreaterEq, Val::Str(l), Val::Str(r)) => l >= r,
+                    _ => {
+                        return Err(ExecError {
+                            pos: op_tok.range.start,
+                            kind: ExecErrorKind::InvalidCompareOp {
+                                op: *op,
+                                l_ty: prev_val.type_of(),
+                                r_ty: current_val.type_of(),
+                            },
+                        });
+                    }
+                };
+
+                if !result {
+                    return Ok(Val::Bool(false));
+                }
+
+                prev_val = current_val;
+            }
+            Ok(Val::Bool(true))
+        }
         Expr::Obj { props, .. } => {
             let mut obj = Obj {
                 props: HashMap::new(),
@@ -210,14 +245,12 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
             }),
         },
         Expr::FuncCall { callee, args, .. } => eval_func_call(scope, callee, args),
-        Expr::Lambda { params, body, .. } => {
-            Ok(Val::Func(Rc::new(Func {
-                id: Uuid::new_v4(),
-                params: params.clone(),
-                body: Rc::new(*body.clone()),
-                closure_scope: Rc::clone(scope),
-            })))
-        }
+        Expr::Lambda { params, body, .. } => Ok(Val::Func(Rc::new(Func {
+            id: Uuid::new_v4(),
+            params: params.clone(),
+            body: Rc::new(*body.clone()),
+            closure_scope: Rc::clone(scope),
+        }))),
     }
 }
 
@@ -333,16 +366,6 @@ fn eval_bin_op(
         (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
         (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
         (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l / r)),
-        (BinOp::Eq, l, r) => Ok(Val::Bool(l == r)),
-        (BinOp::NotEq, l, r) => Ok(Val::Bool(l != r)),
-        (BinOp::Less, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l < r)),
-        (BinOp::LessEq, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l <= r)),
-        (BinOp::Greater, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l > r)),
-        (BinOp::GreaterEq, Val::Num(l), Val::Num(r)) => Ok(Val::Bool(l >= r)),
-        (BinOp::Less, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l < r)),
-        (BinOp::LessEq, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l <= r)),
-        (BinOp::Greater, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l > r)),
-        (BinOp::GreaterEq, Val::Str(l), Val::Str(r)) => Ok(Val::Bool(l >= r)),
         (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
         (op, l, r) => Err(ExecError {
             pos: op_tok.range.start,
@@ -455,14 +478,36 @@ impl std::error::Error for ExecError {}
 
 #[derive(Debug, PartialEq)]
 pub enum ExecErrorKind {
-    InvalidCondition { cond_ty: Type },
-    InvalidUnaryOp { op: UnaryOp, val_ty: Type },
-    InvalidBinOp { op: BinOp, l_ty: Type, r_ty: Type },
-    InvalidPropAccess { obj_ty: Type },
-    UndefVar { name: String },
+    InvalidCondition {
+        cond_ty: Type,
+    },
+    InvalidUnaryOp {
+        op: UnaryOp,
+        val_ty: Type,
+    },
+    InvalidBinOp {
+        op: BinOp,
+        l_ty: Type,
+        r_ty: Type,
+    },
+    InvalidCompareOp {
+        op: CompareOp,
+        l_ty: Type,
+        r_ty: Type,
+    },
+    InvalidPropAccess {
+        obj_ty: Type,
+    },
+    UndefVar {
+        name: String,
+    },
     InvalidAssign,
-    InvalidCall { called_ty: Type },
-    InvalidMatchObj { matched_ty: Type },
+    InvalidCall {
+        called_ty: Type,
+    },
+    InvalidMatchObj {
+        matched_ty: Type,
+    },
     InvalidControlFlow,
 }
 
@@ -482,6 +527,16 @@ impl std::fmt::Display for ExecErrorKind {
                 write!(f, "invalid {op:?} on {val_ty:?} value")
             }
             ExecErrorKind::InvalidBinOp {
+                op,
+                l_ty: left_ty,
+                r_ty: right_ty,
+            } => {
+                write!(
+                    f,
+                    "invalid {op:?} between {left_ty:?} and {right_ty:?} values"
+                )
+            }
+            ExecErrorKind::InvalidCompareOp {
                 op,
                 l_ty: left_ty,
                 r_ty: right_ty,

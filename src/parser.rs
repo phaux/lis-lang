@@ -7,7 +7,7 @@ use std::{
 };
 
 use crate::{
-    ast::{BinOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
+    ast::{BinOp, CompareOp, Expr, Pat, Prog, Span, Stmt, UnaryOp},
     lexer::Lexer,
     token::{Keyword, Sigil, Token},
 };
@@ -570,6 +570,38 @@ impl<'a> Parser<'a> {
             let Some(op_token) = self.tokens.peek() else {
                 break;
             };
+
+            if let Some(op) = CompareOp::try_from_token(op_token) {
+                let next_prec = op.get_precedence();
+                if next_prec <= precedence {
+                    break;
+                }
+
+                let op_tok = self.tokens.next().unwrap();
+                let mut comparators = vec![(op, op_tok, self.parse_expr(next_prec)?)];
+
+                while let Some(op_token) = self.tokens.peek() {
+                    let Some(op) = CompareOp::try_from_token(op_token) else {
+                        break;
+                    };
+                    // All comparison operators have the same precedence
+                    let op_tok = self.tokens.next().unwrap();
+                    let right = self.parse_expr(next_prec)?;
+                    comparators.push((op, op_tok, right));
+                }
+
+                let end = comparators.last().unwrap().2.range.end;
+                left = Span {
+                    range: left.range.start..end,
+                    node: Expr::Compare {
+                        left: Box::new(left),
+                        comparators,
+                    },
+                };
+
+                continue;
+            }
+
             let Some(op) = BinOp::try_from_token(op_token) else {
                 break;
             };
@@ -577,6 +609,7 @@ impl<'a> Parser<'a> {
             if next_prec <= precedence {
                 break;
             }
+
             let op_tok = self.tokens.next().unwrap(); // Consume operator
             let right = self.parse_expr(next_prec)?;
             left = Span {
