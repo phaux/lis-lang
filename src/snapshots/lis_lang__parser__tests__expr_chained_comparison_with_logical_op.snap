@@ -39,65 +39,65 @@ Ok(
                             val: 0.0,
                         },
                     },
-                    ops: [
-                        Less,
-                        Less,
-                    ],
-                    op_toks: [
-                        Token {
-                            sigil: Less,
-                            range: Pos {
-                                offset: 2,
-                                line: 0,
-                                col: 2,
-                            }..Pos {
-                                offset: 3,
-                                line: 0,
-                                col: 3,
-                            },
-                        },
-                        Token {
-                            sigil: Less,
-                            range: Pos {
-                                offset: 6,
-                                line: 0,
-                                col: 6,
-                            }..Pos {
-                                offset: 7,
-                                line: 0,
-                                col: 7,
-                            },
-                        },
-                    ],
                     comparators: [
-                        Span {
-                            range: Pos {
-                                offset: 4,
-                                line: 0,
-                                col: 4,
-                            }..Pos {
-                                offset: 5,
-                                line: 0,
-                                col: 5,
+                        (
+                            Less,
+                            Token {
+                                sigil: Less,
+                                range: Pos {
+                                    offset: 2,
+                                    line: 0,
+                                    col: 2,
+                                }..Pos {
+                                    offset: 3,
+                                    line: 0,
+                                    col: 3,
+                                },
                             },
-                            node: Var {
-                                name: "x",
+                            Span {
+                                range: Pos {
+                                    offset: 4,
+                                    line: 0,
+                                    col: 4,
+                                }..Pos {
+                                    offset: 5,
+                                    line: 0,
+                                    col: 5,
+                                },
+                                node: Var {
+                                    name: "x",
+                                },
                             },
-                        },
-                        Span {
-                            range: Pos {
-                                offset: 8,
-                                line: 0,
-                                col: 8,
-                            }..Pos {
-                                offset: 10,
-                                line: 0,
-                                col: 10,
+                        ),
+                        (
+                            Less,
+                            Token {
+                                sigil: Less,
+                                range: Pos {
+                                    offset: 6,
+                                    line: 0,
+                                    col: 6,
+                                }..Pos {
+                                    offset: 7,
+                                    line: 0,
+                                    col: 7,
+                                },
                             },
-                            node: Num {
-                                val: 10.0,
+                            Span {
+                                range: Pos {
+                                    offset: 8,
+                                    line: 0,
+                                    col: 8,
+                                }..Pos {
+                                    offset: 10,
+                                    line: 0,
+                                    col: 10,
+                                },
+                                node: Num {
+                                    val: 10.0,
+                                },
                             },
-                        },
+                        ),
                     ],
                 },
             },
@@ -141,38 +141,36 @@ Ok(
                             name: "y",
                         },
                     },
-                    ops: [
-                        Eq,
-                    ],
-                    op_toks: [
-                        Token {
-                            sigil: EqEq,
-                            range: Pos {
-                                offset: 17,
-                                line: 0,
-                                col: 17,
-                            }..Pos {
-                                offset: 19,
-                                line: 0,
-                                col: 19,
-                            },
-                        },
-                    ],
                     comparators: [
-                        Span {
-                            range: Pos {
-                                offset: 20,
-                                line: 0,
-                                col: 20,
-                            }..Pos {
-                                offset: 22,
-                                line: 0,
-                                col: 22,
+                        (
+                            Eq,
+                            Token {
+                                sigil: EqEq,
+                                range: Pos {
+                                    offset: 17,
+                                    line: 0,
+                                    col: 17,
+                                }..Pos {
+                                    offset: 19,
+                                    line: 0,
+                                    col: 19,
+                                },
                             },
-                            node: Num {
-                                val: 20.0,
+                            Span {
+                                range: Pos {
+                                    offset: 20,
+                                    line: 0,
+                                    col: 20,
+                                }..Pos {
+                                    offset: 22,
+                                    line: 0,
+                                    col: 22,
+                                },
+                                node: Num {
+                                    val: 20.0,
+                                },
                             },
-                        },
+                        ),
                     ],
                 },
             },

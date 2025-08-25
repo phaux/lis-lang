@@ -28,173 +28,181 @@ Ok(
                     name: "a",
                 },
             },
-            ops: [
-                Less,
-                LessEq,
-                Greater,
-                GreaterEq,
-                Eq,
-                NotEq,
-            ],
-            op_toks: [
-                Token {
-                    sigil: Less,
-                    range: Pos {
-                        offset: 2,
-                        line: 0,
-                        col: 2,
-                    }..Pos {
-                        offset: 3,
-                        line: 0,
-                        col: 3,
-                    },
-                },
-                Token {
-                    sigil: LessEq,
-                    range: Pos {
-                        offset: 6,
-                        line: 0,
-                        col: 6,
-                    }..Pos {
-                        offset: 8,
-                        line: 0,
-                        col: 8,
-                    },
-                },
-                Token {
-                    sigil: Greater,
-                    range: Pos {
-                        offset: 11,
-                        line: 0,
-                        col: 11,
-                    }..Pos {
-                        offset: 12,
-                        line: 0,
-                        col: 12,
-                    },
-                },
-                Token {
-                    sigil: GreaterEq,
-                    range: Pos {
-                        offset: 15,
-                        line: 0,
-                        col: 15,
-                    }..Pos {
-                        offset: 17,
-                        line: 0,
-                        col: 17,
-                    },
-                },
-                Token {
-                    sigil: EqEq,
-                    range: Pos {
-                        offset: 20,
-                        line: 0,
-                        col: 20,
-                    }..Pos {
-                        offset: 22,
-                        line: 0,
-                        col: 22,
-                    },
-                },
-                Token {
-                    sigil: BangEq,
-                    range: Pos {
-                        offset: 25,
-                        line: 0,
-                        col: 25,
-                    }..Pos {
-                        offset: 27,
-                        line: 0,
-                        col: 27,
-                    },
-                },
-            ],
             comparators: [
-                Span {
-                    range: Pos {
-                        offset: 4,
-                        line: 0,
-                        col: 4,
-                    }..Pos {
-                        offset: 5,
-                        line: 0,
-                        col: 5,
+                (
+                    Less,
+                    Token {
+                        sigil: Less,
+                        range: Pos {
+                            offset: 2,
+                            line: 0,
+                            col: 2,
+                        }..Pos {
+                            offset: 3,
+                            line: 0,
+                            col: 3,
+                        },
                     },
-                    node: Var {
-                        name: "b",
+                    Span {
+                        range: Pos {
+                            offset: 4,
+                            line: 0,
+                            col: 4,
+                        }..Pos {
+                            offset: 5,
+                            line: 0,
+                            col: 5,
+                        },
+                        node: Var {
+                            name: "b",
+                        },
                     },
-                },
-                Span {
-                    range: Pos {
-                        offset: 9,
-                        line: 0,
-                        col: 9,
-                    }..Pos {
-                        offset: 10,
-                        line: 0,
-                        col: 10,
+                ),
+                (
+                    LessEq,
+                    Token {
+                        sigil: LessEq,
+                        range: Pos {
+                            offset: 6,
+                            line: 0,
+                            col: 6,
+                        }..Pos {
+                            offset: 8,
+                            line: 0,
+                            col: 8,
+                        },
                     },
-                    node: Var {
-                        name: "c",
+                    Span {
+                        range: Pos {
+                            offset: 9,
+                            line: 0,
+                            col: 9,
+                        }..Pos {
+                            offset: 10,
+                            line: 0,
+                            col: 10,
+                        },
+                        node: Var {
+                            name: "c",
+                        },
                     },
-                },
-                Span {
-                    range: Pos {
-                        offset: 13,
-                        line: 0,
-                        col: 13,
-                    }..Pos {
-                        offset: 14,
-                        line: 0,
-                        col: 14,
+                ),
+                (
+                    Greater,
+                    Token {
+                        sigil: Greater,
+                        range: Pos {
+                            offset: 11,
+                            line: 0,
+                            col: 11,
+                        }..Pos {
+                            offset: 12,
+                            line: 0,
+                            col: 12,
+                        },
                     },
-                    node: Var {
-                        name: "d",
+                    Span {
+                        range: Pos {
+                            offset: 13,
+                            line: 0,
+                            col: 13,
+                        }..Pos {
+                            offset: 14,
+                            line: 0,
+                            col: 14,
+                        },
+                        node: Var {
+                            name: "d",
+                        },
                     },
-                },
-                Span {
-                    range: Pos {
-                        offset: 18,
-                        line: 0,
-                        col: 18,
-                    }..Pos {
-                        offset: 19,
-                        line: 0,
-                        col: 19,
+                ),
+                (
+                    GreaterEq,
+                    Token {
+                        sigil: GreaterEq,
+                        range: Pos {
+                            offset: 15,
+                            line: 0,
+                            col: 15,
+                        }..Pos {
+                            offset: 17,
+                            line: 0,
+                            col: 17,
+                        },
                     },
-                    node: Var {
-                        name: "e",
+                    Span {
+                        range: Pos {
+                            offset: 18,
+                            line: 0,
+                            col: 18,
+                        }..Pos {
+                            offset: 19,
+                            line: 0,
+                            col: 19,
+                        },
+                        node: Var {
+                            name: "e",
+                        },
                     },
-                },
-                Span {
-                    range: Pos {
-                        offset: 23,
-                        line: 0,
-                        col: 23,
-                    }..Pos {
-                        offset: 24,
-                        line: 0,
-                        col: 24,
+                ),
+                (
+                    Eq,
+                    Token {
+                        sigil: EqEq,
+                        range: Pos {
+                            offset: 20,
+                            line: 0,
+                            col: 20,
+                        }..Pos {
+                            offset: 22,
+                            line: 0,
+                            col: 22,
+                        },
                     },
-                    node: Var {
-                        name: "f",
+                    Span {
+                        range: Pos {
+                            offset: 23,
+                            line: 0,
+                            col: 23,
+                        }..Pos {
+                            offset: 24,
+                            line: 0,
+                            col: 24,
+                        },
+                        node: Var {
+                            name: "f",
+                        },
                     },
-                },
-                Span {
-                    range: Pos {
-                        offset: 28,
-                        line: 0,
-                        col: 28,
-                    }..Pos {
-                        offset: 29,
-                        line: 0,
-                        col: 29,
+                ),
+                (
+                    NotEq,
+                    Token {
+                        sigil: BangEq,
+                        range: Pos {
+                            offset: 25,
+                            line: 0,
+                            col: 25,
+                        }..Pos {
+                            offset: 27,
+                            line: 0,
+                            col: 27,
+                        },
                     },
-                    node: Var {
-                        name: "g",
+                    Span {
+                        range: Pos {
+                            offset: 28,
+                            line: 0,
+                            col: 28,
+                        }..Pos {
+                            offset: 29,
+                            line: 0,
+                            col: 29,
+                        },
+                        node: Var {
+                            name: "g",
+                        },
                     },
-                },
+                ),
             ],
         },
     },
