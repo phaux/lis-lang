@@ -228,10 +228,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_default_wrapper(
-        &mut self,
-        mut pat: Span<Pattern>,
-    ) -> Result<Span<Pattern>, ParseError> {
+    fn parse_default_value(&mut self, mut pat: Span<Pattern>) -> Result<Span<Pattern>, ParseError> {
         if let Some(eq_tok) = self.tokens.next_if(|t| t.node == Token::Eq) {
             let default = Box::new(self.parse_expr(0)?);
             pat = Span {
@@ -286,7 +283,7 @@ impl<'a> Parser<'a> {
             };
 
             // Parse optional property value pattern
-            let pat_without_default = if self.tokens.next_if(|t| t.node == Token::Colon).is_some() {
+            let pat = if self.tokens.next_if(|t| t.node == Token::Colon).is_some() {
                 self.parse_pattern()?
             } else {
                 // No colon - Parse as object property shorthand.
@@ -298,7 +295,7 @@ impl<'a> Parser<'a> {
                 }
             };
 
-            let pat = self.parse_default_wrapper(pat_without_default)?;
+            let pat = self.parse_default_value(pat)?;
 
             props.push((key, pat));
             needs_separator = true;
@@ -371,8 +368,9 @@ impl<'a> Parser<'a> {
             }
 
             // Parse parameter pattern
-            let pat_without_default = self.parse_pattern()?;
-            params.push(self.parse_default_wrapper(pat_without_default)?);
+            let pat = self.parse_pattern()?;
+            let pat = self.parse_default_value(pat)?;
+            params.push(pat);
             needs_separator = true;
         };
 
@@ -876,8 +874,9 @@ impl<'a> Parser<'a> {
             }
 
             // Parse parameter pattern
-            let pat_without_default = self.parse_pattern()?;
-            params.push(self.parse_default_wrapper(pat_without_default)?);
+            let pat = self.parse_pattern()?;
+            let pat = self.parse_default_value(pat)?;
+            params.push(pat);
             needs_separator = true;
         };
 
