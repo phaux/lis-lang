@@ -74,6 +74,92 @@ fn if_non_bool_cond() {
 }
 
 #[test]
+fn func_call_pat_obj() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        fn foo({x, y}) {
+            return x + y;
+        }
+        return foo({x: 1, y: 2});
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(3.0));
+}
+
+#[test]
+fn func_call_pat_obj_nested() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        fn foo({a: {b: {c}}}) {
+            return c;
+        }
+        return foo({a: {b: {c: 100}}});
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(100.0));
+}
+
+#[test]
+fn func_call_pat_obj_rename_default() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        fn foo({a: x, b: y = 2}) {
+            return x + y;
+        }
+        return foo({a: 1});
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(3.0));
+}
+
+#[test]
+fn lambda_call_pat_obj() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        return (|{x, y}| x + y)({x: 1, y: 2});
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(3.0));
+}
+
+#[test]
+fn func_call_pat_obj_non_obj() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        fn foo({x}) {}
+        foo(1);
+        ",
+    );
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos {
+                line: 1,
+                col: 15,
+                offset: 16,
+            },
+            kind: ExecErrorKind::InvalidMatchObj {
+                matched_ty: Type::Num
+            },
+        })
+    ));
+}
+
+#[test]
 fn lambda_closure() {
     let scope = Rc::new(Scope::root());
     let result = exec_str(

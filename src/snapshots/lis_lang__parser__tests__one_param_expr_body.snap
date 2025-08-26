@@ -37,7 +37,9 @@ Ok(
                         line: 0,
                         col: 2,
                     },
-                    node: "x",
+                    node: Ident {
+                        name: "x",
+                    },
                 },
             ],
             pipe_r: Span {

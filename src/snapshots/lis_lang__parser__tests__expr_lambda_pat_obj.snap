@@ -1,0 +1,245 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        range: Pos {
+            offset: 0,
+            line: 0,
+            col: 0,
+        }..Pos {
+            offset: 18,
+            line: 0,
+            col: 18,
+        },
+        node: Lambda {
+            pipe_l: Span {
+                range: Pos {
+                    offset: 0,
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    offset: 1,
+                    line: 0,
+                    col: 1,
+                },
+                node: (),
+            },
+            params: [
+                Span {
+                    range: Pos {
+                        offset: 1,
+                        line: 0,
+                        col: 1,
+                    }..Pos {
+                        offset: 7,
+                        line: 0,
+                        col: 7,
+                    },
+                    node: Obj {
+                        brace_l: Span {
+                            range: Pos {
+                                offset: 1,
+                                line: 0,
+                                col: 1,
+                            }..Pos {
+                                offset: 2,
+                                line: 0,
+                                col: 2,
+                            },
+                            node: (),
+                        },
+                        props: [
+                            (
+                                Span {
+                                    range: Pos {
+                                        offset: 2,
+                                        line: 0,
+                                        col: 2,
+                                    }..Pos {
+                                        offset: 3,
+                                        line: 0,
+                                        col: 3,
+                                    },
+                                    node: "x",
+                                },
+                                Span {
+                                    range: Pos {
+                                        offset: 2,
+                                        line: 0,
+                                        col: 2,
+                                    }..Pos {
+                                        offset: 3,
+                                        line: 0,
+                                        col: 3,
+                                    },
+                                    node: Ident {
+                                        name: "x",
+                                    },
+                                },
+                            ),
+                            (
+                                Span {
+                                    range: Pos {
+                                        offset: 5,
+                                        line: 0,
+                                        col: 5,
+                                    }..Pos {
+                                        offset: 6,
+                                        line: 0,
+                                        col: 6,
+                                    },
+                                    node: "y",
+                                },
+                                Span {
+                                    range: Pos {
+                                        offset: 5,
+                                        line: 0,
+                                        col: 5,
+                                    }..Pos {
+                                        offset: 6,
+                                        line: 0,
+                                        col: 6,
+                                    },
+                                    node: Ident {
+                                        name: "y",
+                                    },
+                                },
+                            ),
+                        ],
+                        brace_r: Span {
+                            range: Pos {
+                                offset: 6,
+                                line: 0,
+                                col: 6,
+                            }..Pos {
+                                offset: 7,
+                                line: 0,
+                                col: 7,
+                            },
+                            node: (),
+                        },
+                    },
+                },
+            ],
+            pipe_r: Span {
+                range: Pos {
+                    offset: 7,
+                    line: 0,
+                    col: 7,
+                }..Pos {
+                    offset: 8,
+                    line: 0,
+                    col: 8,
+                },
+                node: (),
+            },
+            body: Span {
+                range: Pos {
+                    offset: 9,
+                    line: 0,
+                    col: 9,
+                }..Pos {
+                    offset: 18,
+                    line: 0,
+                    col: 18,
+                },
+                node: Block {
+                    brace_l: Span {
+                        range: Pos {
+                            offset: 9,
+                            line: 0,
+                            col: 9,
+                        }..Pos {
+                            offset: 10,
+                            line: 0,
+                            col: 10,
+                        },
+                        node: (),
+                    },
+                    stmts: [
+                        Span {
+                            range: Pos {
+                                offset: 11,
+                                line: 0,
+                                col: 11,
+                            }..Pos {
+                                offset: 16,
+                                line: 0,
+                                col: 16,
+                            },
+                            node: Expr {
+                                expr: Span {
+                                    range: Pos {
+                                        offset: 11,
+                                        line: 0,
+                                        col: 11,
+                                    }..Pos {
+                                        offset: 16,
+                                        line: 0,
+                                        col: 16,
+                                    },
+                                    node: BinOp {
+                                        left: Span {
+                                            range: Pos {
+                                                offset: 11,
+                                                line: 0,
+                                                col: 11,
+                                            }..Pos {
+                                                offset: 12,
+                                                line: 0,
+                                                col: 12,
+                                            },
+                                            node: Var {
+                                                name: "x",
+                                            },
+                                        },
+                                        op: Span {
+                                            range: Pos {
+                                                offset: 13,
+                                                line: 0,
+                                                col: 13,
+                                            }..Pos {
+                                                offset: 14,
+                                                line: 0,
+                                                col: 14,
+                                            },
+                                            node: Add,
+                                        },
+                                        right: Span {
+                                            range: Pos {
+                                                offset: 15,
+                                                line: 0,
+                                                col: 15,
+                                            }..Pos {
+                                                offset: 16,
+                                                line: 0,
+                                                col: 16,
+                                            },
+                                            node: Var {
+                                                name: "y",
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    ],
+                    brace_r: Span {
+                        range: Pos {
+                            offset: 17,
+                            line: 0,
+                            col: 17,
+                        }..Pos {
+                            offset: 18,
+                            line: 0,
+                            col: 18,
+                        },
+                        node: (),
+                    },
+                },
+            },
+        },
+    },
+)
