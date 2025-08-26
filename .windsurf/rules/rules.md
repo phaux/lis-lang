@@ -10,10 +10,9 @@ trigger: always_on
   In other words, try to always put the function definition after all its usages.
 - Prefer flat filesystem structure for source files. Avoid deeply nested directories.
 
-## Testing
+## Workflow
 
-- Always run `cargo test` and `cargo clippy` after making changes.
-- If snapshots changed, use `cargo insta accept` to update them.
-- You can run tests with `INSTA_UPDATE=always` to automatically update snapshots.
+- Run tests with `INSTA_UPDATE=always cargo test` after making changes.
+- Check code with `cargo clippy` before finishing work.
 - Your job is done only after all tests pass.
-- Remember to format code with `cargo fmt` after you're done.
+- Format code with `cargo fmt` after you're done.
