@@ -13,7 +13,7 @@ Ok(
             line: 0,
             col: 29,
         },
-        node: Compare {
+        node: CompareChain {
             left: Span {
                 range: Pos {
                     offset: 0,

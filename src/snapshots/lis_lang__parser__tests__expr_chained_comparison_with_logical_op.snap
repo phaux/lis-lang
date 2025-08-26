@@ -24,7 +24,7 @@ Ok(
                     line: 0,
                     col: 10,
                 },
-                node: Compare {
+                node: CompareChain {
                     left: Span {
                         range: Pos {
                             offset: 0,
@@ -121,7 +121,7 @@ Ok(
                     line: 0,
                     col: 22,
                 },
-                node: Compare {
+                node: CompareChain {
                     left: Span {
                         range: Pos {
                             offset: 15,
