@@ -349,3 +349,27 @@ fn expr_lambda() {
     let ast = Parser::new("|x y| x").parse_expr(0);
     insta::assert_debug_snapshot!("missing_comma", ast);
 }
+
+#[test]
+fn stmt_func_decl_pat_obj() {
+    let ast = Parser::new("fn foo({x, y}) {}").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_func_decl_pat_obj_nested() {
+    let ast = Parser::new("fn foo({x: {y}}) {}").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_func_decl_pat_obj_rename_default() {
+    let ast = Parser::new("fn foo({x: y=1}) {}").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn expr_lambda_pat_obj() {
+    let ast = Parser::new("|{x, y}| { x + y }").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}

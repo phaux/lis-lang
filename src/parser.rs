@@ -362,19 +362,8 @@ impl<'a> Parser<'a> {
                 });
             }
 
-            // Parse parameter name
-            match self.tokens.next() {
-                Some(Span {
-                    node: Token::Ident { name },
-                    range,
-                }) => params.push(Span { range, node: name }),
-                tok => {
-                    return Err(ParseError {
-                        expected: "parameter name identifier",
-                        found: tok,
-                    });
-                }
-            }
+            // Parse parameter pattern
+            params.push(self.parse_pattern()?);
             needs_separator = true;
         };
 
@@ -877,19 +866,8 @@ impl<'a> Parser<'a> {
                 });
             }
 
-            // Parse parameter name
-            match self.tokens.next() {
-                Some(Span {
-                    node: Token::Ident { name },
-                    range,
-                }) => params.push(Span { range, node: name }),
-                tok => {
-                    return Err(ParseError {
-                        expected: "parameter name identifier",
-                        found: tok,
-                    });
-                }
-            }
+            // Parse parameter pattern
+            params.push(self.parse_pattern()?);
             needs_separator = true;
         };
 

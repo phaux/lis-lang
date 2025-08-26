@@ -48,7 +48,7 @@ pub enum Stmt {
         keyword: Span<()>,
         name: Span<String>,
         param_paren_l: Span<()>,
-        params: Vec<Span<String>>,
+        params: Vec<Span<Pattern>>,
         param_paren_r: Span<()>,
         body: Box<Span<Stmt>>,
     },
@@ -166,7 +166,7 @@ pub enum Expr {
     },
     Lambda {
         pipe_l: Span<()>,
-        params: Vec<Span<String>>,
+        params: Vec<Span<Pattern>>,
         pipe_r: Span<()>,
         body: Box<Span<Stmt>>,
     },

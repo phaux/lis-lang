@@ -61,7 +61,9 @@ Ok(
                         line: 0,
                         col: 8,
                     },
-                    node: "a",
+                    node: Ident {
+                        name: "a",
+                    },
                 },
                 Span {
                     range: Pos {
@@ -73,7 +75,9 @@ Ok(
                         line: 0,
                         col: 11,
                     },
-                    node: "b",
+                    node: Ident {
+                        name: "b",
+                    },
                 },
             ],
             param_paren_r: Span {

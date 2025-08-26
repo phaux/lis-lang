@@ -37,7 +37,9 @@ Ok(
                         line: 0,
                         col: 2,
                     },
-                    node: "x",
+                    node: Ident {
+                        name: "x",
+                    },
                 },
                 Span {
                     range: Pos {
@@ -49,7 +51,9 @@ Ok(
                         line: 0,
                         col: 5,
                     },
-                    node: "y",
+                    node: Ident {
+                        name: "y",
+                    },
                 },
             ],
             pipe_r: Span {

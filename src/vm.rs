@@ -277,22 +277,22 @@ fn eval_func_call(
     }
 
     // Create a new scope for the body of the function
-    let func_scope = callee_val.closure_scope.new_child();
+    let func_scope = Rc::new(callee_val.closure_scope.new_child());
 
     // Populate the scope with the parameters
-    for (idx, name) in callee_val.params.iter().enumerate() {
+    for (idx, pat) in callee_val.params.iter().enumerate() {
         // For each parameter, either use the provided argument or default to Nil
         let val = arg_vals.get(idx).cloned().unwrap_or(Val::Nil);
-        func_scope.declare(&name.node, val);
+        match_pattern(&func_scope, pat, val)?;
     }
 
     // Execute the function body
     let body_stmt = &callee_val.body;
     if let Stmt::Expr { expr } = &body_stmt.node {
         // This is a lambda with an expression body. Evaluate and return.
-        return eval_expr(&Rc::new(func_scope), expr);
+        return eval_expr(&func_scope, expr);
     }
-    match exec_stmt(&Rc::new(func_scope), body_stmt)? {
+    match exec_stmt(&func_scope, body_stmt)? {
         ExecResult::Return(val) => Ok(val),
         ExecResult::Break | ExecResult::Continue => {
             // Break or continue used inside a function
