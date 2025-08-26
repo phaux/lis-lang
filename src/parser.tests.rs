@@ -373,3 +373,15 @@ fn expr_lambda_pat_obj() {
     let ast = Parser::new("|{x, y}| { x + y }").parse_expr(0);
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn stmt_func_decl_default_arg() {
+    let ast = Parser::new("fn foo(a = 1, b = true) {}").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}
+
+#[test]
+fn stmt_let_default_error() {
+    let ast = Parser::new("let a = 1 = 2;").parse_stmt();
+    insta::assert_debug_snapshot!(ast);
+}

@@ -1,0 +1,110 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        range: Pos {
+            offset: 0,
+            line: 0,
+            col: 0,
+        }..Pos {
+            offset: 13,
+            line: 0,
+            col: 13,
+        },
+        node: Let {
+            keyword: Span {
+                range: Pos {
+                    offset: 0,
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    offset: 3,
+                    line: 0,
+                    col: 3,
+                },
+                node: (),
+            },
+            pat: Span {
+                range: Pos {
+                    offset: 4,
+                    line: 0,
+                    col: 4,
+                }..Pos {
+                    offset: 5,
+                    line: 0,
+                    col: 5,
+                },
+                node: Ident {
+                    name: "a",
+                },
+            },
+            eq_tok: Span {
+                range: Pos {
+                    offset: 6,
+                    line: 0,
+                    col: 6,
+                }..Pos {
+                    offset: 7,
+                    line: 0,
+                    col: 7,
+                },
+                node: (),
+            },
+            init: Span {
+                range: Pos {
+                    offset: 8,
+                    line: 0,
+                    col: 8,
+                }..Pos {
+                    offset: 13,
+                    line: 0,
+                    col: 13,
+                },
+                node: Assign {
+                    place: Span {
+                        range: Pos {
+                            offset: 8,
+                            line: 0,
+                            col: 8,
+                        }..Pos {
+                            offset: 9,
+                            line: 0,
+                            col: 9,
+                        },
+                        node: Num {
+                            val: 1.0,
+                        },
+                    },
+                    eq_tok: Span {
+                        range: Pos {
+                            offset: 10,
+                            line: 0,
+                            col: 10,
+                        }..Pos {
+                            offset: 11,
+                            line: 0,
+                            col: 11,
+                        },
+                        node: (),
+                    },
+                    expr: Span {
+                        range: Pos {
+                            offset: 12,
+                            line: 0,
+                            col: 12,
+                        }..Pos {
+                            offset: 13,
+                            line: 0,
+                            col: 13,
+                        },
+                        node: Num {
+                            val: 2.0,
+                        },
+                    },
+                },
+            },
+        },
+    },
+)

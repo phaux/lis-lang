@@ -74,6 +74,34 @@ fn if_non_bool_cond() {
 }
 
 #[test]
+fn func_call_default_args() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(
+        &scope,
+        r"
+        fn add(a, b = 2, c = 3) {
+            return a + b + c;
+        }
+        return add(1, 3);
+        ",
+    )
+    .unwrap();
+    assert_eq!(result, Val::Num(7.0));
+
+    let result2 = exec_str(
+        &scope,
+        r"
+        fn add(a, b = 2, c = 3) {
+            return a + b + c;
+        }
+        return add(1);
+        ",
+    )
+    .unwrap();
+    assert_eq!(result2, Val::Num(6.0));
+}
+
+#[test]
 fn func_call_pat_obj() {
     let scope = Rc::new(Scope::root());
     let result = exec_str(

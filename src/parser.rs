@@ -228,6 +228,25 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_default_wrapper(
+        &mut self,
+        mut pat: Span<Pattern>,
+    ) -> Result<Span<Pattern>, ParseError> {
+        if let Some(eq_tok) = self.tokens.next_if(|t| t.node == Token::Eq) {
+            let default = Box::new(self.parse_expr(0)?);
+            pat = Span {
+                range: pat.range.start..default.range.end,
+                node: Pattern::Default {
+                    pat: Box::new(pat),
+                    eq_tok: eq_tok.without_node(),
+                    default,
+                },
+            };
+        }
+
+        Ok(pat)
+    }
+
     fn parse_obj_pat(&mut self, brace_l: Span<()>) -> Result<Span<Pattern>, ParseError> {
         let mut props = Vec::new();
         let mut needs_separator = false;
@@ -267,7 +286,7 @@ impl<'a> Parser<'a> {
             };
 
             // Parse optional property value pattern
-            let mut pat = if self.tokens.next_if(|t| t.node == Token::Colon).is_some() {
+            let pat_without_default = if self.tokens.next_if(|t| t.node == Token::Colon).is_some() {
                 self.parse_pattern()?
             } else {
                 // No colon - Parse as object property shorthand.
@@ -279,18 +298,7 @@ impl<'a> Parser<'a> {
                 }
             };
 
-            // Check for default value after pattern
-            if let Some(eq_tok) = self.tokens.next_if(|t| t.node == Token::Eq) {
-                let default = Box::new(self.parse_expr(0)?);
-                pat = Span {
-                    range: pat.range.start..default.range.end,
-                    node: Pattern::Default {
-                        pat: Box::new(pat),
-                        eq_tok: eq_tok.without_node(),
-                        default,
-                    },
-                };
-            }
+            let pat = self.parse_default_wrapper(pat_without_default)?;
 
             props.push((key, pat));
             needs_separator = true;
@@ -363,7 +371,8 @@ impl<'a> Parser<'a> {
             }
 
             // Parse parameter pattern
-            params.push(self.parse_pattern()?);
+            let pat_without_default = self.parse_pattern()?;
+            params.push(self.parse_default_wrapper(pat_without_default)?);
             needs_separator = true;
         };
 
@@ -867,7 +876,8 @@ impl<'a> Parser<'a> {
             }
 
             // Parse parameter pattern
-            params.push(self.parse_pattern()?);
+            let pat_without_default = self.parse_pattern()?;
+            params.push(self.parse_default_wrapper(pat_without_default)?);
             needs_separator = true;
         };
 
