@@ -32,14 +32,6 @@ pub enum Stmt {
         stmts: Vec<Span<Stmt>>,
         brace_r: Span<()>,
     },
-    If {
-        keyword: Span<()>,
-        condition: Box<Span<Expr>>,
-        then_keyword: Span<()>,
-        cons_branch: Box<Span<Stmt>>,
-        else_keyword: Option<Span<()>>,
-        alt_branch: Option<Box<Span<Stmt>>>,
-    },
     Return {
         keyword: Span<()>,
         expr: Option<Box<Span<Expr>>>,
@@ -80,18 +72,6 @@ impl Stmt {
             | Stmt::Continue { .. } => true,
 
             Stmt::Block { .. } | Stmt::FuncDecl { .. } => false,
-
-            Stmt::If {
-                cons_branch,
-                alt_branch,
-                ..
-            } => {
-                if let Some(alt_branch) = alt_branch {
-                    alt_branch.node.needs_separator()
-                } else {
-                    cons_branch.node.needs_separator()
-                }
-            }
 
             Stmt::While { body, .. } => body.node.needs_separator(),
         }
@@ -169,6 +149,20 @@ pub enum Expr {
         params: Vec<Span<Pattern>>,
         pipe_r: Span<()>,
         body: Box<Span<Stmt>>,
+    },
+    DoBlock {
+        keyword: Span<()>,
+        brace_l: Span<()>,
+        stmts: Vec<Span<Stmt>>,
+        brace_r: Span<()>,
+    },
+    If {
+        keyword: Span<()>,
+        condition: Box<Span<Expr>>,
+        then_keyword: Span<()>,
+        cons_branch: Box<Span<Expr>>,
+        else_keyword: Option<Span<()>>,
+        alt_branch: Option<Box<Span<Expr>>>,
     },
 }
 

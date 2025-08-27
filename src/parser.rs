@@ -95,7 +95,6 @@ impl<'a> Parser<'a> {
                 Token::Keyword(Keyword::Let) => return self.parse_let_stmt(),
                 Token::Keyword(Keyword::Fn) => return self.parse_func_decl(),
                 Token::Keyword(Keyword::Print) => return self.parse_print_stmt(),
-                Token::Keyword(Keyword::If) => return self.parse_if_stmt(),
                 Token::Keyword(Keyword::While) => return self.parse_while_stmt(),
                 Token::Keyword(Keyword::Return) => return self.parse_return_stmt(),
                 Token::Keyword(Keyword::Break) => {
@@ -447,54 +446,6 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_if_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
-        // Consume 'if' keyword
-        let keyword = self.tokens.next().unwrap().without_node();
-
-        // Parse condition
-        let condition = Box::new(self.parse_expr(0)?);
-
-        // Expect 'then'
-        let then_keyword = match self.tokens.next() {
-            Some(Span {
-                node: Token::Keyword(Keyword::Then),
-                range,
-            }) => Span { range, node: () },
-            tok => {
-                return Err(ParseError {
-                    expected: "then keyword of if statement",
-                    found: tok,
-                });
-            }
-        };
-
-        // Parse consequent branch
-        let cons_branch = Box::new(self.parse_stmt()?);
-
-        // Parse optional alternate branch
-        let (else_keyword, alt_branch) = match self
-            .tokens
-            .next_if(|t| t.node == Token::Keyword(Keyword::Else))
-        {
-            Some(tok) => (Some(tok.without_node()), Some(Box::new(self.parse_stmt()?))),
-            None => (None, None),
-        };
-
-        let end_node = alt_branch.as_ref().unwrap_or(&cons_branch);
-
-        Ok(Span {
-            range: keyword.range.start..end_node.range.end,
-            node: Stmt::If {
-                keyword,
-                condition,
-                then_keyword,
-                cons_branch,
-                else_keyword,
-                alt_branch,
-            },
-        })
-    }
-
     fn parse_while_stmt(&mut self) -> Result<Span<Stmt>, ParseError> {
         // Consume 'while' keyword
         let keyword = self.tokens.next().unwrap().without_node();
@@ -648,6 +599,14 @@ impl<'a> Parser<'a> {
             // Handle lambda expression
             if tok.node == Token::Pipe {
                 return self.parse_lambda(tok.without_node());
+            }
+
+            if let Token::Keyword(Keyword::Do) = tok.node {
+                return self.parse_do_expr(tok.without_node());
+            }
+
+            if let Token::Keyword(Keyword::If) = tok.node {
+                return self.parse_if_expr(tok.without_node());
             }
 
             // Handle parenthesized expression
@@ -890,6 +849,110 @@ impl<'a> Parser<'a> {
                 params,
                 pipe_r,
                 body: Box::new(body),
+            },
+        })
+    }
+
+    fn parse_do_expr(&mut self, keyword: Span<()>) -> Result<Span<Expr>, ParseError> {
+        // Expect opening brace
+        let brace_l = match self.tokens.next() {
+            Some(Span {
+                node: Token::CurlyL,
+                range,
+            }) => Span { range, node: () },
+            tok => {
+                return Err(ParseError {
+                    expected: "opening brace of do expression",
+                    found: tok,
+                });
+            }
+        };
+
+        // Parse a list of statements
+        let mut stmts = Vec::new();
+        let mut needs_separator = false;
+        let brace_r = loop {
+            // Always break on closing brace
+            if let Some(tok) = self.tokens.next_if(|t| t.node == Token::CurlyR) {
+                break tok.without_node();
+            }
+
+            // If needs separator - repeat on semicolon or fail
+            if needs_separator {
+                let tok = self.tokens.next();
+                if let Some(tok) = &tok
+                    && tok.node == Token::Semi
+                {
+                    needs_separator = false;
+                    continue;
+                }
+                return Err(ParseError {
+                    expected: "semicolon or closing brace of do expression",
+                    found: tok,
+                });
+            }
+
+            // Parse statement
+            let stmt = self.parse_stmt()?;
+            needs_separator = stmt.node.needs_separator();
+            stmts.push(stmt);
+        };
+
+        Ok(Span {
+            range: keyword.range.start..brace_r.range.end,
+            node: Expr::DoBlock {
+                keyword,
+                brace_l,
+                stmts,
+                brace_r,
+            },
+        })
+    }
+
+    fn parse_if_expr(&mut self, keyword: Span<()>) -> Result<Span<Expr>, ParseError> {
+        // Parse condition
+        let condition = Box::new(self.parse_expr(0)?);
+
+        // Expect 'then'
+        let then_keyword = match self.tokens.next() {
+            Some(Span {
+                node: Token::Keyword(Keyword::Then),
+                range,
+            }) => Span { range, node: () },
+            tok => {
+                return Err(ParseError {
+                    expected: "then keyword of if expression",
+                    found: tok,
+                });
+            }
+        };
+
+        // Parse consequent branch
+        let cons_branch = Box::new(self.parse_expr(0)?);
+
+        // Parse optional alternate branch
+        let (else_keyword, alt_branch) = match self
+            .tokens
+            .next_if(|t| t.node == Token::Keyword(Keyword::Else))
+        {
+            Some(tok) => (
+                Some(tok.without_node()),
+                Some(Box::new(self.parse_expr(0)?)),
+            ),
+            None => (None, None),
+        };
+
+        let end_node = alt_branch.as_ref().unwrap_or(&cons_branch);
+
+        Ok(Span {
+            range: keyword.range.start..end_node.range.end,
+            node: Expr::If {
+                keyword,
+                condition,
+                then_keyword,
+                cons_branch,
+                else_keyword,
+                alt_branch,
             },
         })
     }

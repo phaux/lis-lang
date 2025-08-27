@@ -2,97 +2,24 @@
 source: src/parser.tests.rs
 expression: ast
 ---
-Ok(
-    Span {
-        range: Pos {
-            offset: 0,
-            line: 0,
-            col: 0,
-        }..Pos {
-            offset: 17,
-            line: 0,
-            col: 17,
-        },
-        node: If {
-            keyword: Span {
-                range: Pos {
-                    offset: 0,
-                    line: 0,
-                    col: 0,
-                }..Pos {
-                    offset: 2,
-                    line: 0,
-                    col: 2,
-                },
-                node: (),
-            },
-            condition: Span {
-                range: Pos {
-                    offset: 3,
-                    line: 0,
-                    col: 3,
-                }..Pos {
-                    offset: 4,
-                    line: 0,
-                    col: 4,
-                },
-                node: Num {
-                    val: 1.0,
-                },
-            },
-            then_keyword: Span {
-                range: Pos {
-                    offset: 5,
-                    line: 0,
-                    col: 5,
-                }..Pos {
-                    offset: 9,
-                    line: 0,
-                    col: 9,
-                },
-                node: (),
-            },
-            cons_branch: Span {
+Err(
+    ParseError {
+        expected: "expression",
+        found: Some(
+            Span {
                 range: Pos {
                     offset: 10,
                     line: 0,
                     col: 10,
                 }..Pos {
-                    offset: 17,
+                    offset: 15,
                     line: 0,
-                    col: 17,
+                    col: 15,
                 },
-                node: Print {
-                    keyword: Span {
-                        range: Pos {
-                            offset: 10,
-                            line: 0,
-                            col: 10,
-                        }..Pos {
-                            offset: 15,
-                            line: 0,
-                            col: 15,
-                        },
-                        node: (),
-                    },
-                    expr: Span {
-                        range: Pos {
-                            offset: 16,
-                            line: 0,
-                            col: 16,
-                        }..Pos {
-                            offset: 17,
-                            line: 0,
-                            col: 17,
-                        },
-                        node: Num {
-                            val: 1.0,
-                        },
-                    },
-                },
+                node: Keyword(
+                    Print,
+                ),
             },
-            else_keyword: None,
-            alt_branch: None,
-        },
+        ),
     },
 )

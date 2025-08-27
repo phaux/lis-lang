@@ -19,7 +19,7 @@ use crate::{
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum ExecResult {
-    Void,
+    Value(Val),
     Return(Val),
     Break,
     Continue,
@@ -30,7 +30,7 @@ pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError
     let prog_scope = Rc::new(global_scope.new_child());
     for stmt in &prog.stmts {
         match exec_stmt(&prog_scope, stmt)? {
-            ExecResult::Void => {}
+            ExecResult::Value(_) => {}
             ExecResult::Return(val) => {
                 // Top-level return was encountered.
                 return Ok(val);
@@ -49,15 +49,14 @@ pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError
 
 fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecError> {
     match &stmt.node {
-        Stmt::Expr { expr } => {
-            eval_expr(scope, expr)?;
-            Ok(ExecResult::Void)
-        }
+        Stmt::Expr { expr } => eval_expr(scope, expr),
         Stmt::Block { stmts, .. } => exec_block(scope, stmts),
         Stmt::Let { pat, init, .. } => {
-            let val = eval_expr(scope, init)?;
-            match_pattern(scope, pat, val)?;
-            Ok(ExecResult::Void)
+            let init_val = eval_expr(scope, init)?;
+            if let ExecResult::Value(val) = &init_val {
+                match_pattern(scope, pat, val.clone())?;
+            }
+            Ok(init_val)
         }
         Stmt::FuncDecl {
             name, params, body, ..
@@ -71,27 +70,21 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
                     closure_scope: Rc::clone(scope),
                 })),
             );
-            Ok(ExecResult::Void)
+            Ok(ExecResult::Value(Val::Nil))
         }
         Stmt::Return { expr, .. } => {
             let val = if let Some(expr) = expr {
-                eval_expr(scope, expr)?
+                eval_expr_to_val(scope, expr)?
             } else {
                 Val::Nil
             };
             Ok(ExecResult::Return(val))
         }
         Stmt::Print { expr, .. } => {
-            let value = eval_expr(scope, expr)?;
+            let value = eval_expr_to_val(scope, expr)?;
             println!("{value:?}");
-            Ok(ExecResult::Void)
+            Ok(ExecResult::Value(Val::Nil))
         }
-        Stmt::If {
-            condition,
-            cons_branch,
-            alt_branch,
-            ..
-        } => exec_if_stmt(scope, condition, cons_branch, alt_branch.as_deref()),
         Stmt::While {
             condition, body, ..
         } => exec_while_stmt(scope, condition, body),
@@ -102,40 +95,15 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
 
 fn exec_block(scope: &Rc<Scope>, stmts: &[Span<Stmt>]) -> Result<ExecResult, ExecError> {
     let block_scope = Rc::new(scope.new_child());
+    let mut result = ExecResult::Value(Val::Nil);
     for stmt in stmts {
-        match exec_stmt(&block_scope, stmt)? {
-            ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
-            ExecResult::Break => return Ok(ExecResult::Break),
-            ExecResult::Continue => return Ok(ExecResult::Continue),
-            ExecResult::Void => {}
+        result = exec_stmt(&block_scope, stmt)?;
+        match result {
+            ExecResult::Return(_) | ExecResult::Break | ExecResult::Continue => return Ok(result),
+            ExecResult::Value(_) => {}
         }
     }
-    Ok(ExecResult::Void)
-}
-
-fn exec_if_stmt(
-    scope: &Rc<Scope>,
-    condition: &Span<Expr>,
-    cons_branch: &Span<Stmt>,
-    alt_branch: Option<&Span<Stmt>>,
-) -> Result<ExecResult, ExecError> {
-    let cond_val = eval_expr(scope, condition)?;
-    let Val::Bool(cond_val) = cond_val else {
-        // Condition value must be a boolean.
-        return Err(ExecError {
-            pos: condition.range.start,
-            kind: ExecErrorKind::InvalidCondition {
-                cond_ty: cond_val.type_of(),
-            },
-        });
-    };
-    if cond_val {
-        exec_stmt(scope, cons_branch)
-    } else if let Some(alt_branch) = alt_branch {
-        exec_stmt(scope, alt_branch)
-    } else {
-        Ok(ExecResult::Void)
-    }
+    Ok(result)
 }
 
 fn exec_while_stmt(
@@ -145,7 +113,7 @@ fn exec_while_stmt(
 ) -> Result<ExecResult, ExecError> {
     let loop_scope = Rc::new(scope.new_child());
     loop {
-        let cond_val = eval_expr(&loop_scope, condition)?;
+        let cond_val = eval_expr_to_val(&loop_scope, condition)?;
         let Val::Bool(cond_val) = cond_val else {
             // Condition value must be a boolean.
             return Err(ExecError {
@@ -159,23 +127,33 @@ fn exec_while_stmt(
             match exec_stmt(&loop_scope, body)? {
                 ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
                 ExecResult::Break => break,
-                ExecResult::Continue | ExecResult::Void => {}
+                ExecResult::Continue | ExecResult::Value(_) => {}
             }
         } else {
             break;
         }
     }
-    Ok(ExecResult::Void)
+    Ok(ExecResult::Value(Val::Nil))
+}
+
+fn eval_expr_to_val(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError> {
+    match eval_expr(scope, expr)? {
+        ExecResult::Value(val) => Ok(val),
+        ExecResult::Return(_) | ExecResult::Break | ExecResult::Continue => Err(ExecError {
+            pos: expr.range.start,
+            kind: ExecErrorKind::InvalidControlFlow,
+        }),
+    }
 }
 
 /// Evaluates a single expression.
-pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError> {
+pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<ExecResult, ExecError> {
     match &expr.node {
-        Expr::Nil => Ok(Val::Nil),
-        Expr::Bool { val } => Ok(Val::Bool(*val)),
-        Expr::Num { val } => Ok(Val::Num(*val)),
-        Expr::Str { val } => Ok(Val::Str(val.clone())),
-        Expr::Var { name } => Ok(scope.lookup(name).unwrap_or_default()),
+        Expr::Nil => Ok(ExecResult::Value(Val::Nil)),
+        Expr::Bool { val } => Ok(ExecResult::Value(Val::Bool(*val))),
+        Expr::Num { val } => Ok(ExecResult::Value(Val::Num(*val))),
+        Expr::Str { val } => Ok(ExecResult::Value(Val::Str(val.clone()))),
+        Expr::Var { name } => Ok(ExecResult::Value(scope.lookup(name).unwrap_or_default())),
         Expr::Assign { place, expr, .. } => eval_assign(scope, place, expr),
         Expr::UnaryOp { op, expr, .. } => eval_unary_op(scope, op, expr),
         Expr::BinOp {
@@ -187,30 +165,58 @@ pub fn eval_expr(scope: &Rc<Scope>, expr: &Span<Expr>) -> Result<Val, ExecError>
                 props: HashMap::new(),
             };
             for (key, val) in props {
-                let val = eval_expr(scope, val)?;
+                let val = eval_expr_to_val(scope, val)?;
                 obj.props.insert(key.node.clone(), val);
             }
-            Ok(Val::Obj(Rc::new(obj)))
+            Ok(ExecResult::Value(Val::Obj(Rc::new(obj))))
         }
-        Expr::PropAccess { obj, prop, dot_tok } => match eval_expr(scope, obj)? {
-            Val::Obj(obj) => match obj.props.get(&prop.node) {
-                Some(value) => Ok(value.clone()),
-                None => Ok(Val::Nil),
-            },
-            v => Err(ExecError {
-                pos: dot_tok.range.start,
-                kind: ExecErrorKind::InvalidPropAccess {
-                    obj_ty: v.type_of(),
+        Expr::PropAccess { obj, prop, dot_tok } => {
+            let obj = eval_expr_to_val(scope, obj)?;
+            match obj {
+                Val::Obj(obj) => match obj.props.get(&prop.node) {
+                    Some(value) => Ok(ExecResult::Value(value.clone())),
+                    None => Ok(ExecResult::Value(Val::Nil)),
                 },
-            }),
-        },
+                v => Err(ExecError {
+                    pos: dot_tok.range.start,
+                    kind: ExecErrorKind::InvalidPropAccess {
+                        obj_ty: v.type_of(),
+                    },
+                }),
+            }
+        }
         Expr::FuncCall { callee, args, .. } => eval_func_call(scope, callee, args),
-        Expr::Lambda { params, body, .. } => Ok(Val::Func(Rc::new(Func {
+        Expr::Lambda { params, body, .. } => Ok(ExecResult::Value(Val::Func(Rc::new(Func {
             id: Uuid::new_v4(),
             params: params.clone(),
             body: Rc::new(*body.clone()),
             closure_scope: Rc::clone(scope),
-        }))),
+        })))),
+        Expr::DoBlock { stmts, .. } => exec_block(scope, stmts),
+        Expr::If {
+            condition,
+            cons_branch,
+            alt_branch,
+            ..
+        } => {
+            let cond_val = eval_expr_to_val(scope, condition)?;
+            let Val::Bool(cond_val) = cond_val else {
+                // Condition value must be a boolean.
+                return Err(ExecError {
+                    pos: condition.range.start,
+                    kind: ExecErrorKind::InvalidCondition {
+                        cond_ty: cond_val.type_of(),
+                    },
+                });
+            };
+            if cond_val {
+                eval_expr(scope, cons_branch)
+            } else if let Some(alt_branch) = alt_branch {
+                eval_expr(scope, alt_branch)
+            } else {
+                Ok(ExecResult::Value(Val::Nil))
+            }
+        }
     }
 }
 
@@ -218,10 +224,10 @@ fn eval_compare(
     scope: &Rc<Scope>,
     left: &Span<Expr>,
     comparators: &[(Span<CompareOp>, Span<Expr>)],
-) -> Result<Val, ExecError> {
-    let mut prev_val = eval_expr(scope, left)?;
+) -> Result<ExecResult, ExecError> {
+    let mut prev_val = eval_expr_to_val(scope, left)?;
     for (op, comparator) in comparators {
-        let current_val = eval_expr(scope, comparator)?;
+        let current_val = eval_expr_to_val(scope, comparator)?;
         let result = match (op.node, &prev_val, &current_val) {
             (CompareOp::Eq, l, r) => l == r,
             (CompareOp::NotEq, l, r) => l != r,
@@ -246,21 +252,21 @@ fn eval_compare(
         };
 
         if !result {
-            return Ok(Val::Bool(false));
+            return Ok(ExecResult::Value(Val::Bool(false)));
         }
 
         prev_val = current_val;
     }
-    Ok(Val::Bool(true))
+    Ok(ExecResult::Value(Val::Bool(true)))
 }
 
 fn eval_func_call(
     scope: &Rc<Scope>,
     callee: &Span<Expr>,
     args: &[Span<Expr>],
-) -> Result<Val, ExecError> {
+) -> Result<ExecResult, ExecError> {
     // Evaluate the callee
-    let callee_val = eval_expr(scope, callee)?;
+    let callee_val = eval_expr_to_val(scope, callee)?;
     let Val::Func(callee_val) = callee_val else {
         return Err(ExecError {
             pos: callee.range.start,
@@ -273,7 +279,7 @@ fn eval_func_call(
     // Evaluate the arguments
     let mut arg_vals = Vec::new();
     for arg in args {
-        arg_vals.push(eval_expr(scope, arg)?);
+        arg_vals.push(eval_expr_to_val(scope, arg)?);
     }
 
     // Create a new scope for the body of the function
@@ -293,7 +299,7 @@ fn eval_func_call(
         return eval_expr(&func_scope, expr);
     }
     match exec_stmt(&func_scope, body_stmt)? {
-        ExecResult::Return(val) => Ok(val),
+        ExecResult::Return(val) => Ok(ExecResult::Value(val)),
         ExecResult::Break | ExecResult::Continue => {
             // Break or continue used inside a function
             Err(ExecError {
@@ -301,7 +307,7 @@ fn eval_func_call(
                 kind: ExecErrorKind::InvalidControlFlow,
             })
         }
-        ExecResult::Void => Ok(Val::Nil),
+        ExecResult::Value(_) => Ok(ExecResult::Value(Val::Nil)),
     }
 }
 
@@ -310,17 +316,17 @@ fn eval_bin_op(
     op: &Span<BinOp>,
     left: &Span<Expr>,
     right: &Span<Expr>,
-) -> Result<Val, ExecError> {
+) -> Result<ExecResult, ExecError> {
     // Handle short-circuit evaluation for logical operators
     match op.node {
         BinOp::Or => {
-            let left_val = eval_expr(scope, left)?;
+            let left_val = eval_expr_to_val(scope, left)?;
             if let Val::Bool(true) = left_val {
-                return Ok(Val::Bool(true));
+                return Ok(ExecResult::Value(Val::Bool(true)));
             }
-            let right_val = eval_expr(scope, right)?;
+            let right_val = eval_expr_to_val(scope, right)?;
             match (left_val, right_val) {
-                (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l || r)),
+                (Val::Bool(l), Val::Bool(r)) => return Ok(ExecResult::Value(Val::Bool(l || r))),
                 (l, r) => {
                     return Err(ExecError {
                         pos: op.range.start,
@@ -334,13 +340,13 @@ fn eval_bin_op(
             }
         }
         BinOp::And => {
-            let left_val = eval_expr(scope, left)?;
+            let left_val = eval_expr_to_val(scope, left)?;
             if let Val::Bool(false) = left_val {
-                return Ok(Val::Bool(false));
+                return Ok(ExecResult::Value(Val::Bool(false)));
             }
-            let right_val = eval_expr(scope, right)?;
+            let right_val = eval_expr_to_val(scope, right)?;
             match (left_val, right_val) {
-                (Val::Bool(l), Val::Bool(r)) => return Ok(Val::Bool(l && r)),
+                (Val::Bool(l), Val::Bool(r)) => return Ok(ExecResult::Value(Val::Bool(l && r))),
                 (l, r) => {
                     return Err(ExecError {
                         pos: op.range.start,
@@ -357,15 +363,15 @@ fn eval_bin_op(
     }
 
     // For non-short-circuiting operators, evaluate both sides first
-    let left_val = eval_expr(scope, left)?;
-    let right_val = eval_expr(scope, right)?;
+    let left_val = eval_expr_to_val(scope, left)?;
+    let right_val = eval_expr_to_val(scope, right)?;
 
     match (op.node, left_val, right_val) {
-        (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l + r)),
-        (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l - r)),
-        (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l * r)),
-        (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(Val::Num(l / r)),
-        (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(Val::Str(format!("{l}{r}"))),
+        (BinOp::Add, Val::Num(l), Val::Num(r)) => Ok(ExecResult::Value(Val::Num(l + r))),
+        (BinOp::Sub, Val::Num(l), Val::Num(r)) => Ok(ExecResult::Value(Val::Num(l - r))),
+        (BinOp::Mul, Val::Num(l), Val::Num(r)) => Ok(ExecResult::Value(Val::Num(l * r))),
+        (BinOp::Div, Val::Num(l), Val::Num(r)) => Ok(ExecResult::Value(Val::Num(l / r))),
+        (BinOp::Concat, Val::Str(l), Val::Str(r)) => Ok(ExecResult::Value(Val::Str(format!("{l}{r}")))),
         (_, l, r) => Err(ExecError {
             pos: op.range.start,
             kind: ExecErrorKind::InvalidBinOp {
@@ -381,12 +387,12 @@ fn eval_unary_op(
     scope: &Rc<Scope>,
     op: &Span<UnaryOp>,
     expr: &Span<Expr>,
-) -> Result<Val, ExecError> {
-    let val = eval_expr(scope, expr)?;
+) -> Result<ExecResult, ExecError> {
+    let val = eval_expr_to_val(scope, expr)?;
     match (op.node, val) {
-        (UnaryOp::Pos, Val::Num(n)) => Ok(Val::Num(n)),
-        (UnaryOp::Neg, Val::Num(n)) => Ok(Val::Num(-n)),
-        (UnaryOp::Not, Val::Bool(b)) => Ok(Val::Bool(!b)),
+        (UnaryOp::Pos, Val::Num(n)) => Ok(ExecResult::Value(Val::Num(n))),
+        (UnaryOp::Neg, Val::Num(n)) => Ok(ExecResult::Value(Val::Num(-n))),
+        (UnaryOp::Not, Val::Bool(b)) => Ok(ExecResult::Value(Val::Bool(!b))),
         (_, val) => Err(ExecError {
             pos: op.range.start,
             kind: ExecErrorKind::InvalidUnaryOp {
@@ -397,7 +403,11 @@ fn eval_unary_op(
     }
 }
 
-fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Result<Val, ExecError> {
+fn eval_assign(
+    scope: &Rc<Scope>,
+    place: &Span<Expr>,
+    expr: &Span<Expr>,
+) -> Result<ExecResult, ExecError> {
     let Expr::Var { name } = &place.node else {
         // Only support variable assignment for now
         return Err(ExecError {
@@ -405,7 +415,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
             kind: ExecErrorKind::InvalidAssign,
         });
     };
-    let val = eval_expr(scope, expr)?;
+    let val = eval_expr_to_val(scope, expr)?;
     if !scope.assign(name, val.clone()) {
         // Variable must be defined anywhere in the scope chain.
         // This is unlike JS where it would create a variable in the global scope.
@@ -416,7 +426,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
             },
         });
     }
-    Ok(val)
+    Ok(ExecResult::Value(val))
 }
 
 /// Matches a pattern against a value.
@@ -454,7 +464,7 @@ pub fn match_pattern(
         Pattern::Default { pat, default, .. } => {
             // Default pattern replaces the matched value if it's nil.
             let matched_val = match matched_val {
-                Val::Nil => eval_expr(scope, default)?,
+                Val::Nil => eval_expr_to_val(scope, default)?,
                 val => val,
             };
             match_pattern(scope, pat, matched_val)?;

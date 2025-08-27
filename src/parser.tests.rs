@@ -385,3 +385,9 @@ fn stmt_let_default_error() {
     let ast = Parser::new("let a = 1 = 2;").parse_stmt();
     insta::assert_debug_snapshot!(ast);
 }
+
+#[test]
+fn expr_do_block() {
+    let ast = Parser::new("do { 1; 2; }").parse_expr(0);
+    insta::assert_debug_snapshot!(ast);
+}

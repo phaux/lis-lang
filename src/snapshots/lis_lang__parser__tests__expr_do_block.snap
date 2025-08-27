@@ -1,0 +1,111 @@
+---
+source: src/parser.tests.rs
+expression: ast
+---
+Ok(
+    Span {
+        range: Pos {
+            offset: 0,
+            line: 0,
+            col: 0,
+        }..Pos {
+            offset: 12,
+            line: 0,
+            col: 12,
+        },
+        node: DoBlock {
+            keyword: Span {
+                range: Pos {
+                    offset: 0,
+                    line: 0,
+                    col: 0,
+                }..Pos {
+                    offset: 2,
+                    line: 0,
+                    col: 2,
+                },
+                node: (),
+            },
+            brace_l: Span {
+                range: Pos {
+                    offset: 3,
+                    line: 0,
+                    col: 3,
+                }..Pos {
+                    offset: 4,
+                    line: 0,
+                    col: 4,
+                },
+                node: (),
+            },
+            stmts: [
+                Span {
+                    range: Pos {
+                        offset: 5,
+                        line: 0,
+                        col: 5,
+                    }..Pos {
+                        offset: 6,
+                        line: 0,
+                        col: 6,
+                    },
+                    node: Expr {
+                        expr: Span {
+                            range: Pos {
+                                offset: 5,
+                                line: 0,
+                                col: 5,
+                            }..Pos {
+                                offset: 6,
+                                line: 0,
+                                col: 6,
+                            },
+                            node: Num {
+                                val: 1.0,
+                            },
+                        },
+                    },
+                },
+                Span {
+                    range: Pos {
+                        offset: 8,
+                        line: 0,
+                        col: 8,
+                    }..Pos {
+                        offset: 9,
+                        line: 0,
+                        col: 9,
+                    },
+                    node: Expr {
+                        expr: Span {
+                            range: Pos {
+                                offset: 8,
+                                line: 0,
+                                col: 8,
+                            }..Pos {
+                                offset: 9,
+                                line: 0,
+                                col: 9,
+                            },
+                            node: Num {
+                                val: 2.0,
+                            },
+                        },
+                    },
+                },
+            ],
+            brace_r: Span {
+                range: Pos {
+                    offset: 11,
+                    line: 0,
+                    col: 11,
+                }..Pos {
+                    offset: 12,
+                    line: 0,
+                    col: 12,
+                },
+                node: (),
+            },
+        },
+    },
+)

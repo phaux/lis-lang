@@ -4,7 +4,22 @@ expression: ast
 ---
 Err(
     ParseError {
-        expected: "semicolon or closing brace of block statement",
-        found: None,
+        expected: "property key of object literal",
+        found: Some(
+            Span {
+                range: Pos {
+                    offset: 12,
+                    line: 0,
+                    col: 12,
+                }..Pos {
+                    offset: 17,
+                    line: 0,
+                    col: 17,
+                },
+                node: Keyword(
+                    Print,
+                ),
+            },
+        ),
     },
 )
