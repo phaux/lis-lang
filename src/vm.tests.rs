@@ -22,7 +22,7 @@ fn assign_self() {
         foo = foo + 1;
         { foo = foo + 1; }
         foo = foo + 1;
-        return foo;
+        foo
         ",
     )
     .unwrap();
@@ -47,9 +47,9 @@ fn if_stmt() {
         r"
         let foo = 1 + 1;
         if foo == 2 then {
-            return 1;
+            1
         } else {
-            return 0;
+            0
         }
         ",
     )
@@ -80,9 +80,9 @@ fn func_call_default_args() {
         &scope,
         r"
         fn add(a, b = 2, c = 3) {
-            return a + b + c;
+            a + b + c
         }
-        return add(1, 3);
+        add(1, 3)
         ",
     )
     .unwrap();
@@ -92,9 +92,9 @@ fn func_call_default_args() {
         &scope,
         r"
         fn add(a, b = 2, c = 3) {
-            return a + b + c;
+            a + b + c
         }
-        return add(1);
+        add(1)
         ",
     )
     .unwrap();
@@ -108,9 +108,9 @@ fn func_call_pat_obj() {
         &scope,
         r"
         fn foo({x, y}) {
-            return x + y;
+            x + y
         }
-        return foo({x: 1, y: 2});
+        foo({x: 1, y: 2})
         ",
     )
     .unwrap();
@@ -124,9 +124,9 @@ fn func_call_pat_obj_nested() {
         &scope,
         r"
         fn foo({a: {b: {c}}}) {
-            return c;
+            c
         }
-        return foo({a: {b: {c: 100}}});
+        foo({a: {b: {c: 100}}})
         ",
     )
     .unwrap();
@@ -140,9 +140,9 @@ fn func_call_pat_obj_rename_default() {
         &scope,
         r"
         fn foo({a: x, b: y = 2}) {
-            return x + y;
+            x + y
         }
-        return foo({a: 1});
+        foo({a: 1})
         ",
     )
     .unwrap();
@@ -155,7 +155,7 @@ fn lambda_call_pat_obj() {
     let result = exec_str(
         &scope,
         r"
-        return (|{x, y}| x + y)({x: 1, y: 2});
+        (|{x, y}| x + y)({x: 1, y: 2})
         ",
     )
     .unwrap();
@@ -194,7 +194,7 @@ fn lambda_closure() {
         &scope,
         r"
         let f = |x| x + 1;
-        return f(1);
+        f(1)
         ",
     )
     .unwrap();
@@ -205,7 +205,7 @@ fn lambda_closure() {
         r"
         let x = 10;
         let f = || x;
-        return f();
+        f()
         ",
     )
     .unwrap();
@@ -214,7 +214,7 @@ fn lambda_closure() {
     let result = exec_str(
         &scope,
         r"
-        return (|x, y| x * y)(2, 3);
+        (|x, y| x * y)(2, 3)
         ",
     )
     .unwrap();
@@ -225,7 +225,7 @@ fn lambda_closure() {
         r"
         let factory = |x| |y| x + y;
         let add5 = factory(5);
-        return add5(10);
+        add5(10)
         ",
     )
     .unwrap();
@@ -293,7 +293,7 @@ fn obj_pat() {
         r"
         let o = {x: 1, y: 2};
         let {x, y} = o;
-        return x + y;
+        x + y
         ",
     )
     .unwrap();
@@ -308,7 +308,7 @@ fn obj_pat_nested() {
         r"
         let o = {a: {b: {c: 100}}};
         let {a: {b: {c}}} = o;
-        return c;
+        c
         ",
     )
     .unwrap();
@@ -323,7 +323,7 @@ fn obj_pat_rename() {
         r"
         let o = {x: 1};
         let {x: y} = o;
-        return y;
+        y
         ",
     )
     .unwrap();
@@ -338,7 +338,7 @@ fn obj_pat_default() {
         r"
         let o = {x: 1};
         let {x = 0, y = 2} = o;
-        return x + y;
+        x + y
         ",
     )
     .unwrap();
@@ -353,7 +353,7 @@ fn obj_pat_nested_default() {
         r"
         let o = {x: {a: 1}};
         let {x: {a = 0, b = 2} = {}} = o;
-        return a + b;
+        a + b
         ",
     )
     .unwrap();
@@ -369,7 +369,7 @@ fn obj_pat_default_with_nil() {
         r"
         let o = {a: nil, b: 2};
         let {a = 1, b = 0} = o;
-        return a + b;
+        a + b
         ",
     )
     .unwrap();
@@ -739,7 +739,7 @@ fn func_call() {
         fn add(a, b) {
             return a + b;
         }
-        return add(1, 2);
+        add(1, 2)
         ",
     )
     .unwrap();
@@ -756,7 +756,7 @@ fn func_closure_capture() {
         fn closure() {
             return x;
         }
-        return closure();
+        closure()
         ",
     )
     .unwrap();
@@ -794,7 +794,7 @@ fn func_higher_order() {
         fn add(x, y) {
             return x + y;
         }
-        return executor(add, 5, 10);
+        executor(add, 5, 10)
         ",
     )
     .unwrap();
@@ -814,7 +814,7 @@ fn func_higher_order_return() {
             return greeter;
         }
         let helloGreeter = greeterFactory("Hello");
-        return helloGreeter("World");
+        helloGreeter("World")
         "#,
     )
     .unwrap();
@@ -828,11 +828,11 @@ fn func_recursive() {
         &scope,
         r"
         fn factorial(n) {
-            if n == 0 
+            if n == 0
             then return 1
             else return n * factorial(n - 1)
         }
-        return factorial(5);
+        factorial(5)
         ",
     )
     .unwrap();
@@ -868,7 +868,7 @@ fn func_too_many_args() {
         fn foo(a, b) {
             return a + b;
         }
-        return foo(1, 2, 3);
+        foo(1, 2, 3)
         ",
     );
     assert!(result.is_ok());
@@ -887,7 +887,7 @@ fn while_loop() {
             sum = sum + i;
             i = i + 1;
         }
-        return sum;
+        sum
         ",
     );
     assert_eq!(result.unwrap(), Val::Num(10.0));
@@ -902,7 +902,7 @@ fn while_loop_blockless() {
         let i = 0;
         let sum = 0;
         while i < 5 do sum = sum + (i = i + 1);
-        return sum;
+        sum
         ",
     );
     assert_eq!(result.unwrap(), Val::Num(15.0));
@@ -924,7 +924,7 @@ fn while_loop_with_break() {
                 i = i + 1;
             }
         }
-        return sum;
+        sum
         ",
     );
     assert_eq!(result.unwrap(), Val::Num(10.0));
@@ -946,7 +946,7 @@ fn while_loop_with_continue() {
                 sum = sum + i;
             }
         }
-        return sum;
+        sum
         ",
     );
     assert_eq!(result.unwrap(), Val::Num(12.0)); // 3 + 4 + 5 = 12
@@ -973,6 +973,23 @@ fn break_outside_loop() {
 fn continue_outside_loop() {
     let scope = Rc::new(Scope::root());
     let result = exec_str(&scope, "continue;");
+    assert!(matches!(
+        result,
+        Err(ExecError {
+            pos: Pos {
+                line: 0,
+                col: 0,
+                offset: 0,
+            },
+            kind: ExecErrorKind::InvalidControlFlow,
+        })
+    ));
+}
+
+#[test]
+fn top_level_return() {
+    let scope = Rc::new(Scope::root());
+    let result = exec_str(&scope, "return 1;");
     assert!(matches!(
         result,
         Err(ExecError {

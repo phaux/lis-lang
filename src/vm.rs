@@ -19,7 +19,7 @@ use crate::{
 #[must_use]
 #[derive(Debug, PartialEq)]
 pub enum ExecResult {
-    Void,
+    Normal(Val),
     Return(Val),
     Break,
     Continue,
@@ -27,51 +27,41 @@ pub enum ExecResult {
 
 /// Executes a whole program.
 pub fn exec_prog(global_scope: &Rc<Scope>, prog: &Prog) -> Result<Val, ExecError> {
-    let prog_scope = Rc::new(global_scope.new_child());
-    for stmt in &prog.stmts {
-        match exec_stmt(&prog_scope, stmt)? {
-            ExecResult::Void => {}
-            ExecResult::Return(val) => {
-                // Top-level return was encountered.
-                return Ok(val);
-            }
-            ExecResult::Break | ExecResult::Continue => {
-                // Break or continue used outside of a loop.
-                return Err(ExecError {
-                    pos: stmt.range.start,
-                    kind: ExecErrorKind::InvalidControlFlow,
-                });
-            }
+    match exec_block(global_scope, &prog.stmts)? {
+        ExecResult::Normal(val) => Ok(val),
+        ExecResult::Return(_) | ExecResult::Break | ExecResult::Continue => {
+            // Top-level control flow.
+            Err(ExecError {
+                pos: Pos::default(),
+                kind: ExecErrorKind::InvalidControlFlow,
+            })
         }
     }
-    Ok(Val::Nil)
 }
 
 fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecError> {
     match &stmt.node {
         Stmt::Expr { expr } => {
-            eval_expr(scope, expr)?;
-            Ok(ExecResult::Void)
+            let val = eval_expr(scope, expr)?;
+            Ok(ExecResult::Normal(val))
         }
         Stmt::Block { stmts, .. } => exec_block(scope, stmts),
         Stmt::Let { pat, init, .. } => {
             let val = eval_expr(scope, init)?;
             match_pattern(scope, pat, val)?;
-            Ok(ExecResult::Void)
+            Ok(ExecResult::Normal(Val::Nil))
         }
         Stmt::FuncDecl {
             name, params, body, ..
         } => {
-            scope.declare(
-                &name.node,
-                Val::Func(Rc::new(Func {
-                    id: Uuid::new_v4(),
-                    params: params.clone(),
-                    body: Rc::new(*body.clone()),
-                    closure_scope: Rc::clone(scope),
-                })),
-            );
-            Ok(ExecResult::Void)
+            let func = Val::Func(Rc::new(Func {
+                id: Uuid::new_v4(),
+                params: params.clone(),
+                body: Rc::new(*body.clone()),
+                closure_scope: Rc::clone(scope),
+            }));
+            scope.declare(&name.node, func);
+            Ok(ExecResult::Normal(Val::Nil))
         }
         Stmt::Return { expr, .. } => {
             let val = if let Some(expr) = expr {
@@ -82,9 +72,9 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
             Ok(ExecResult::Return(val))
         }
         Stmt::Print { expr, .. } => {
-            let value = eval_expr(scope, expr)?;
-            println!("{value:?}");
-            Ok(ExecResult::Void)
+            let val = eval_expr(scope, expr)?;
+            println!("{val:?}");
+            Ok(ExecResult::Normal(Val::Nil))
         }
         Stmt::If {
             condition,
@@ -102,15 +92,16 @@ fn exec_stmt(scope: &Rc<Scope>, stmt: &Span<Stmt>) -> Result<ExecResult, ExecErr
 
 fn exec_block(scope: &Rc<Scope>, stmts: &[Span<Stmt>]) -> Result<ExecResult, ExecError> {
     let block_scope = Rc::new(scope.new_child());
+    let mut last_val = Val::Nil;
     for stmt in stmts {
         match exec_stmt(&block_scope, stmt)? {
             ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
             ExecResult::Break => return Ok(ExecResult::Break),
             ExecResult::Continue => return Ok(ExecResult::Continue),
-            ExecResult::Void => {}
+            ExecResult::Normal(val) => last_val = val,
         }
     }
-    Ok(ExecResult::Void)
+    Ok(ExecResult::Normal(last_val))
 }
 
 fn exec_if_stmt(
@@ -134,7 +125,7 @@ fn exec_if_stmt(
     } else if let Some(alt_branch) = alt_branch {
         exec_stmt(scope, alt_branch)
     } else {
-        Ok(ExecResult::Void)
+        Ok(ExecResult::Normal(Val::Nil))
     }
 }
 
@@ -159,13 +150,13 @@ fn exec_while_stmt(
             match exec_stmt(&loop_scope, body)? {
                 ExecResult::Return(val) => return Ok(ExecResult::Return(val)),
                 ExecResult::Break => break,
-                ExecResult::Continue | ExecResult::Void => {}
+                ExecResult::Continue | ExecResult::Normal(_) => {}
             }
         } else {
             break;
         }
     }
-    Ok(ExecResult::Void)
+    Ok(ExecResult::Normal(Val::Nil))
 }
 
 /// Evaluates a single expression.
@@ -293,7 +284,7 @@ fn eval_func_call(
         return eval_expr(&func_scope, expr);
     }
     match exec_stmt(&func_scope, body_stmt)? {
-        ExecResult::Return(val) => Ok(val),
+        ExecResult::Normal(val) | ExecResult::Return(val) => Ok(val),
         ExecResult::Break | ExecResult::Continue => {
             // Break or continue used inside a function
             Err(ExecError {
@@ -301,7 +292,6 @@ fn eval_func_call(
                 kind: ExecErrorKind::InvalidControlFlow,
             })
         }
-        ExecResult::Void => Ok(Val::Nil),
     }
 }
 
@@ -412,7 +402,7 @@ fn eval_assign(scope: &Rc<Scope>, place: &Span<Expr>, expr: &Span<Expr>) -> Resu
         return Err(ExecError {
             pos: place.range.start,
             kind: ExecErrorKind::UndefVar {
-                name: name.to_string(),
+                name: name.clone(),
             },
         });
     }
